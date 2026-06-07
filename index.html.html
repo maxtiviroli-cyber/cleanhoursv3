@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horas Limpieza — Cuba Style</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --primary: #7366FF;
+  --primary-dark: #5B4FE8;
+  --primary-light: #EEEDFF;
+  --secondary: #F73164;
+  --secondary-light: #FEE7EE;
+  --success: #51BB25;
+  --success-light: #E8F8DD;
+  --info: #A927F9;
+  --info-light: #F4E5FE;
+  --warning: #F8D62B;
+  --warning-light: #FFF8D0;
+  --danger: #DC3545;
+  --danger-light: #FBE0E2;
+
+  --bg: #F8F8F8;
+  --surface: #FFFFFF;
+  --border: #EFEFEF;
+  --text: #2F2F3B;
+  --text2: #59667A;
+  --text3: #999;
+  --radius: 8px;
+  --radius-lg: 14px;
+  --shadow: 0 0 20px rgba(8,21,66,0.05);
+  --shadow-lg: 0 4px 24px rgba(8,21,66,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Rubik', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar { width: 270px; background: var(--surface); flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 0 21px rgba(89,102,122,0.1); }
+.sidebar-header { padding: 18px 22px; background: linear-gradient(89deg, var(--primary) 0%, var(--secondary) 100%); color: white; display: flex; align-items: center; gap: 12px; }
+.sidebar-logo { width: 40px; height: 40px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.sidebar-brand { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.sidebar-brand-sub { font-size: 11px; opacity: 0.9; margin-top: 2px; font-weight: 500; }
+.sidebar-menu { padding: 18px 14px; flex: 1; }
+.sidebar-section { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text3); padding: 18px 14px 10px; letter-spacing: 0.06em; }
+.sidebar-item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: var(--radius); color: var(--text2); cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; margin-bottom: 4px; border: none; background: transparent; width: 100%; text-align: left; font-family: inherit; position: relative; }
+.sidebar-item::before { content:''; position:absolute; left:0; top:50%; transform: translateY(-50%); width: 3px; height: 0; background: var(--primary); border-radius: 0 3px 3px 0; transition: height 0.2s; }
+.sidebar-item:hover { color: var(--primary); background: var(--primary-light); }
+.sidebar-item:hover::before { height: 24px; }
+.sidebar-item.active { color: white; background: linear-gradient(89deg, var(--primary), var(--primary-dark)); }
+.sidebar-item.active::before { display: none; }
+.sidebar-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.badge-num { margin-left: auto; background: var(--warning); color: var(--text); padding: 2px 9px; border-radius: 50px; font-size: 11px; font-weight: 700; }
+.sidebar-item.active .badge-num { background: white; color: var(--primary); }
+.sidebar-footer { padding: 16px 22px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text3); }
+
+/* MAIN */
+.wrap { flex: 1; min-width: 0; }
+.topbar { background: var(--surface); padding: 16px 30px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; box-shadow: 0 0 21px rgba(89,102,122,0.1); border-bottom: 1px solid var(--border); }
+.topbar-title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+.topbar-breadcrumb { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.topbar-breadcrumb span { color: var(--primary); font-weight: 500; }
+.user-chip { background: var(--primary-light); color: var(--primary); padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; }
+
+.content { padding: 30px; max-width: 1280px; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* CARDS */
+.card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); margin-bottom: 24px; overflow: hidden; }
+.card-header { padding: 22px 26px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: relative; }
+.card-header.colored::before { content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background: var(--primary); }
+.card-header.success::before { background: var(--success); }
+.card-title { font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.2px; display: flex; align-items: center; gap: 10px; }
+.card-title-icon { width: 32px; height: 32px; background: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.card-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+.card-body { padding: 26px; }
+
+/* KPI cards Cuba style: colored backgrounds */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 28px; }
+.kpi { padding: 24px 22px; border-radius: var(--radius-lg); position: relative; overflow: hidden; color: white; box-shadow: var(--shadow); }
+.kpi.primary { background: linear-gradient(89deg, var(--primary), var(--primary-dark)); }
+.kpi.secondary { background: linear-gradient(89deg, var(--secondary), #C61C49); }
+.kpi.success { background: linear-gradient(89deg, var(--success), #3E9E1B); }
+.kpi.warning { background: linear-gradient(89deg, #FFB821, #F8A523); color: var(--text); }
+.kpi.danger { background: linear-gradient(89deg, var(--danger), #B71B27); }
+.kpi.info { background: linear-gradient(89deg, var(--info), #7E1FC7); }
+.kpi::before { content:''; position:absolute; right:-30px; bottom:-40px; width:130px; height:130px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+.kpi::after { content:''; position:absolute; right:50px; top:-20px; width:60px; height:60px; background: rgba(255,255,255,0.08); border-radius: 50%; }
+.kpi-icon { font-size: 28px; opacity: 0.9; margin-bottom: 14px; position: relative; z-index: 1; }
+.kpi-value { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; position: relative; z-index: 1; }
+.kpi-label { font-size: 12px; font-weight: 500; opacity: 0.95; margin-top: 6px; position: relative; z-index: 1; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* FORM */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.form-full { margin-bottom: 18px; }
+label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 7px; }
+input, select, textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: all 0.2s; appearance: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 3px var(--primary-light); }
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+.btn { padding: 10px 22px; border-radius: var(--radius); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 7px; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: linear-gradient(89deg, var(--primary), var(--primary-dark)); color: white; }
+.btn-primary:hover { box-shadow: 0 4px 12px rgba(115,102,255,0.4); }
+.btn-success { background: linear-gradient(89deg, var(--success), #3E9E1B); color: white; }
+.btn-success:hover { box-shadow: 0 4px 12px rgba(81,187,37,0.4); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-secondary { background: linear-gradient(89deg, var(--secondary), #C61C49); color: white; }
+.btn-light { background: var(--bg); color: var(--text2); border: 1px solid var(--border); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-full { width: 100%; justify-content: center; }
+
+.role-bar { display: inline-flex; background: var(--surface); border-radius: var(--radius); padding: 5px; margin-bottom: 22px; box-shadow: var(--shadow); }
+.role-btn { padding: 9px 22px; border-radius: var(--radius); border: none; background: transparent; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); transition: all 0.2s; }
+.role-btn.active { background: linear-gradient(89deg, var(--primary), var(--primary-dark)); color: white; }
+
+.hours-pill { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(89deg, var(--success-light), #F0FBE5); color: var(--success); padding: 9px 18px; border-radius: 50px; font-size: 15px; font-weight: 600; margin: 4px 0 16px; border: 1px solid #C8E89F; }
+
+/* WHATSAPP */
+.wa-wrap { background: var(--bg); border-radius: var(--radius-lg); overflow: hidden; }
+.wa-header { background: linear-gradient(89deg, var(--primary), var(--secondary)); color: white; padding: 16px 22px; display: flex; align-items: center; gap: 14px; }
+.wa-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.wa-info-name { font-size: 15px; font-weight: 600; }
+.wa-info-sub { font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 2px; }
+.wa-body { padding: 18px; min-height: 240px; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #FAFAFC; }
+.wa-msg { max-width: 80%; }
+.wa-msg.out { align-self: flex-end; }
+.wa-msg.in { align-self: flex-start; }
+.wa-msg.system { align-self: center; max-width: 90%; }
+.wa-bubble { padding: 11px 15px; border-radius: var(--radius-lg); font-size: 13px; line-height: 1.5; box-shadow: 0 2px 8px rgba(8,21,66,0.06); }
+.wa-msg.out .wa-bubble { background: linear-gradient(89deg, var(--primary), var(--primary-dark)); color: white; border-radius: 14px 4px 14px 14px; }
+.wa-msg.in .wa-bubble { background: var(--surface); border-radius: 4px 14px 14px 14px; }
+.wa-msg.system .wa-bubble { background: var(--warning-light); color: #8A6500; border-radius: 50px; text-align: center; font-size: 12px; font-weight: 500; padding: 8px 18px; }
+.wa-name { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+.wa-msg.out .wa-name { color: rgba(255,255,255,0.8); }
+.wa-msg.in .wa-name { color: var(--primary); }
+.wa-ts { font-size: 10px; opacity: 0.6; text-align: right; margin-top: 4px; }
+
+.wa-input-area { background: var(--surface); padding: 14px 18px; display: flex; gap: 10px; align-items: flex-end; border-top: 1px solid var(--border); }
+.wa-input-wrap { flex: 1; background: var(--bg); border-radius: 50px; padding: 4px 4px 4px 16px; display: flex; align-items: flex-end; }
+.wa-textarea { flex: 1; border: none; background: transparent; padding: 10px 0; font-size: 14px; font-family: inherit; outline: none; resize: none; max-height: 90px; line-height: 1.4; }
+.wa-sender-sel { border: none; background: transparent; font-size: 12px; color: var(--text2); padding: 10px 8px; font-family: inherit; outline: none; cursor: pointer; min-width: 75px; font-weight: 500; }
+.wa-send { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(89deg, var(--primary), var(--secondary)); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(115,102,255,0.4); transition: transform 0.15s; }
+.wa-send:hover { transform: scale(1.05); }
+.wa-send:disabled { opacity: 0.4; }
+.wa-send svg { width: 18px; height: 18px; fill: white; }
+
+.typing-dots { display: flex; gap: 3px; padding: 2px; }
+.typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); animation: bounce 1.2s infinite; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100% { transform: scale(1); } 30% { transform: scale(1.5); } }
+
+.wa-btn-ok, .wa-btn-no { padding: 7px 16px; border-radius: 50px; border: none; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.wa-btn-ok { background: linear-gradient(89deg, var(--success), #3E9E1B); color: white; }
+.wa-btn-no { background: var(--bg); color: var(--text2); border: 1px solid var(--border); }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { text-align: left; padding: 14px 18px; background: linear-gradient(89deg, var(--primary-light), #F5F4FF); font-size: 12px; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+tbody td { padding: 14px 18px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
+tbody tr:hover td { background: var(--primary-light); }
+tbody tr.row-pending td { background: var(--warning-light); }
+tbody tr.row-mismatch td { background: var(--danger-light); }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 13px; border-radius: 50px; font-size: 11px; font-weight: 600; }
+.badge-ok { background: var(--success-light); color: var(--success); }
+.badge-pending { background: var(--warning-light); color: #B0950A; }
+.badge-mismatch { background: var(--danger-light); color: var(--danger); }
+.badge-info { background: var(--info-light); color: var(--info); }
+.badge-worker { background: var(--primary-light); color: var(--primary); }
+.badge-secondary { background: var(--secondary-light); color: var(--secondary); }
+
+.filter-bar { display: flex; gap: 12px; flex-wrap: wrap; }
+.filter-bar select { width: auto; min-width: 160px; font-size: 13px; }
+
+.section-title { font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; margin-bottom: 4px; background: linear-gradient(89deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; }
+.section-sub { font-size: 14px; color: var(--text3); margin-bottom: 22px; }
+
+.legend-wrap { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
+.legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text); font-weight: 500; }
+.legend-sq { width: 11px; height: 11px; border-radius: 3px; }
+
+.apikey-box { background: linear-gradient(135deg, var(--warning-light), #FFF3A8); border: 1px solid #FFE066; border-radius: var(--radius-lg); padding: 20px 22px; margin-bottom: 22px; }
+.apikey-box .ak-title { font-size: 14px; font-weight: 600; color: #8A6500; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.apikey-box .ak-input-row { display: flex; gap: 10px; }
+.apikey-box input { font-family: monospace; }
+.apikey-help { font-size: 12px; color: #8A6500; margin-top: 10px; }
+.apikey-help a { color: var(--primary); font-weight: 600; }
+
+#toast { position: fixed; bottom: 26px; right: 26px; background: linear-gradient(89deg, var(--primary), var(--secondary)); color: white; padding: 14px 24px; border-radius: 50px; font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(115,102,255,0.4); z-index: 999; opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; }
+#toast.show { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .sidebar { position: fixed; left: -270px; z-index: 100; transition: left 0.3s; }
+  .form-row { grid-template-columns: 1fr; }
+  .content { padding: 20px 16px; }
+  .topbar { padding: 14px 18px; }
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">⏱</div>
+    <div>
+      <div class="sidebar-brand">CleanHours</div>
+      <div class="sidebar-brand-sub">Control de horas</div>
+    </div>
+  </div>
+  <nav class="sidebar-menu">
+    <div class="sidebar-section">Aplicaciones</div>
+    <button class="sidebar-item active" onclick="switchTab('registro')" id="tab-registro">
+      <span class="sidebar-icon">📋</span> Registro
+    </button>
+    <button class="sidebar-item" onclick="switchTab('auditoria')" id="tab-auditoria">
+      <span class="sidebar-icon">🔍</span> Auditoría
+      <span class="badge-num" id="pending-count" style="display:none">0</span>
+    </button>
+    <button class="sidebar-item" onclick="switchTab('dashboard')" id="tab-dashboard">
+      <span class="sidebar-icon">📊</span> Dashboard
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div id="header-date"></div>
+    <div style="margin-top:4px;opacity:0.7">Cuba Theme</div>
+  </div>
+</aside>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="page-title">Registro de horas</div>
+      <div class="topbar-breadcrumb">CleanHours · <span id="page-crumb">Registro</span></div>
+    </div>
+    <span class="user-chip">🧹 Limpieza Pisos</span>
+  </div>
+
+  <div class="content">
+
+  <!-- REGISTRO -->
+  <div class="panel active" id="panel-registro">
+
+    <div id="apikey-section" class="apikey-box">
+      <div class="ak-title">🔑 API Key de Claude</div>
+      <div class="ak-input-row">
+        <input type="password" id="api-key-input" placeholder="sk-ant-api03-...">
+        <button class="btn btn-primary" onclick="saveApiKey()" style="white-space:nowrap">Guardar</button>
+      </div>
+      <div class="apikey-help">Necesaria para reconocimiento natural. <a href="https://console.anthropic.com" target="_blank">Obtener API key →</a></div>
+    </div>
+
+    <div class="role-bar">
+      <button class="role-btn active" id="role-worker-btn" onclick="setRole('worker')">👤 Trabajador</button>
+      <button class="role-btn" id="role-admin-btn" onclick="setRole('admin')">🛡 Administrador</button>
+    </div>
+
+    <div id="form-worker">
+      <div class="card">
+        <div class="card-header colored">
+          <div><div class="card-title"><div class="card-title-icon">📋</div>Formulario manual</div><div class="card-sub">Inicio y término · teclado numérico en móvil</div></div>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div><label>Trabajador</label><select id="w-user"><option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option></select></div>
+            <div><label>Fecha</label><input type="date" id="w-date"></div>
+          </div>
+          <div class="form-row">
+            <div><label>Inicio (HH:MM)</label><input type="time" id="w-start" inputmode="numeric" onchange="updateHours('w')" style="font-size:18px;font-weight:600;text-align:center;padding:12px;letter-spacing:2px"></div>
+            <div><label>Término (HH:MM)</label><input type="time" id="w-end" inputmode="numeric" onchange="updateHours('w')" style="font-size:18px;font-weight:600;text-align:center;padding:12px;letter-spacing:2px"></div>
+          </div>
+          <div id="w-hours-pill" style="display:none"><div class="hours-pill">⏱ <span id="w-hours-text">0:00 hrs</span></div></div>
+          <div class="form-full"><label>Negocio / Piso</label><select id="w-negocio"></select></div>
+          <div class="form-full"><label>Observaciones</label><input type="text" id="w-obs" placeholder="Notas adicionales..."></div>
+          <button class="btn btn-primary btn-full" onclick="submitWorkerForm()">💬 Enviar al grupo</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="form-admin" style="display:none">
+      <div class="card">
+        <div class="card-header colored success">
+          <div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">🛡</div>Modo administrador</div><div class="card-sub">Registra y confirma horas</div></div>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div><label>Admin</label><select id="a-admin"><option>Manuel (Admin)</option><option>Claudia (Admin)</option></select></div>
+            <div><label>Trabajador</label><select id="a-user"><option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option></select></div>
+          </div>
+          <div class="form-row">
+            <div><label>Fecha</label><input type="date" id="a-date"></div>
+            <div><label>Negocio</label><select id="a-negocio"></select></div>
+          </div>
+          <div class="form-row">
+            <div><label>Inicio (HH:MM)</label><input type="time" id="a-start" inputmode="numeric" onchange="updateHours('a')" style="font-size:18px;font-weight:600;text-align:center;padding:12px;letter-spacing:2px"></div>
+            <div><label>Término (HH:MM)</label><input type="time" id="a-end" inputmode="numeric" onchange="updateHours('a')" style="font-size:18px;font-weight:600;text-align:center;padding:12px;letter-spacing:2px"></div>
+          </div>
+          <div id="a-hours-pill" style="display:none"><div class="hours-pill">⏱ <span id="a-hours-text">0:00 hrs</span></div></div>
+          <div class="form-full"><label>Observaciones</label><input type="text" id="a-obs"></div>
+          <button class="btn btn-success btn-full" onclick="submitAdminForm()">🛡 Guardar registro admin</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header colored">
+        <div><div class="card-title"><div class="card-title-icon" style="background:linear-gradient(89deg,var(--primary-light),var(--secondary-light));color:var(--primary)">💬</div>Grupo WhatsApp</div><div class="card-sub">Escribe natural — IA interpreta</div></div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="wa-wrap" style="border-radius:0">
+          <div class="wa-header">
+            <div class="wa-avatar">🧹</div>
+            <div><div class="wa-info-name">Limpieza Pisos</div><div class="wa-info-sub">5 participantes</div></div>
+          </div>
+          <div class="wa-body" id="wa-body"></div>
+          <div class="wa-input-area">
+            <div class="wa-input-wrap">
+              <select class="wa-sender-sel" id="wa-sender"><option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option><option value="Manuel (Admin)">Admin</option></select>
+              <textarea class="wa-textarea" id="wa-input" rows="1" placeholder='14 a 18 en Sapporo por Manuel hoy' onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+            </div>
+            <button class="wa-send" id="wa-send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDITORÍA -->
+  <div class="panel" id="panel-auditoria">
+    <div class="section-title">Auditoría</div>
+    <div class="section-sub">Contraste registros trabajadores vs admin</div>
+
+    <div class="card"><div class="card-body">
+      <div class="filter-bar">
+        <select id="filter-worker" onchange="renderAudit()"><option value="">Todos los trabajadores</option><option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option></select>
+        <select id="filter-status" onchange="renderAudit()"><option value="">Todos los estados</option><option value="ok">Cuadra</option><option value="pending">Pendiente</option><option value="mismatch">Conflicto</option></select>
+        <select id="filter-neg-audit" onchange="renderAudit()"></select>
+      </div>
+    </div></div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Reg. trab.</th><th>Reg. admin</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="audit-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="panel" id="panel-dashboard">
+    <div class="section-title">Dashboard</div>
+    <div class="section-sub">Resumen mensual · Mayo 2026</div>
+
+    <div class="kpi-grid" id="dash-metrics"></div>
+
+    <div class="card">
+      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon">👥</div>Horas por trabajador</div><div class="card-sub">Mayo 2026</div></div></div>
+      <div class="card-body">
+        <div class="kpi-grid" id="workers-grid" style="margin-bottom:0"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--info-light);color:var(--info)">🏠</div>Horas por piso</div><div class="card-sub">Por agrupación</div></div></div>
+      <div class="card-body">
+        <div id="pisos-grid"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">✓</div>Estado auditoría</div><div class="card-sub">Confirmado vs pendiente</div></div></div>
+      <div class="card-body" style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
+        <div style="position:relative;width:180px;height:180px;flex-shrink:0"><canvas id="chart-status"></canvas></div>
+        <div id="legend-status"></div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const PISOS = [
+  'A01','B21','B24','C21','C22','D11 (Kristine)','D12','D13','D43 (Atico)',
+  'Sapporo 20','Morera 5C','Dolsa 3','Madriu 45','Chamoix 47','Nevada 32','Nevada 33','Nuria 3A',
+  'Xalet Tarter (Rosa)','Pisos David','Eventuales',
+  'Circuito Pas de la Casa','Lavandería'
+];
+const GRUPOS = {
+  'Tarter Izard': ['A01','B21','B24','C21','C22','D11 (Kristine)','D12','D13','D43 (Atico)'],
+  'Pas de la Casa': ['Sapporo 20','Morera 5C','Dolsa 3','Madriu 45','Chamoix 47','Nevada 32','Nevada 33','Nuria 3A'],
+  'Otros': ['Xalet Tarter (Rosa)','Pisos David','Eventuales'],
+  'Servicios': ['Circuito Pas de la Casa','Lavandería']
+};
+const WORKERS = ['Ana','Claudia','Diego','Manuel'];
+
+const MAY_RECORDS = [
+  {date:'2026-05-01',negocio:'Circuito',start:'11:30',end:'15:00',hrs:3.5,user:'Ana',obs:'',adminHrs:3.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-01',negocio:'Circuito',start:'11:30',end:'15:00',hrs:3.5,user:'Manuel',obs:'',adminHrs:3.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-05',negocio:'C22',start:'12:00',end:'16:00',hrs:4.0,user:'Claudia',obs:'',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-05',negocio:'C22',start:'12:00',end:'16:00',hrs:4.0,user:'Manuel',obs:'',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-06',negocio:'Circuito',start:'16:00',end:'17:30',hrs:1.5,user:'Ana',obs:'',adminHrs:1.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-06',negocio:'Circuito',start:'16:00',end:'17:30',hrs:1.5,user:'Claudia',obs:'',adminHrs:1.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-06',negocio:'Morera',start:'17:30',end:'18:30',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-06',negocio:'Morera',start:'17:30',end:'18:30',hrs:1.0,user:'Claudia',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-06',negocio:'Dolsa',start:'18:30',end:'20:00',hrs:1.5,user:'Ana',obs:'',adminHrs:1.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-06',negocio:'Dolsa',start:'18:30',end:'20:00',hrs:1.5,user:'Claudia',obs:'',adminHrs:1.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-07',negocio:'David',start:'13:00',end:'17:00',hrs:4.0,user:'Claudia',obs:'Hortalet',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-07',negocio:'David',start:'13:00',end:'17:00',hrs:4.0,user:'Manuel',obs:'Hortalet',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-08',negocio:'Circuito',start:'11:00',end:'12:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-08',negocio:'Circuito',start:'11:00',end:'12:00',hrs:1.0,user:'Claudia',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-08',negocio:'B21',start:'12:00',end:'13:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-08',negocio:'B21',start:'12:00',end:'13:00',hrs:1.0,user:'Claudia',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-08',negocio:'Atico',start:'13:00',end:'14:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-08',negocio:'Atico',start:'13:00',end:'14:00',hrs:1.0,user:'Claudia',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-11',negocio:'Circuito',start:'18:00',end:'20:00',hrs:2.0,user:'Manuel',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-13',negocio:'Circuito',start:'13:00',end:'14:00',hrs:1.0,user:'Claudia',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-13',negocio:'Circuito',start:'13:00',end:'14:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-13',negocio:'B21',start:'15:30',end:'19:30',hrs:4.0,user:'Claudia',obs:'',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-13',negocio:'B21',start:'15:30',end:'19:30',hrs:4.0,user:'Manuel',obs:'',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-15',negocio:'Atico',start:'12:00',end:'15:00',hrs:3.0,user:'Ana',obs:'',adminHrs:3.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-15',negocio:'Atico',start:'12:00',end:'15:00',hrs:3.0,user:'Claudia',obs:'',adminHrs:3.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-15',negocio:'Atico',start:'12:00',end:'15:00',hrs:3.0,user:'Manuel',obs:'',adminHrs:3.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-15',negocio:'D11',start:'15:00',end:'16:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-15',negocio:'D11',start:'15:00',end:'16:00',hrs:1.0,user:'Claudia',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-15',negocio:'D11',start:'15:00',end:'16:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-15',negocio:'D12',start:'16:00',end:'17:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-15',negocio:'D12',start:'16:00',end:'17:00',hrs:1.0,user:'Claudia',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-15',negocio:'D12',start:'16:00',end:'17:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-19',negocio:'Circuito',start:'16:00',end:'18:00',hrs:2.0,user:'Diego',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-19',negocio:'Circuito',start:'16:00',end:'18:00',hrs:2.0,user:'Manuel',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-19',negocio:'Lavanderia',start:'16:00',end:'17:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-22',negocio:'Circuito',start:'10:00',end:'12:00',hrs:2.0,user:'Manuel',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-22',negocio:'Circuito',start:'10:00',end:'12:00',hrs:2.0,user:'Ana',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-24',negocio:'Dolsa (arreglo)',start:'17:00',end:'19:00',hrs:2.0,user:'Manuel',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-24',negocio:'Sapporo',start:'16:00',end:'17:30',hrs:1.5,user:'Ana',obs:'',adminHrs:1.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-24',negocio:'Madriu',start:'17:30',end:'19:00',hrs:1.5,user:'Ana',obs:'',adminHrs:1.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-24',negocio:'Sapporo',start:'16:00',end:'17:30',hrs:1.5,user:'Claudia',obs:'',adminHrs:1.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-24',negocio:'Madriu',start:'17:30',end:'19:00',hrs:1.5,user:'Claudia',obs:'',adminHrs:1.5,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-25',negocio:'Circuito',start:'16:30',end:'17:30',hrs:1.0,user:'Ana',obs:'',adminHrs:null,admin:null,status:'pending'},
+  {date:'2026-05-25',negocio:'Morera',start:'17:30',end:'19:00',hrs:1.5,user:'Ana',obs:'',adminHrs:null,admin:null,status:'pending'},
+  {date:'2026-05-25',negocio:'Circuito',start:'16:30',end:'17:30',hrs:1.0,user:'Claudia',obs:'',adminHrs:null,admin:null,status:'pending'},
+  {date:'2026-05-25',negocio:'Morera',start:'17:30',end:'19:00',hrs:1.5,user:'Claudia',obs:'',adminHrs:null,admin:null,status:'pending'},
+  {date:'2026-05-25',negocio:'Dolsa (arreglo)',start:'16:30',end:'18:00',hrs:1.5,user:'Manuel',obs:'',adminHrs:null,admin:null,status:'pending'},
+  {date:'2026-05-29',negocio:'Lavanderia',start:'11:00',end:'12:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-29',negocio:'Dolsa',start:'12:00',end:'13:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-29',negocio:'Circuito',start:'13:00',end:'14:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-29',negocio:'Lavanderia',start:'11:00',end:'12:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-29',negocio:'Dolsa',start:'12:00',end:'13:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-29',negocio:'Circuito',start:'13:00',end:'14:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-30',negocio:'Geraldine',start:'10:00',end:'14:00',hrs:4.0,user:'Ana',obs:'Xalet Pas',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-30',negocio:'Geraldine',start:'10:00',end:'14:00',hrs:4.0,user:'Manuel',obs:'Xalet Pas',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-30',negocio:'Geraldine',start:'10:00',end:'14:00',hrs:4.0,user:'Claudia',obs:'Xalet Pas',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
+];
+
+let records = JSON.parse(localStorage.getItem('horas_records') || 'null') || [...MAY_RECORDS];
+let waMessages = JSON.parse(localStorage.getItem('horas_wa') || '[]');
+let apiKey = localStorage.getItem('horas_apikey') || '';
+let pendingPreview = null;
+let chartW = null, chartN = null, chartS = null;
+let currentRole = 'worker';
+
+function saveData() {
+  try {
+    localStorage.setItem('horas_records', JSON.stringify(records));
+    localStorage.setItem('horas_wa', JSON.stringify(waMessages));
+  } catch(e) {}
+}
+
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwn3asBxPc3wJD6vxYRGRPIgehhkbDMdM6El1Y1rbsuHvN229FlnYl_MqXvXL9gh7Y/exec';
+
+function syncToSheets(rec) {
+  const payload = {
+    fecha:         fmtDate(rec.date),
+    trabajador:    rec.user,
+    negocio:       rec.negocio,
+    inicio:        rec.start,
+    termino:       rec.end,
+    horas:         rec.hrs,
+    observaciones: rec.obs || '',
+    admin:         rec.admin || '',
+    estado:        rec.status,
+    registrado:    new Date().toLocaleString('es-ES')
+  };
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(() => {});
+}
+
+function syncManyToSheets(recs) {
+  recs.forEach(r => syncToSheets(r));
+}
+
+function t2m(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function calcHrs(s,e){const d=t2m(e)-t2m(s);return d>0?d/60:0;}
+function fmtHrs(h){const hh=Math.floor(h),mm=Math.round((h-hh)*60);return `${hh}:${String(mm).padStart(2,'0')} hrs`;}
+function fmtDate(iso){const[y,m,d]=iso.split('-');return `${d}/${m}/${y}`;}
+function fmtTime(d){return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+function isoToDate(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);}
+
+function genTimes() {
+  const t = [];
+  for (let h=6; h<=23; h++) for (let m=0; m<60; m+=10) t.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  return t;
+}
+
+function updateHours(p) {
+  const s = document.getElementById(`${p}-start`).value;
+  const e = document.getElementById(`${p}-end`).value;
+  const h = calcHrs(s, e);
+  const pill = document.getElementById(`${p}-hours-pill`);
+  if (pill) pill.style.display = h > 0 ? 'block' : 'none';
+  const txt = document.getElementById(`${p}-hours-text`);
+  if (txt) txt.textContent = fmtHrs(h);
+}
+
+function updatePendingBadge() {
+  const n = records.filter(r => r.status === 'pending').length;
+  const el = document.getElementById('pending-count');
+  if (!el) return;
+  el.style.display = n > 0 ? 'inline-flex' : 'none';
+  el.textContent = n;
+}
+
+function saveApiKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  if (!k.startsWith('sk-ant')) { toast('La API key debe empezar con sk-ant...'); return; }
+  apiKey = k;
+  localStorage.setItem('horas_apikey', k);
+  const sec = document.getElementById('apikey-section');
+  if (sec) sec.style.display = 'none';
+  toast('API key guardada');
+}
+
+function setRole(r) {
+  currentRole = r;
+  const w = document.getElementById('form-worker'), a = document.getElementById('form-admin');
+  if (w) w.style.display = r === 'worker' ? 'block' : 'none';
+  if (a) a.style.display = r === 'admin' ? 'block' : 'none';
+  const wb = document.getElementById('role-worker-btn'), ab = document.getElementById('role-admin-btn');
+  if (wb) wb.classList.toggle('active', r === 'worker');
+  if (ab) ab.classList.toggle('active', r === 'admin');
+}
+
+function addWaMsg(text, sender, dir, isAdmin) {
+  waMessages.push({ text, sender, dir, isAdmin, time: fmtTime(new Date()) });
+  saveData();
+  renderWa();
+}
+
+function addTyping() {
+  const body = document.getElementById('wa-body');
+  if (!body) return;
+  const el = document.createElement('div');
+  el.className = 'wa-msg in thinking';
+  el.id = 'typing-indicator';
+  el.innerHTML = `<div class="wa-bubble"><div class="wa-name" style="color:#5A2D8C">IA</div><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+
+async function sendMessage() {
+  const input = document.getElementById('wa-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const sender = document.getElementById('wa-sender').value;
+  const isAdminSender = sender.includes('Admin');
+  addWaMsg(text, sender, 'out', isAdminSender);
+  input.value = '';
+  input.style.height = 'auto';
+  const btn = document.getElementById('wa-send-btn');
+  if (btn) btn.disabled = true;
+  if (!apiKey) {
+    addWaMsg('No hay API key configurada. Ingresa tu API key arriba para usar reconocimiento de texto.', 'IA', 'in', false);
+    if (btn) btn.disabled = false;
+    return;
+  }
+  addTyping();
+  try {
+    const parsed = await parseWithClaude(text, sender);
+    removeTyping();
+    if (parsed.error) {
+      addWaMsg(`No pude interpretar el mensaje. <small style="color:#888">${parsed.error}</small>`, 'IA', 'in', false);
+    } else {
+      showPreview(parsed, sender, isAdminSender);
+    }
+  } catch(e) {
+    removeTyping();
+    addWaMsg(`Error al conectar con la API: ${e.message}`, 'IA', 'in', false);
+  }
+  if (btn) btn.disabled = false;
+}
+
+async function parseWithClaude(text, senderName) {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const prompt = `Eres un asistente que extrae datos de registros de horas de trabajo en limpieza de pisos.
+Hoy es ${today}. Ayer fue ${yesterday}.
+El mensaje fue enviado por: ${senderName}
+Trabajadores válidos: ${WORKERS.join(', ')}
+Negocios/pisos válidos: ${PISOS.join(', ')}
+Mensaje del usuario: "${text}"
+Extrae los datos y responde SOLO con un JSON válido, sin texto adicional, sin markdown.
+Si no se menciona trabajador, usa "${senderName}" (si es un trabajador válido).
+Si se dice "hoy", usa la fecha ${today}. Si dice "ayer", usa ${yesterday}.
+Redondea los tiempos al múltiplo de 10 minutos más cercano.
+Si el mensaje menciona múltiples trabajadores, crea un entry por cada uno.
+Formato:
+{"entries":[{"user":"nombre","date":"YYYY-MM-DD","negocio":"piso","start":"HH:MM","end":"HH:MM","obs":""}],"error":null}
+Si no puedes interpretar:
+{"entries":[],"error":"descripción"}`;
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 500, messages: [{ role: 'user', content: prompt }] })
+  });
+  if (!resp.ok) { const err = await resp.json().catch(()=>({})); throw new Error(err.error?.message || `HTTP ${resp.status}`); }
+  const data = await resp.json();
+  const raw = data.content[0].text.trim().replace(/```json|```/g, '').trim();
+  return JSON.parse(raw);
+}
+
+function showPreview(parsed, sender, isAdmin) {
+  if (!parsed.entries || !parsed.entries.length) {
+    addWaMsg('No encontré datos de registro. Intenta con: <em>"14 a 18 en Sapporo por Manuel hoy"</em>', 'IA', 'in', false);
+    return;
+  }
+  pendingPreview = { entries: parsed.entries, sender, isAdmin };
+  const lines = parsed.entries.map(e => {
+    const hrs = calcHrs(e.start, e.end);
+    return `<b>${e.user}</b> · ${e.negocio} · ${fmtDate(e.date)}<br>${e.start}–${e.end} = <b>${fmtHrs(hrs)}</b>${e.obs ? '<br><em>' + e.obs + '</em>' : ''}`;
+  }).join('<hr style="border:none;border-top:1px solid #ddd;margin:6px 0">');
+  const html = `<div style="font-weight:600;color:#5A2D8C;margin-bottom:6px">IA detectó:</div>${lines}
+<div style="display:flex;gap:6px;margin-top:10px">
+  <button class="wa-btn-ok" onclick="confirmPreview()">Confirmar</button>
+  <button class="wa-btn-no" onclick="cancelPreview()">Cancelar</button>
+</div>`;
+  addWaMsg(html, 'IA', 'in', false);
+}
+
+function confirmPreview() {
+  if (!pendingPreview) return;
+  const { entries, sender } = pendingPreview;
+  pendingPreview = null;
+  const isAdmin = sender.includes('Admin');
+  entries.forEach(e => {
+    const hrs = calcHrs(e.start, e.end);
+    if (hrs <= 0) return;
+    if (isAdmin) {
+      const p = records.find(r => r.date === e.date && r.negocio === e.negocio && r.user === e.user && r.status === 'pending');
+      if (p) {
+        p.adminHrs = hrs;
+        p.admin = sender;
+        p.status = Math.abs(p.hrs - hrs) < 0.09 ? 'ok' : 'mismatch';
+        syncToSheets(p);
+      } else {
+        const nr = { date: e.date, negocio: e.negocio, start: e.start, end: e.end, hrs, user: e.user, obs: e.obs || '', adminHrs: hrs, admin: sender, status: 'admin-only' };
+        records.push(nr);
+        syncToSheets(nr);
+      }
+    } else {
+      const nr = { date: e.date, negocio: e.negocio, start: e.start, end: e.end, hrs, user: e.user, obs: e.obs || '', adminHrs: null, admin: null, status: 'pending' };
+      records.push(nr);
+      syncToSheets(nr);
+    }
+  });
+  saveData();
+  updatePendingBadge();
+  const summary = entries.map(e => `${e.user} · ${e.negocio} · ${fmtDate(e.date)} · ${fmtHrs(calcHrs(e.start, e.end))}`).join('<br>');
+  addWaMsg(`Registrado:<br>${summary}`, 'Sistema', 'system', false);
+  toast(`${entries.length} registro(s) guardado(s)`);
+}
+
+function cancelPreview() {
+  pendingPreview = null;
+  addWaMsg('Registro cancelado.', 'Sistema', 'system', false);
+}
+
+function submitWorkerForm() {
+  const user = document.getElementById('w-user').value;
+  const date = document.getElementById('w-date').value;
+  const start = document.getElementById('w-start').value;
+  const end = document.getElementById('w-end').value;
+  const negocio = document.getElementById('w-negocio').value;
+  const obs = document.getElementById('w-obs').value.trim();
+  const hrs = calcHrs(start, end);
+  if (!date) return toast('Selecciona una fecha');
+  if (hrs <= 0) return toast('El término debe ser posterior al inicio');
+  const wRec = { date, negocio, start, end, hrs, user, obs, adminHrs: null, admin: null, status: 'pending' };
+  records.push(wRec);
+  saveData();
+  syncToSheets(wRec);
+  addWaMsg(`<b>${user}</b> · ${negocio} · ${fmtDate(date)}<br>${start}→${end} = <b>${fmtHrs(hrs)}</b>${obs ? '<br>' + obs : ''}`, user, 'out', false);
+  document.getElementById('w-obs').value = '';
+  updatePendingBadge();
+  toast('Enviado — pendiente confirmación del admin');
+}
+
+function submitAdminForm() {
+  const admin = document.getElementById('a-admin').value;
+  const user = document.getElementById('a-user').value;
+  const date = document.getElementById('a-date').value;
+  const start = document.getElementById('a-start').value;
+  const end = document.getElementById('a-end').value;
+  const negocio = document.getElementById('a-negocio').value;
+  const obs = document.getElementById('a-obs').value.trim();
+  const hrs = calcHrs(start, end);
+  if (!date) return toast('Selecciona una fecha');
+  if (hrs <= 0) return toast('El término debe ser posterior al inicio');
+  const pending = records.find(r => r.date === date && r.negocio === negocio && r.user === user && r.status === 'pending');
+  if (pending) {
+    pending.adminHrs = hrs;
+    pending.admin = admin;
+    const match = Math.abs(pending.hrs - hrs) < 0.09;
+    pending.status = match ? 'ok' : 'mismatch';
+    addWaMsg(`<b>Confirmación</b> — ${admin}<br>${user} · ${negocio} · ${fmtDate(date)}<br>${fmtHrs(hrs)} ${match ? '= Cuadra ✓' : '≠ Trabajador: ' + fmtHrs(pending.hrs)}`, admin, 'in', true);
+    toast(match ? 'Cuadra — registro confirmado' : 'Conflicto detectado');
+    syncToSheets(pending);
+  } else {
+    const aRec = { date, negocio, start, end, hrs, user, obs, adminHrs: hrs, admin, status: 'admin-only' };
+    records.push(aRec);
+    addWaMsg(`<b>Registro admin</b> — ${admin}<br>${user} · ${negocio} · ${fmtDate(date)}<br>${fmtHrs(hrs)}${obs ? '<br>' + obs : ''}`, admin, 'in', true);
+    toast('Registro admin guardado');
+    syncToSheets(aRec);
+  }
+  saveData();
+  updatePendingBadge();
+  document.getElementById('a-obs').value = '';
+}
+
+function confirmRecord(idx) {
+  records[idx].status = 'ok';
+  records[idx].adminHrs = records[idx].hrs;
+  if (!records[idx].admin) records[idx].admin = 'Admin';
+  saveData(); updatePendingBadge(); renderAudit();
+  syncToSheets(records[idx]);
+  toast('Confirmado');
+}
+function rejectRecord(idx) {
+  records[idx].status = 'mismatch';
+  saveData(); updatePendingBadge(); renderAudit();
+  syncToSheets(records[idx]);
+  toast('Marcado como conflicto');
+}
+
+function switchTab(name) {
+  ['registro','auditoria','dashboard'].forEach(t => {
+    const p = document.getElementById(`panel-${t}`);
+    const b = document.getElementById(`tab-${t}`);
+    if (p) p.classList.toggle('active', t === name);
+    if (b) b.classList.toggle('active', t === name);
+  });
+  if (name === 'auditoria') renderAudit();
+  if (name === 'dashboard') renderDashboard();
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+function commonInit() {
+  const now = new Date();
+  const hd = document.getElementById('header-date');
+  if (hd) hd.textContent = now.toLocaleDateString('es-ES', {weekday:'short',day:'numeric',month:'short',year:'numeric'});
+
+  // time inputs — no population needed
+  const ws = document.getElementById('w-start'); if(ws) ws.value='09:00';
+  const we = document.getElementById('w-end'); if(we) we.value='13:00';
+  const asx = document.getElementById('a-start'); if(asx) asx.value='09:00';
+  const ae = document.getElementById('a-end'); if(ae) ae.value='13:00';
+
+  const today = now.toISOString().split('T')[0];
+  const wd = document.getElementById('w-date'); if(wd) wd.value=today;
+  const ad = document.getElementById('a-date'); if(ad) ad.value=today;
+
+  // Build optgroup selects for negocios
+  function buildNegocioSelect(id, withAll) {
+    const s = document.getElementById(id);
+    if (!s) return;
+    let html = withAll ? '<option value="">Todos los negocios</option>' : '';
+    for (const [grupo, pisos] of Object.entries(GRUPOS)) {
+      html += `<optgroup label="${grupo}">`;
+      pisos.forEach(p => { html += `<option>${p}</option>`; });
+      html += '</optgroup>';
+    }
+    s.innerHTML = html;
+  }
+  buildNegocioSelect('w-negocio', false);
+  buildNegocioSelect('a-negocio', false);
+  buildNegocioSelect('filter-neg-audit', true);
+
+  updateHours('w');
+  updateHours('a');
+
+  if (apiKey) {
+    const k = document.getElementById('api-key-input'); if (k) k.value = apiKey;
+    const sec = document.getElementById('apikey-section'); if (sec) sec.style.display = 'none';
+  }
+
+  if (waMessages.length === 0) {
+    waMessages.push({ text: 'Grupo creado. Escribe en lenguaje natural: <em>"14 a 18 en Sapporo por Manuel hoy"</em>', sender: 'Sistema', dir: 'system', isAdmin: false, time: fmtTime(now) });
+    saveData();
+  }
+  renderWa();
+  updatePendingBadge();
+}
+
+</script>
+<script>
+const W_COLORS = ['#7366FF','#F73164','#51BB25','#A927F9'];
+const N_COLORS = ['#7366FF','#F73164','#51BB25','#A927F9','#F8D62B','#DC3545','#00CFE8','#5B4FE8','#FF7B92','#7BD64A','#C566FA','#FFE066','#FF9F87','#5BC5DE'];
+
+function renderWa() {
+  const body = document.getElementById('wa-body');
+  body.innerHTML = waMessages.map(m => {
+    if (m.dir === 'system') return `<div class="wa-msg system"><div class="wa-bubble">${m.text}</div></div>`;
+    return `<div class="wa-msg ${m.dir}"><div class="wa-bubble"><div class="wa-name">${m.sender}${m.isAdmin?' 🛡':''}</div>${m.text}<div class="wa-ts">${m.time}</div></div></div>`;
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+function renderAudit() {
+  const fw = document.getElementById('filter-worker').value;
+  const fs = document.getElementById('filter-status').value;
+  const fn = document.getElementById('filter-neg-audit').value;
+  let data = [...records];
+  if (fw) data = data.filter(r => r.user === fw);
+  if (fs) data = data.filter(r => r.status === fs);
+  if (fn) data = data.filter(r => r.negocio === fn);
+  data.sort((a,b) => isoToDate(a.date) - isoToDate(b.date));
+  const tbody = document.getElementById('audit-tbody');
+  if (!data.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)">Sin registros</td></tr>`; return; }
+  tbody.innerHTML = data.map(r => {
+    const idx = records.indexOf(r);
+    let badge;
+    if (r.status === 'ok') badge = `<span class="badge badge-ok">✓ Cuadra</span>`;
+    else if (r.status === 'pending') badge = `<span class="badge badge-pending">⏳ Pendiente</span>`;
+    else if (r.status === 'mismatch') badge = `<span class="badge badge-mismatch">⚠ Conflicto</span>`;
+    else badge = `<span class="badge badge-info">🛡 Admin</span>`;
+    const w = r.hrs ? `<div style="font-weight:600">${fmtHrs(r.hrs)}</div><div style="font-size:11px;color:var(--text3)">${r.start}–${r.end}</div>` : '—';
+    const a = r.adminHrs ? `<div style="font-weight:600">${fmtHrs(r.adminHrs)}</div>` : '<span style="color:var(--text3)">—</span>';
+    const acts = r.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="confirmRecord(${idx})">✓</button> <button class="btn btn-danger btn-sm" onclick="rejectRecord(${idx})">✗</button>` : '';
+    const cls = r.status === 'mismatch' ? 'row-mismatch' : r.status === 'pending' ? 'row-pending' : '';
+    return `<tr class="${cls}"><td style="white-space:nowrap;font-weight:600">${fmtDate(r.date)}</td><td>${r.negocio}</td><td><span class="badge badge-worker">${r.user}</span></td><td>${w}</td><td>${a}</td><td>${badge}</td><td>${acts}</td></tr>`;
+  }).join('');
+}
+
+function renderDashboard() {
+  const data = records.filter(r => r.date.startsWith('2026-05'));
+  const totalHrs = data.reduce((s,r) => s+(r.hrs||0), 0);
+  const okCount = data.filter(r => r.status === 'ok').length;
+  const pendingCount = data.filter(r => r.status === 'pending').length;
+  const conflictCount = data.filter(r => r.status === 'mismatch').length;
+
+  document.getElementById('dash-metrics').innerHTML = `
+    <div class="kpi primary"><div class="kpi-icon">⏱</div><div class="kpi-value">${totalHrs.toFixed(1)}</div><div class="kpi-label">Total horas</div></div>
+    <div class="kpi success"><div class="kpi-icon">✓</div><div class="kpi-value">${okCount}</div><div class="kpi-label">Confirmados</div></div>
+    <div class="kpi warning"><div class="kpi-icon">⏳</div><div class="kpi-value">${pendingCount}</div><div class="kpi-label">Pendientes</div></div>
+    <div class="kpi secondary"><div class="kpi-icon">⚠</div><div class="kpi-value">${conflictCount}</div><div class="kpi-label">Conflictos</div></div>`;
+
+  // Workers as KPI cards matching the summary style
+  const wKpiColors = ['primary','secondary','success','info'];
+  const wHrs = WORKERS.map(w => data.filter(r => r.user === w).reduce((s,r) => s+(r.hrs||0), 0));
+  document.getElementById('workers-grid').innerHTML = WORKERS.map((w,i) =>
+    `<div class="kpi ${wKpiColors[i]}">
+      <div class="kpi-icon">👤</div>
+      <div class="kpi-value">${wHrs[i].toFixed(1)}</div>
+      <div class="kpi-label">${w}</div>
+    </div>`
+  ).join('');
+
+  // Pisos grouped multi-column table
+  const grupoColors = { 'Tarter Izard':'#7366FF', 'Pas de la Casa':'#F73164', 'Otros':'#51BB25', 'Servicios':'#00CFE8' };
+  let pisosHtml = '';
+  for (const [grupo, pisos] of Object.entries(GRUPOS)) {
+    const grupoTotal = pisos.reduce((s,p) => s + data.filter(r => r.negocio === p).reduce((ss,r) => ss+(r.hrs||0), 0), 0);
+    if (grupoTotal === 0) continue;
+    const col = grupoColors[grupo] || '#999';
+    pisosHtml += `<div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid ${col}22">
+        <div style="width:10px;height:10px;border-radius:3px;background:${col};flex-shrink:0"></div>
+        <span style="font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.04em">${grupo}</span>
+        <span style="margin-left:auto;background:${col}22;color:${col};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">${grupoTotal.toFixed(1)} hrs</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">
+        ${pisos.map(p => {
+          const hrs = data.filter(r => r.negocio === p).reduce((s,r) => s+(r.hrs||0), 0);
+          if (hrs === 0) return '';
+          return `<div style="background:${col}0d;border:1px solid ${col}33;border-radius:10px;padding:12px 14px">
+            <div style="font-size:22px;font-weight:700;color:${col};line-height:1">${hrs.toFixed(1)}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:4px;line-height:1.3">${p}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  document.getElementById('pisos-grid').innerHTML = pisosHtml || '<div style="color:var(--text3);font-size:13px">Sin datos</div>';
+
+  const sColors = ['#51BB25','#F8D62B','#DC3545'];
+  const sLabels = ['Confirmados','Pendientes','Conflictos'];
+  const sData = [okCount, pendingCount, conflictCount];
+  document.getElementById('legend-status').innerHTML = sLabels.map((l,i) => {
+    const pct = data.length ? Math.round(sData[i]/data.length*100) : 0;
+    return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(89deg,${sColors[i]},${sColors[i]}cc);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px">${sData[i]}</div>
+      <div><div style="font-size:14px;font-weight:600">${l}</div><div style="font-size:12px;color:var(--text3)">${pct}%</div></div>
+    </div>`;
+  }).join('');
+  if (chartS) chartS.destroy();
+  chartS = new Chart(document.getElementById('chart-status'), {
+    type:'doughnut', data:{ labels:sLabels, datasets:[{ data:sData, backgroundColor:sColors, borderWidth:0, hoverOffset:8 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{legend:{display:false}} }
+  });
+}
+
+const _origSwitch = switchTab;
+switchTab = function(name) {
+  _origSwitch(name);
+  const titles = { registro:'Registro de horas', auditoria:'Auditoría', dashboard:'Dashboard' };
+  document.getElementById('page-title').textContent = titles[name];
+  document.getElementById('page-crumb').textContent = titles[name];
+};
+
+commonInit();
+</script>
+</body>
+</html>
