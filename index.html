@@ -206,7 +206,8 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
 }
 .hamburger { display:none; align-items:center; justify-content:center; width:36px; height:36px; background:rgba(255,255,255,0.1); border:none; border-radius:8px; cursor:pointer; flex-direction:column; gap:5px; padding:0; flex-shrink:0; }
 .hamburger span { display:block; width:18px; height:2px; background:white; border-radius:2px; transition:all 0.2s; }
-
+.cal-tooltip{position:fixed;background:#1E1E2D;color:white;padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.7;z-index:500;max-width:240px;box-shadow:0 8px 24px rgba(0,0,0,0.3);pointer-events:none}
+@media(max-width:700px){.dash-bottom-grid{grid-template-columns:1fr!important}}
 .hamburger{display:none;align-items:center;justify-content:center;width:38px;height:38px;background:rgba(255,255,255,0.12);border:none;border-radius:8px;cursor:pointer;flex-direction:column;gap:5px;padding:0;flex-shrink:0}
 .hamburger span{display:block;width:18px;height:2px;background:white;border-radius:2px}
 @media(max-width:900px){
@@ -254,6 +255,12 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
     <button class="sidebar-item"        id="tab-dashboard"  onclick="showTab('dashboard')"><span class="sidebar-icon">&#128202;</span> Dashboard</button>
     <div class="sidebar-section">Sistema</div>
     <button class="sidebar-item"        id="tab-config"     onclick="showTab('config')"><span class="sidebar-icon">&#9881;</span> Configuracion</button>
+    <button class="sidebar-item"        id="tab-calendario" onclick="showTab('calendario')"><span class="sidebar-icon">&#128197;</span> Calendario</button>
+    <button class="sidebar-item"        id="tab-informe"    onclick="showTab('informe')"><span class="sidebar-icon">&#128196;</span> Informes</button>
+    <div style="padding:12px 14px;border-top:1px solid rgba(255,255,255,0.08);margin-top:auto">
+      <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:8px;font-weight:500" id="sidebar-username"></div>
+      <button onclick="doLogout()" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;cursor:pointer;color:#FCA5A5;font-size:13px;font-family:inherit;padding:9px 14px;display:flex;align-items:center;gap:8px;font-weight:600;transition:all 0.15s" onmouseover="this.style.background='rgba(239,68,68,0.28)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">&#128682; Cerrar sesion</button>
+    </div>
   </nav>
   <div class="sidebar-footer">
     <div id="header-date"></div>
@@ -402,22 +409,39 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
 
   <!-- DASHBOARD -->
   <div class="panel" id="panel-dashboard">
-    <div class="section-title">Dashboard</div>
-    <div class="section-sub">Resumen mensual Mayo 2026</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
+      <div><div class="section-title" style="margin-bottom:2px">Dashboard</div><div class="section-sub" style="margin-bottom:0">Resumen de horas registradas</div></div>
+      <select id="dash-month-sel" onchange="renderDashboard()" style="width:auto;font-size:13px;padding:8px 12px">
+        <option value="all">Todos los meses</option>
+        <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
+        <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
+        <option value="2026-05" selected>Mayo 2026</option><option value="2026-06">Junio 2026</option>
+        <option value="2026-07">Julio 2026</option><option value="2026-08">Agosto 2026</option>
+        <option value="2026-09">Septiembre 2026</option><option value="2026-10">Octubre 2026</option>
+        <option value="2026-11">Noviembre 2026</option><option value="2026-12">Diciembre 2026</option>
+      </select>
+    </div>
     <div class="kpi-grid" id="dash-kpis"></div>
     <div class="card">
       <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon">&#128101;</div>Horas por trabajador</div></div></div>
       <div class="card-body"><div class="kpi-grid" id="dash-workers" style="margin-bottom:0"></div></div>
     </div>
     <div class="card">
-      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--info-light);color:var(--info)">&#127968;</div>Horas por piso</div></div></div>
+      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--info-light);color:var(--info)">&#127968;</div>Horas por negocio</div></div></div>
       <div class="card-body"><div id="dash-pisos"></div></div>
     </div>
-    <div class="card">
-      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">&#10003;</div>Estado auditoria</div></div></div>
-      <div class="card-body" style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
-        <div style="position:relative;width:180px;height:180px;flex-shrink:0"><canvas id="chart-status"></canvas></div>
-        <div id="dash-donut-legend"></div>
+    <!-- Estado + Proximos: lado a lado en desktop -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="dash-bottom-grid">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">&#10003;</div>Estado auditoria</div></div></div>
+        <div class="card-body" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <div style="position:relative;width:160px;height:160px;flex-shrink:0"><canvas id="chart-status"></canvas></div>
+          <div id="dash-donut-legend"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--warning-light);color:var(--amber)">&#128197;</div>Proximos trabajos</div></div></div>
+        <div class="card-body" style="padding:0;max-height:260px;overflow-y:auto"><div id="dash-pending-jobs"></div></div>
       </div>
     </div>
   </div>
@@ -471,10 +495,185 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
         </div>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-header colored">
+        <div><div class="card-title"><div class="card-title-icon">&#128272;</div>Usuarios y accesos</div><div class="card-sub">Quien puede acceder y con que rol</div></div>
+      </div>
+      <div class="card-body">
+        <div id="cfg-appusers" style="margin-bottom:18px"></div>
+        <div style="padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px">Nuevo usuario</div>
+          <div class="form-row">
+            <div><label>Usuario</label><input type="text" id="inp-uname" placeholder="ej: ana01" style="font-family:monospace"></div>
+            <div><label>Nombre</label><input type="text" id="inp-udisp" placeholder="ej: Ana Garcia"></div>
+          </div>
+          <div class="form-row">
+            <div><label>Contrasena</label><input type="password" id="inp-upass" placeholder="minimo 4 caracteres"></div>
+            <div><label>Rol</label>
+              <select id="inp-urole">
+                <option value="normal">Normal - solo calendario</option>
+                <option value="supervisor">Supervisor - ve todo, edita calendario</option>
+                <option value="admin">Admin - acceso completo</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="cfgAddUser()">+ Crear usuario</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDARIO -->
+  <div class="panel" id="panel-calendario">
+    <div class="section-title">Calendario</div>
+    <div class="section-sub">Planifica trabajos de limpieza</div>
+
+    <!-- NAVEGACION MES (primero) -->
+    <div class="card">
+      <div class="card-header" style="padding:14px 20px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button onclick="calPrevMonth()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--primary);padding:0 4px;line-height:1">&#8249;</button>
+          <div class="card-title" id="cal-month-title" style="min-width:180px;text-align:center"></div>
+          <button onclick="calNextMonth()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--primary);padding:0 4px;line-height:1">&#8250;</button>
+        </div>
+        <button onclick="calGoToday()" class="btn btn-light" style="font-size:12px;padding:5px 12px">Hoy</button>
+      </div>
+      <div class="card-body" style="padding:12px">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">LUN</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">MAR</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">MIE</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">JUE</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">VIE</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">SAB</div>
+          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--danger);padding:4px">DOM</div>
+        </div>
+        <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+      </div>
+    </div>
+
+    <!-- FORM REGISTRO (segundo) -->
+    <div class="card" id="cal-form-card" style="margin-bottom:20px">
+      <div class="card-header colored">
+        <div><div class="card-title"><div class="card-title-icon">&#43;</div>Registro de trabajo</div>
+        <div class="card-sub">Asigna fecha, hora y trabajador</div></div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div>
+            <label>Trabajadores <span style="font-size:11px;font-weight:400;color:var(--text3)">(puedes seleccionar varios)</span></label>
+            <select id="cal-worker" multiple size="3" style="height:auto;padding:6px"></select>
+          </div>
+          <div>
+            <label>Negocios / Pisos <span style="font-size:11px;font-weight:400;color:var(--text3)">(puedes seleccionar varios)</span></label>
+            <select id="cal-negocio" multiple size="3" style="height:auto;padding:6px"></select>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin:-8px 0 12px;padding:0 2px">
+          Mantén <b>Ctrl</b> (Windows) o <b>Cmd</b> (Mac) para seleccionar varios. En movil toca cada uno.
+        </div>
+        <div class="form-row">
+          <div><label>Fecha</label><input type="date" id="cal-date"></div>
+          <div><label>Hora aprox.</label><input type="time" id="cal-time" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
+        </div>
+        <div class="form-full"><label>Notas</label><input type="text" id="cal-notes" placeholder="Ej: llevar aspiradora, entrada por garaje..."></div>
+        <button class="btn btn-primary btn-full" onclick="calAdd()">&#128197; Agregar al calendario</button>
+      </div>
+    </div>
+
+    <!-- LISTA TRABAJOS (tercero) -->
+    <div class="card">
+      <div class="card-header colored">
+        <div><div class="card-title"><div class="card-title-icon">&#128203;</div>Trabajos programados</div>
+        <div class="card-sub" id="cal-list-title"></div></div>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div id="cal-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFORME -->
+  <div class="panel" id="panel-informe">
+    <div class="section-title">Informes</div>
+    <div class="section-sub">Exporta horas trabajadas por mes, negocio o trabajador</div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header colored">
+        <div><div class="card-title"><div class="card-title-icon">&#128196;</div>Filtros del informe</div></div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div>
+            <label>Mes</label>
+            <select id="inf-month">
+              <option value="all">Todos los meses</option>
+              <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
+              <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
+              <option value="2026-05">Mayo 2026</option><option value="2026-06">Junio 2026</option>
+              <option value="2026-07">Julio 2026</option><option value="2026-08">Agosto 2026</option>
+              <option value="2026-09">Septiembre 2026</option><option value="2026-10">Octubre 2026</option>
+              <option value="2026-11">Noviembre 2026</option><option value="2026-12">Diciembre 2026</option>
+            </select>
+          </div>
+          <div>
+            <label>Trabajador</label>
+            <select id="inf-worker"><option value="all">Todos</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Negocio / Piso</label>
+            <select id="inf-negocio"><option value="all">Todos</option></select>
+          </div>
+          <div>
+            <label>Estado</label>
+            <select id="inf-status">
+              <option value="all">Todos</option>
+              <option value="ok">Confirmados</option>
+              <option value="pending">Pendientes</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="renderInforme()">&#128202; Generar informe</button>
+          <button class="btn btn-light" onclick="exportPDF()">&#128196; Exportar PDF</button>
+          <button class="btn btn-light" onclick="exportExcel()">&#128190; Exportar Excel</button>
+        </div>
+      </div>
+    </div>
+    <div id="informe-output"></div>
   </div>
 
   </div><!-- /content -->
 </div><!-- /wrap -->
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="display:flex;position:fixed;inset:0;background:linear-gradient(135deg,#1E1E2D,#2D1E3D);z-index:9999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:20px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:56px;height:56px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px">&#129529;</div>
+      <div style="font-size:22px;font-weight:700;color:#1C1A17;letter-spacing:-0.3px">CleanHours</div>
+      <div style="font-size:13px;color:#9E9890;margin-top:4px">Control de horas de limpieza</div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:600;color:#5E6278;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;display:block">Usuario</label>
+      <input type="text" id="login-user" placeholder="nombre de usuario" autocomplete="username"
+        style="width:100%;padding:11px 14px;border:1px solid #E0E0E0;border-radius:10px;font-size:14px;font-family:inherit;outline:none"
+        onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:12px;font-weight:600;color:#5E6278;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;display:block">Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+        style="width:100%;padding:11px 14px;border:1px solid #E0E0E0;border-radius:10px;font-size:14px;font-family:inherit;outline:none"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="login-error" style="display:none;background:#FEE2E2;color:#B91C1C;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;text-align:center"></div>
+    <button onclick="doLogin()" style="width:100%;padding:13px;background:linear-gradient(89deg,var(--primary),var(--secondary));color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">
+      Iniciar sesion
+    </button>
+  </div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -609,16 +808,25 @@ function closeSidebar(){ document.getElementById('sidebar').classList.remove('op
 
 //=== TABS ===================================================================
 function showTab(name){
-  ['registro','auditoria','dashboard','config'].forEach(function(t){
+  // Check permissions
+  var role=currentUser?currentUser.role:'';
+  if(name==='config'&&role!=='admin') return toast('Solo el administrador puede acceder');
+  if(name==='informe'&&role!=='admin') return toast('Solo el administrador puede acceder');
+  if(name==='registro'&&role==='normal') return toast('Sin permiso para registrar horas');
+  if(name==='auditoria'&&role==='normal') return toast('Sin permiso para acceder a auditoria');
+
+  ['registro','auditoria','dashboard','config','calendario','informe'].forEach(function(t){
     var p=document.getElementById('panel-'+t); if(p) p.className='panel'+(t===name?' active':'');
     var b=document.getElementById('tab-'+t);   if(b) b.className='sidebar-item'+(t===name?' active':'');
   });
-  var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion'};
+  var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion',calendario:'Calendario',informe:'Informes'};
   document.getElementById('page-title').textContent=titles[name]||name;
   document.getElementById('page-crumb').textContent=titles[name]||name;
   if(name==='auditoria') renderAudit();
   if(name==='dashboard') renderDashboard();
   if(name==='config')    renderConfig();
+  if(name==='calendario'){calBuildSelects();renderCal();}
+  if(name==='informe')   initInforme();
   closeSidebar();
 }
 
@@ -834,7 +1042,9 @@ function renderAudit(){
 //=== DASHBOARD ==============================================================
 function renderDashboard(){
   var cfg=getCfg();
-  var data=records.filter(function(r){return r.date.indexOf('2026-05')===0;});
+  var sel=document.getElementById('dash-month-sel');
+  var mf=sel?sel.value:'2026-05';
+  var data=mf==='all'?records:records.filter(function(r){return r.date.indexOf(mf)===0;});
   var tot=data.reduce(function(s,r){return s+(r.hrs||0);},0);
   var ok=data.filter(function(r){return r.status==='ok';}).length;
   var pend=data.filter(function(r){return r.status==='pending';}).length;
@@ -857,10 +1067,14 @@ function renderDashboard(){
   });
   document.getElementById('dash-workers').innerHTML=wh;
 
+  // Horas por negocio — siempre usar GRUPOS_BASE para garantizar cuadratura
+  // Ademas capturar negocios "sin clasificar" para que el total siempre cuadre
   var ph='';
-  Object.keys(cfg.grupos).forEach(function(grupo){
-    var ps=cfg.grupos[grupo], c=GC[grupo]||'#888';
+  var hsAcum=0; // acumulador para verificar cuadratura
+  Object.keys(GRUPOS_BASE).forEach(function(grupo){
+    var ps=GRUPOS_BASE[grupo], c=GC[grupo]||'#888';
     var gt=ps.reduce(function(s,p){return s+data.filter(function(r){return r.negocio===p;}).reduce(function(ss,r){return ss+(r.hrs||0);},0);},0);
+    hsAcum+=gt;
     if(!gt) return;
     ph+='<div style="margin-bottom:20px">';
     ph+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid '+c+'">';
@@ -879,6 +1093,26 @@ function renderDashboard(){
     });
     ph+='</div></div>';
   });
+  // Negocios sin clasificar (no estan en ningun grupo) — garantiza cuadratura
+  var allKnown=[];Object.keys(GRUPOS_BASE).forEach(function(g){allKnown=allKnown.concat(GRUPOS_BASE[g]);});
+  var unclassified={};
+  data.forEach(function(r){if(allKnown.indexOf(r.negocio)<0&&r.hrs>0) unclassified[r.negocio]=(unclassified[r.negocio]||0)+r.hrs;});
+  if(Object.keys(unclassified).length>0){
+    var uc=Object.keys(unclassified).reduce(function(s,n){return s+unclassified[n];},0);
+    ph+='<div style="margin-bottom:20px">';
+    ph+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px dashed #CCC">';
+    ph+='<div style="width:10px;height:10px;border-radius:3px;background:#CCC"></div>';
+    ph+='<b style="font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#999">Sin clasificar</b>';
+    ph+='<span style="margin-left:auto;background:#EEE;color:#666;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">'+uc.toFixed(1)+' hrs</span>';
+    ph+='</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px">';
+    Object.keys(unclassified).forEach(function(n){
+      ph+='<div style="background:white;border:1px solid #E8E8E8;border-top:3px solid #CCC;border-radius:10px;padding:12px 14px">';
+      ph+='<div style="font-size:22px;font-weight:700;color:#999;line-height:1">'+unclassified[n].toFixed(1)+'</div>';
+      ph+='<div style="font-size:11px;color:#666;margin-top:4px;line-height:1.3">'+n+'</div>';
+      ph+='</div>';
+    });
+    ph+='</div></div>';
+  }
   document.getElementById('dash-pisos').innerHTML=ph||'<p style="color:#999;font-size:13px">Sin datos</p>';
 
   var sc=['#51BB25','#F8D62B','#DC3545'],sl=['Confirmados','Pendientes','Conflictos'],sd=[ok,pend,conf];
@@ -895,6 +1129,36 @@ function renderDashboard(){
   chartS=new Chart(document.getElementById('chart-status'),{type:'doughnut',
     data:{labels:sl,datasets:[{data:sd,backgroundColor:sc,borderWidth:0,hoverOffset:8}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+
+  // Proximos trabajos del calendario (desde hoy), agrupados por fecha+negocio
+  var todayStr=new Date().toISOString().split('T')[0];
+  var rawUpcoming=calJobs.filter(function(j){return j.date>=todayStr;})
+    .sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time)});
+  // Group by date+negocio
+  var grouped={};
+  rawUpcoming.forEach(function(j){
+    var key=j.date+'__'+j.negocio+'__'+j.time;
+    if(!grouped[key]) grouped[key]={date:j.date,time:j.time,negocio:j.negocio,workers:[],notes:j.notes||''};
+    if(grouped[key].workers.indexOf(j.worker)<0) grouped[key].workers.push(j.worker);
+  });
+  var upcoming=Object.values(grouped).slice(0,10);
+  var pjEl=document.getElementById('dash-pending-jobs');
+  if(pjEl){
+    if(!upcoming.length){pjEl.innerHTML='<div style="padding:20px;text-align:center;color:#999;font-size:13px">Sin trabajos proximos programados</div>';return;}
+    var ph2='';
+    upcoming.forEach(function(j){
+      ph2+='<div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border)">';
+      ph2+='<div style="background:var(--warning-light);color:var(--amber);border-radius:8px;padding:7px 10px;text-align:center;flex-shrink:0;min-width:50px">';
+      ph2+='<div style="font-size:10px;font-weight:600">'+fmtDate(j.date).substring(0,5)+'</div>';
+      ph2+='<div style="font-size:13px;font-weight:700">'+j.time.substring(0,5)+'</div>';
+      ph2+='</div>';
+      ph2+='<div style="flex:1;min-width:0">';
+      ph2+='<div style="font-size:13px;font-weight:600">'+j.negocio+'</div>';
+      ph2+='<div style="font-size:12px;color:var(--text2);margin-top:2px">&#128100; '+j.workers.join(', ')+(j.notes?' &middot; '+j.notes:'')+'</div>';
+      ph2+='</div></div>';
+    });
+    pjEl.innerHTML=ph2;
+  }
 }
 
 //=== CONFIG =================================================================
@@ -950,7 +1214,8 @@ function renderConfig(){
     gEl.innerHTML=h||'<span style="color:#999">Sin pisos</span>';
   }
 
-  // Attach ONE delegated click handler on panel-config
+  // Users
+  renderConfigUsers();
   var panel=document.getElementById('panel-config');
   panel.onclick=function(ev){
     var btn=ev.target.closest('button[data-action]');
@@ -1009,13 +1274,487 @@ function cfgDelPiso(grupo,piso){
   saveCfg(cfg); buildSelects(); renderConfig(); toast('Piso eliminado');
 }
 
+//=== CALENDARIO ============================================================
+var calJobs = (function(){
+  try { return JSON.parse(localStorage.getItem('cal_jobs')||'[]'); } catch(e){ return []; }
+})();
+var calYear  = new Date().getFullYear();
+var calMonth = new Date().getMonth(); // 0-based
+
+function saveCalJobs(){ try{localStorage.setItem('cal_jobs',JSON.stringify(calJobs));}catch(e){} }
+
+function calBuildSelects(){
+  var cfg=getCfg();
+  var wo=cfg.workers.map(function(w){return '<option>'+w+'</option>';}).join('');
+  document.getElementById('cal-worker').innerHTML=wo;
+  document.getElementById('cal-negocio').innerHTML=negOpts(cfg.grupos);
+  setO('filter-worker','<option value="">Todos los trabajadores</option>'+wo);
+}
+
+function calAdd(){
+  // Read multiple selections
+  var wSel=document.getElementById('cal-worker');
+  var nSel=document.getElementById('cal-negocio');
+  var workers=Array.from(wSel.selectedOptions).map(function(o){return o.value;});
+  var negocios=Array.from(nSel.selectedOptions).map(function(o){return o.value;});
+  var date=document.getElementById('cal-date').value;
+  var time=document.getElementById('cal-time').value;
+  var notes=document.getElementById('cal-notes').value.trim();
+  if(!workers.length||!workers[0]) return toast('Selecciona al menos un trabajador');
+  if(!negocios.length||!negocios[0]) return toast('Selecciona al menos un negocio');
+  if(!date) return toast('Selecciona una fecha');
+  if(!time) return toast('Indica una hora aproximada');
+  // Create one entry per combination worker x negocio
+  var count=0;
+  workers.forEach(function(w){
+    negocios.forEach(function(n){
+      calJobs.push({id:Date.now()+Math.random(),worker:w,negocio:n,date:date,time:time,notes:notes});
+      count++;
+    });
+  });
+  saveCalJobs();
+  document.getElementById('cal-notes').value='';
+  // Deselect all
+  Array.from(wSel.options).forEach(function(o){o.selected=false;});
+  Array.from(nSel.options).forEach(function(o){o.selected=false;});
+  renderCal();
+  toast(count+' trabajo(s) programado(s)');
+}
+
+function calDel(id){
+  if(!confirm('Eliminar este trabajo programado?')) return;
+  calJobs=calJobs.filter(function(j){return j.id!==id;});
+  saveCalJobs(); renderCal(); toast('Trabajo eliminado');
+}
+
+function calPrevMonth(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
+function calNextMonth(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
+function calGoToday(){ calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); renderCal(); }
+
+function renderCal(){
+  var monthNames=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-month-title').textContent=monthNames[calMonth]+' '+calYear;
+  document.getElementById('cal-list-title').textContent='Trabajos en '+monthNames[calMonth]+' '+calYear;
+
+  // Build grid
+  var firstDay = new Date(calYear,calMonth,1).getDay(); // 0=Sun
+  // Convert to Mon-first: Sun=6, Mon=0...
+  var startOffset = firstDay===0?6:firstDay-1;
+  var daysInMonth = new Date(calYear,calMonth+1,0).getDate();
+  var today = new Date();
+  var todayStr = today.getFullYear()+'-'+(today.getMonth()<9?'0':'')+(today.getMonth()+1)+'-'+(today.getDate()<10?'0':'')+today.getDate();
+
+  // Jobs this month
+  var monthPfx = calYear+'-'+(calMonth<9?'0':'')+(calMonth+1);
+  var monthJobs = calJobs.filter(function(j){return j.date.indexOf(monthPfx)===0;});
+
+  var grid='';
+  // Empty cells before first day
+  for(var i=0;i<startOffset;i++) grid+='<div style="min-height:72px"></div>';
+
+  for(var d=1;d<=daysInMonth;d++){
+    var ds=calYear+'-'+(calMonth<9?'0':'')+(calMonth+1)+'-'+(d<10?'0':'')+d;
+    var dayJobs=monthJobs.filter(function(j){return j.date===ds;});
+    var isToday=ds===todayStr;
+    var isSun=(new Date(calYear,calMonth,d).getDay()===0);
+    var bg=isToday?'var(--primary)':'white';
+    var tc=isToday?'white':(isSun?'var(--danger)':'var(--text)');
+    grid+='<div style="height:80px;border-radius:8px;border:1px solid '+(isToday?'var(--primary)':'#EBEBEB')+';background:'+bg+';padding:5px 6px;cursor:pointer;overflow:hidden" onclick="calClickDay(\''+ds+'\')"><div style="font-size:12px;font-weight:700;color:'+tc+';margin-bottom:3px;line-height:1">'+d+'</div>';
+    // Group by negocio
+    var negMap={};
+    dayJobs.forEach(function(j){
+      if(!negMap[j.negocio]) negMap[j.negocio]={time:j.time,workers:[],notes:j.notes||''};
+      if(negMap[j.negocio].workers.indexOf(j.worker)<0) negMap[j.negocio].workers.push(j.worker);
+    });
+    var negKeys=Object.keys(negMap);
+    var visible=negKeys.slice(0,2);
+    var extra=negKeys.length-2;
+    visible.forEach(function(neg){
+      var info=negMap[neg];
+      var workers=info.workers.join(', ');
+      var tip=info.time+'h | '+neg+' | '+workers+(info.notes?' | '+info.notes:'');
+      var shortNeg=neg.length>9?neg.substring(0,8)+'..':neg;
+      var safeTip=tip.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+      grid+='<div style="background:'+(isToday?'rgba(255,255,255,0.22)':'var(--primary-light)')+';color:'+(isToday?'white':'var(--primary)')+';border-radius:3px;font-size:9px;font-weight:600;padding:2px 4px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer" onclick="event.stopPropagation();showCalTooltip(this,\''+safeTip+'\')">'+info.time.substring(0,5)+' '+shortNeg+'</div>';
+    });
+    if(extra>0) grid+='<div style="font-size:9px;color:'+(isToday?'rgba(255,255,255,0.65)':'var(--text3)')+'">+'+extra+' mas</div>';
+    grid+='</div>';
+  }
+  document.getElementById('cal-grid').innerHTML=grid;
+
+  // List
+  var sorted=monthJobs.slice().sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time);});
+  if(!sorted.length){
+    document.getElementById('cal-list').innerHTML='<div style="padding:24px;text-align:center;color:#999;font-size:13px">Sin trabajos programados este mes</div>';
+    return;
+  }
+  var lh='';
+  sorted.forEach(function(j){
+    lh+='<div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--border)">';
+    lh+='<div style="background:var(--primary-light);color:var(--primary);border-radius:10px;padding:8px 10px;text-align:center;flex-shrink:0;min-width:52px">';
+    lh+='<div style="font-size:11px;font-weight:600">'+fmtDate(j.date).substring(0,5)+'</div>';
+    lh+='<div style="font-size:13px;font-weight:700">'+j.time+'</div>';
+    lh+='</div>';
+    lh+='<div style="flex:1;min-width:0">';
+    lh+='<div style="font-size:13px;font-weight:600;color:var(--text)">'+j.negocio+'</div>';
+    lh+='<div style="font-size:12px;color:var(--text2);margin-top:2px">&#128100; '+j.worker+(j.notes?' &middot; '+j.notes:'')+'</div>';
+    lh+='</div>';
+    lh+='<button onclick="calDel('+j.id+')" title="Eliminar" style="background:none;border:none;cursor:pointer;color:#DC3545;font-size:16px;flex-shrink:0;padding:4px">&#128465;</button>';
+    lh+='</div>';
+  });
+  document.getElementById('cal-list').innerHTML=lh;
+}
+
+function calClickDay(ds){
+  // Set date in form and scroll to it
+  document.getElementById('cal-date').value=ds;
+  document.getElementById('cal-worker').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+//=== AUTH ===================================================================
+var currentUser = null;
+
+function getAppUsers(){
+  var stored=null; try{stored=JSON.parse(localStorage.getItem('app_users'));}catch(e){}
+  if(stored&&stored.length) return stored;
+  // default users
+  return [
+    {username:'admin',  password:'admin123', role:'admin',      name:'Administrador'},
+    {username:'super',  password:'super123', role:'supervisor', name:'Supervisor'},
+    {username:'viewer', password:'view123',  role:'normal',     name:'Visualizador'}
+  ];
+}
+function saveAppUsers(users){ try{localStorage.setItem('app_users',JSON.stringify(users));}catch(e){} }
+
+function doLogin(){
+  var u=document.getElementById('login-user').value.trim().toLowerCase();
+  var p=document.getElementById('login-pass').value;
+  var err=document.getElementById('login-error');
+  var users=getAppUsers();
+  var found=null;
+  for(var i=0;i<users.length;i++){
+    if(users[i].username.toLowerCase()===u&&users[i].password===p){found=users[i];break;}
+  }
+  if(!found){
+    err.textContent='Usuario o contraseña incorrectos';
+    err.style.display='block';
+    document.getElementById('login-pass').value='';
+    return;
+  }
+  currentUser=found;
+  err.style.display='none';
+  document.getElementById('login-overlay').style.display='none';
+  // Set sidebar username
+  var su=document.getElementById('sidebar-username');
+  if(su) su.textContent=found.name+' ('+found.role+')';
+  // Apply role restrictions to sidebar
+  applyRoleUI();
+  // Navigate to correct default tab
+  if(found.role==='normal') showTab('calendario');
+  else showTab('registro');
+}
+
+function doLogout(){
+  currentUser=null;
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+}
+
+function applyRoleUI(){
+  var role=currentUser?currentUser.role:'';
+  var tabRules={
+    'tab-registro':  ['admin','supervisor'],
+    'tab-auditoria': ['admin','supervisor'],
+    'tab-dashboard': ['admin','supervisor'],
+    'tab-config':    ['admin'],
+    'tab-informe':   ['admin'],
+    'tab-calendario':['admin','supervisor','normal']
+  };
+  Object.keys(tabRules).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.style.display=tabRules[id].indexOf(role)>=0?'':'none';
+  });
+  // For normal: grey out cal form (read-only)
+  var calForm=document.getElementById('cal-form-card');
+  if(calForm){
+    if(role==='normal'){
+      calForm.style.opacity='0.4';
+      calForm.style.pointerEvents='none';
+      calForm.title='Solo lectura - sin permiso para programar';
+    } else {
+      calForm.style.opacity='';
+      calForm.style.pointerEvents='';
+      calForm.title='';
+    }
+  }
+}
+
+//=== USUARIOS EN CONFIG =====================================================
+function renderConfigUsers(){
+  var users=getAppUsers();
+  var el=document.getElementById('cfg-appusers');
+  if(!el) return;
+  var roleLabels={admin:'Admin',supervisor:'Supervisor',normal:'Normal'};
+  var roleBg={admin:'#EEEDFF',supervisor:'#E8F8DD',normal:'#FEF3C7'};
+  var roleColor={admin:'#5B4FE8',supervisor:'#3E9E1B',normal:'#B45309'};
+  var h='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
+  h+='<thead><tr>';
+  h+='<th style="text-align:left;padding:8px 12px;background:var(--bg);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Usuario</th>';
+  h+='<th style="text-align:left;padding:8px 12px;background:var(--bg);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Nombre</th>';
+  h+='<th style="text-align:left;padding:8px 12px;background:var(--bg);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Rol</th>';
+  h+='<th style="padding:8px 12px;background:var(--bg)"></th>';
+  h+='</tr></thead><tbody>';
+  users.forEach(function(u,i){
+    var rc=roleColor[u.role]||'#888', rb=roleBg[u.role]||'#EEE';
+    h+='<tr style="border-bottom:1px solid var(--border)">';
+    h+='<td style="padding:10px 12px;font-weight:600;font-family:monospace">'+u.username+'</td>';
+    h+='<td style="padding:10px 12px">'+u.name+'</td>';
+    h+='<td style="padding:10px 12px"><span style="background:'+rb+';color:'+rc+';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">'+roleLabels[u.role]+'</span></td>';
+    h+='<td style="padding:10px 12px"><button data-action="delU" data-idx="'+i+'" style="background:none;border:none;cursor:pointer;color:#DC3545;font-size:16px">&#128465;</button></td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  el.innerHTML=h;
+
+  // Delegated delete
+  el.onclick=function(ev){
+    var btn=ev.target.closest('button[data-action]');
+    if(!btn) return;
+    if(btn.getAttribute('data-action')==='delU'){
+      var idx=+btn.getAttribute('data-idx');
+      var users2=getAppUsers();
+      if(users2[idx]&&users2[idx].role==='admin'&&users2.filter(function(u){return u.role==='admin';}).length<=1)
+        return toast('Debe quedar al menos un admin');
+      if(!confirm('Eliminar usuario '+users2[idx].username+'?')) return;
+      users2.splice(idx,1); saveAppUsers(users2); renderConfigUsers();
+      toast('Usuario eliminado');
+    }
+  };
+}
+
+function cfgAddUser(){
+  var uname=document.getElementById('inp-uname').value.trim().toLowerCase();
+  var udisp=document.getElementById('inp-udisp').value.trim();
+  var upass=document.getElementById('inp-upass').value;
+  var urole=document.getElementById('inp-urole').value;
+  if(!uname||!udisp||!upass) return toast('Completa todos los campos');
+  if(upass.length<4) return toast('La contraseña debe tener al menos 4 caracteres');
+  var users=getAppUsers();
+  if(users.some(function(u){return u.username===uname;})) return toast('Ese nombre de usuario ya existe');
+  users.push({username:uname,password:upass,role:urole,name:udisp});
+  saveAppUsers(users);
+  ['inp-uname','inp-udisp','inp-upass'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  renderConfigUsers();
+  toast('Usuario "'+uname+'" creado');
+}
+
+//=== INFORME ================================================================
+function initInforme(){
+  var cfg=getCfg();
+  var wo=cfg.workers.map(function(w){return '<option value="'+w+'">'+w+'</option>';}).join('');
+  setO('inf-worker','<option value="all">Todos</option>'+wo);
+  var allNegs=[];Object.keys(cfg.grupos).forEach(function(g){allNegs=allNegs.concat(cfg.grupos[g]);});
+  var no=allNegs.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join('');
+  setO('inf-negocio','<option value="all">Todos</option>'+no);
+  renderInforme();
+}
+
+function getInfData(){
+  var mf=document.getElementById('inf-month').value;
+  var wf=document.getElementById('inf-worker').value;
+  var nf=document.getElementById('inf-negocio').value;
+  var sf=document.getElementById('inf-status').value;
+  return records.filter(function(r){
+    return (mf==='all'||r.date.indexOf(mf)===0)
+      &&(wf==='all'||r.user===wf)
+      &&(nf==='all'||r.negocio===nf)
+      &&(sf==='all'||r.status===sf);
+  });
+}
+
+function renderInforme(){
+  var data=getInfData();
+  var out=document.getElementById('informe-output');
+  if(!data.length){out.innerHTML='<div style="text-align:center;padding:40px;color:#999;font-size:13px">Sin datos para los filtros seleccionados</div>';return;}
+
+  var total=data.reduce(function(s,r){return s+(r.hrs||0);},0);
+  var ok=data.filter(function(r){return r.status==='ok';}).length;
+  var pend=data.filter(function(r){return r.status==='pending';}).length;
+
+  // By worker
+  var cfg=getCfg();
+  var byWorker={};
+  data.forEach(function(r){byWorker[r.user]=(byWorker[r.user]||0)+(r.hrs||0);});
+  // By negocio
+  var byNeg={};
+  data.forEach(function(r){byNeg[r.negocio]=(byNeg[r.negocio]||0)+(r.hrs||0);});
+
+  var h='';
+
+  // Summary card
+  h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128202; Resumen</div></div></div><div class="card-body">';
+  h+='<div class="kpi-grid">';
+  h+='<div class="kpi primary"><div class="kpi-icon">&#9201;</div><div class="kpi-value">'+total.toFixed(1)+'</div><div class="kpi-label">Total horas</div></div>';
+  h+='<div class="kpi success"><div class="kpi-icon">&#10003;</div><div class="kpi-value">'+ok+'</div><div class="kpi-label">Confirmados</div></div>';
+  h+='<div class="kpi warning"><div class="kpi-icon">&#8987;</div><div class="kpi-value">'+pend+'</div><div class="kpi-label">Pendientes</div></div>';
+  h+='<div class="kpi secondary"><div class="kpi-icon">&#128203;</div><div class="kpi-value">'+data.length+'</div><div class="kpi-label">Registros</div></div>';
+  h+='</div></div></div>';
+
+  // By worker table
+  h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128101; Por trabajador</div></div></div>';
+  h+='<div class="table-wrap"><table><thead><tr><th>Trabajador</th><th>Horas</th><th>Registros</th><th>% del total</th></tr></thead><tbody>';
+  Object.keys(byWorker).sort(function(a,b){return byWorker[b]-byWorker[a];}).forEach(function(w){
+    var cnt=data.filter(function(r){return r.user===w;}).length;
+    var pct=total>0?Math.round(byWorker[w]/total*100):0;
+    h+='<tr><td style="font-weight:600">'+w+'</td><td><b>'+byWorker[w].toFixed(1)+'</b> hrs</td><td>'+cnt+'</td>';
+    h+='<td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#EEE;border-radius:4px"><div style="width:'+pct+'%;height:8px;background:var(--primary);border-radius:4px"></div></div><span style="font-size:12px;color:#666;min-width:32px">'+pct+'%</span></div></td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+
+  // By negocio table
+  h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#127968; Por negocio</div></div></div>';
+  h+='<div class="table-wrap"><table><thead><tr><th>Negocio</th><th>Horas</th><th>Registros</th><th>% del total</th></tr></thead><tbody>';
+  Object.keys(byNeg).sort(function(a,b){return byNeg[b]-byNeg[a];}).forEach(function(n){
+    var cnt=data.filter(function(r){return r.negocio===n;}).length;
+    var pct=total>0?Math.round(byNeg[n]/total*100):0;
+    h+='<tr><td style="font-weight:600">'+n+'</td><td><b>'+byNeg[n].toFixed(1)+'</b> hrs</td><td>'+cnt+'</td>';
+    h+='<td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#EEE;border-radius:4px"><div style="width:'+pct+'%;height:8px;background:var(--secondary);border-radius:4px"></div></div><span style="font-size:12px;color:#666;min-width:32px">'+pct+'%</span></div></td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+
+  // Detail table
+  h+='<div class="card"><div class="card-header colored"><div><div class="card-title">&#128203; Detalle de registros</div></div></div>';
+  h+='<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Trabajador</th><th>Negocio</th><th>Horas</th><th>Estado</th></tr></thead><tbody>';
+  data.sort(function(a,b){return a.date.localeCompare(b.date);}).forEach(function(r){
+    var badge=r.status==='ok'?'<span class="badge badge-ok">Cuadra</span>':r.status==='pending'?'<span class="badge badge-pending">Pendiente</span>':'<span class="badge badge-mismatch">Conflicto</span>';
+    h+='<tr><td>'+fmtDate(r.date)+'</td><td>'+r.user+'</td><td>'+r.negocio+'</td><td><b>'+fmtHrs(r.hrs||0)+'</b></td><td>'+badge+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+
+  out.innerHTML=h;
+}
+
+function exportPDF(){
+  var data=getInfData();
+  if(!data.length) return toast('Sin datos para exportar');
+  var total=data.reduce(function(s,r){return s+(r.hrs||0);},0);
+  var ok=data.filter(function(r){return r.status==='ok';}).length;
+  var pend=data.filter(function(r){return r.status==='pending';}).length;
+  var byWorker={},byNeg={};
+  data.forEach(function(r){byWorker[r.user]=(byWorker[r.user]||0)+(r.hrs||0);});
+  data.forEach(function(r){byNeg[r.negocio]=(byNeg[r.negocio]||0)+(r.hrs||0);});
+
+  var mLabel=document.getElementById('inf-month').options[document.getElementById('inf-month').selectedIndex].text;
+  var wLabel=document.getElementById('inf-worker').value==='all'?'Todos':document.getElementById('inf-worker').value;
+  var nLabel=document.getElementById('inf-negocio').value==='all'?'Todos':document.getElementById('inf-negocio').value;
+
+  var html='<html><head><meta charset="UTF-8"><style>'
+    +'body{font-family:Arial,sans-serif;font-size:13px;color:#222;margin:32px}'
+    +'h1{font-size:22px;color:#7366FF;margin-bottom:4px}'
+    +'.sub{color:#888;font-size:12px;margin-bottom:24px}'
+    +'.section{font-size:15px;font-weight:700;color:#7366FF;border-bottom:2px solid #7366FF;padding-bottom:6px;margin:22px 0 12px}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:18px}'
+    +'th{background:#F0EEFF;color:#5B4FE8;text-align:left;padding:8px 12px;font-size:12px}'
+    +'td{padding:8px 12px;border-bottom:1px solid #EEE;font-size:13px}'
+    +'.kpi-row{display:flex;gap:20px;margin-bottom:20px}'
+    +'.kpi-box{background:#F0EEFF;border-radius:10px;padding:14px 20px;flex:1;text-align:center}'
+    +'.kpi-val{font-size:28px;font-weight:700;color:#7366FF}'
+    +'.kpi-lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.05em}'
+    +'.bar{height:8px;background:#EEE;border-radius:4px;display:inline-block;width:100px;vertical-align:middle}'
+    +'.bar-fill{height:8px;background:#7366FF;border-radius:4px;display:inline-block}'
+    +'</style></head><body>'
+    +'<h1>&#9203; CleanHours - Informe de Horas</h1>'
+    +'<div class="sub">Periodo: '+mLabel+' &nbsp;|&nbsp; Trabajador: '+wLabel+' &nbsp;|&nbsp; Negocio: '+nLabel+'<br>Generado: '+new Date().toLocaleString('es-ES')+'</div>'
+
+    +'<div class="section">Resumen</div>'
+    +'<div class="kpi-row">'
+    +'<div class="kpi-box"><div class="kpi-val">'+total.toFixed(1)+'</div><div class="kpi-lbl">Total horas</div></div>'
+    +'<div class="kpi-box"><div class="kpi-val" style="color:#51BB25">'+ok+'</div><div class="kpi-lbl">Confirmados</div></div>'
+    +'<div class="kpi-box"><div class="kpi-val" style="color:#F8D62B">'+pend+'</div><div class="kpi-lbl">Pendientes</div></div>'
+    +'<div class="kpi-box"><div class="kpi-val">'+data.length+'</div><div class="kpi-lbl">Registros</div></div>'
+    +'</div>'
+
+    +'<div class="section">Por Trabajador</div>'
+    +'<table><thead><tr><th>Trabajador</th><th>Horas</th><th>Registros</th><th>%</th></tr></thead><tbody>';
+  Object.keys(byWorker).sort(function(a,b){return byWorker[b]-byWorker[a];}).forEach(function(w){
+    var cnt=data.filter(function(r){return r.user===w;}).length;
+    var pct=total>0?Math.round(byWorker[w]/total*100):0;
+    html+='<tr><td><b>'+w+'</b></td><td>'+byWorker[w].toFixed(1)+' hrs</td><td>'+cnt+'</td><td><span class="bar"><span class="bar-fill" style="width:'+pct+'px"></span></span> '+pct+'%</td></tr>';
+  });
+  html+='</tbody></table>'
+    +'<div class="section">Por Negocio</div>'
+    +'<table><thead><tr><th>Negocio</th><th>Horas</th><th>Registros</th><th>%</th></tr></thead><tbody>';
+  Object.keys(byNeg).sort(function(a,b){return byNeg[b]-byNeg[a];}).forEach(function(n){
+    var cnt=data.filter(function(r){return r.negocio===n;}).length;
+    var pct=total>0?Math.round(byNeg[n]/total*100):0;
+    html+='<tr><td><b>'+n+'</b></td><td>'+byNeg[n].toFixed(1)+' hrs</td><td>'+cnt+'</td><td><span class="bar"><span class="bar-fill" style="width:'+pct+'px;background:#F73164"></span></span> '+pct+'%</td></tr>';
+  });
+  html+='</tbody></table></body></html>';
+
+  var w2=window.open('','_blank');
+  w2.document.write(html);
+  w2.document.close();
+  w2.focus();
+  setTimeout(function(){w2.print();},500);
+}
+
+function exportExcel(){
+  var data=getInfData();
+  if(!data.length) return toast('Sin datos para exportar');
+  // Build Excel-compatible XML (SpreadsheetML)
+  var rows=[['Fecha','Trabajador','Negocio','Inicio','Termino','Horas','Estado','Admin','Observaciones']];
+  data.sort(function(a,b){return a.date.localeCompare(b.date);}).forEach(function(r){
+    rows.push([fmtDate(r.date),r.user,r.negocio,r.start||'',r.end||'',(r.hrs||0).toFixed(2),r.status,r.admin||'',r.obs||'']);
+  });
+  var xml='<?xml version="1.0" encoding="UTF-8"?>'
+    +'<?mso-application progid="Excel.Sheet"?>'
+    +'<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'
+    +'<Styles><Style ss:ID="H"><Font ss:Bold="1" ss:Color="#7366FF"/><Interior ss:Color="#F0EEFF" ss:Pattern="Solid"/></Style></Styles>'
+    +'<Worksheet ss:Name="Registros"><Table>';
+  rows.forEach(function(r,ri){
+    xml+='<Row>';
+    r.forEach(function(c){
+      var t=isNaN(c)||c===''?'String':'Number';
+      var sty=ri===0?' ss:StyleID="H"':'';
+      xml+='<Cell'+sty+'><Data ss:Type="'+t+'">'+String(c).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</Data></Cell>';
+    });
+    xml+='</Row>';
+  });
+  xml+='</Table></Worksheet></Workbook>';
+  var blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='cleanhours_'+new Date().toISOString().split('T')[0]+'.xls';
+  a.click();
+  toast('Excel exportado');
+}
+
+function showCalTooltip(el, text){
+  // Remove existing
+  var old=document.getElementById('cal-tip'); if(old) old.remove();
+  var tip=document.createElement('div');
+  tip.id='cal-tip'; tip.className='cal-tooltip';
+  // Format text nicely
+  tip.innerHTML=text.replace(/\|/g,'<br>&#9656; ');
+  document.body.appendChild(tip);
+  var r=el.getBoundingClientRect();
+  var top=r.bottom+6; var left=r.left;
+  if(left+244>window.innerWidth) left=window.innerWidth-248;
+  if(top+120>window.innerHeight) top=r.top-130;
+  tip.style.top=top+'px'; tip.style.left=left+'px';
+  // Auto-close after 3s or on next click anywhere
+  setTimeout(function(){if(tip.parentNode)tip.remove();},3000);
+  document.addEventListener('click',function rm(){tip.remove();document.removeEventListener('click',rm);},{once:true});
+}
+
 //=== INIT ===================================================================
 (function(){
   var now=new Date();
   var el=document.getElementById('header-date');
   if(el) el.textContent=now.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   var today=now.toISOString().split('T')[0];
-  ['w-date','a-date'].forEach(function(id){var e=document.getElementById(id);if(e)e.value=today;});
+  ['w-date','a-date','cal-date'].forEach(function(id){var e=document.getElementById(id);if(e)e.value=today;});
   ['w-start','a-start'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='09:00';});
   ['w-end','a-end'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='13:00';});
   if(apiKey){
@@ -1024,7 +1763,8 @@ function cfgDelPiso(grupo,piso){
   }
   buildSelects();
   setPendBadge();
-  renderConfig();
+  // Show login — do not render app until authenticated
+  document.getElementById('login-overlay').style.display='flex';
 })();
 </script>
 </body>
