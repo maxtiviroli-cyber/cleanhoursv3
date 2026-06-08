@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Horas Limpieza — Cuba Style</title>
+<title>CleanHours</title>
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
@@ -206,13 +206,42 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
 }
 .hamburger { display:none; align-items:center; justify-content:center; width:36px; height:36px; background:rgba(255,255,255,0.1); border:none; border-radius:8px; cursor:pointer; flex-direction:column; gap:5px; padding:0; flex-shrink:0; }
 .hamburger span { display:block; width:18px; height:2px; background:white; border-radius:2px; transition:all 0.2s; }
+
+.hamburger{display:none;align-items:center;justify-content:center;width:38px;height:38px;background:rgba(255,255,255,0.12);border:none;border-radius:8px;cursor:pointer;flex-direction:column;gap:5px;padding:0;flex-shrink:0}
+.hamburger span{display:block;width:18px;height:2px;background:white;border-radius:2px}
+@media(max-width:900px){
+  .sidebar{position:fixed;left:-270px;z-index:200;transition:left 0.25s}
+  .sidebar.open{left:0;box-shadow:4px 0 24px rgba(0,0,0,0.35)}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:199}
+  .overlay.show{display:block}
+  .hamburger{display:flex!important}
+  .form-row{grid-template-columns:1fr}
+  .content{padding:20px 16px}
+  .topbar{padding:12px 16px}
+  .topbar-breadcrumb{display:none}
+}
+
+.hamburger{display:none;align-items:center;justify-content:center;width:38px;height:38px;background:rgba(255,255,255,0.15);border:none;border-radius:8px;cursor:pointer;flex-direction:column;gap:5px;padding:0;flex-shrink:0}
+.hamburger span{display:block;width:18px;height:2px;background:white;border-radius:2px}
+@media(max-width:900px){
+  .sidebar{position:fixed;left:-270px;z-index:200;transition:left 0.25s}
+  .sidebar.open{left:0;box-shadow:4px 0 24px rgba(0,0,0,0.4)}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:199}
+  .overlay.show{display:block}
+  .hamburger{display:flex!important}
+  .form-row{grid-template-columns:1fr}
+  .content{padding:20px 14px}
+  .topbar{padding:12px 14px}
+}
 </style>
 </head>
 <body>
 
-<aside class="sidebar">
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo">⏱</div>
+    <div class="sidebar-logo">&#9203;</div>
     <div>
       <div class="sidebar-brand">CleanHours</div>
       <div class="sidebar-brand-sub">Control de horas</div>
@@ -220,79 +249,100 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
   </div>
   <nav class="sidebar-menu">
     <div class="sidebar-section">Aplicaciones</div>
-    <button class="sidebar-item active" onclick="switchTab('registro')" id="tab-registro">
-      <span class="sidebar-icon">📋</span> Registro
-    </button>
-    <button class="sidebar-item" onclick="switchTab('auditoria')" id="tab-auditoria">
-      <span class="sidebar-icon">🔍</span> Auditoría
-      <span class="badge-num" id="pending-count" style="display:none">0</span>
-    </button>
-    <button class="sidebar-item" onclick="switchTab('dashboard')" id="tab-dashboard">
-      <span class="sidebar-icon">📊</span> Dashboard
-    </button>
+    <button class="sidebar-item active" id="tab-registro"   onclick="showTab('registro')"><span class="sidebar-icon">&#128203;</span> Registro</button>
+    <button class="sidebar-item"        id="tab-auditoria"  onclick="showTab('auditoria')"><span class="sidebar-icon">&#128269;</span> Auditoria <span class="badge-num" id="pending-count" style="display:none">0</span></button>
+    <button class="sidebar-item"        id="tab-dashboard"  onclick="showTab('dashboard')"><span class="sidebar-icon">&#128202;</span> Dashboard</button>
     <div class="sidebar-section">Sistema</div>
-    <button class="sidebar-item" onclick="switchTab('config')" id="tab-config">
-      <span class="sidebar-icon">⚙️</span> Configuración
-    </button>
+    <button class="sidebar-item"        id="tab-config"     onclick="showTab('config')"><span class="sidebar-icon">&#9881;</span> Configuracion</button>
   </nav>
   <div class="sidebar-footer">
     <div id="header-date"></div>
-    <div style="margin-top:4px;opacity:0.7">Cuba Theme</div>
+    <div style="margin-top:4px;opacity:0.6">CleanHours v2</div>
   </div>
 </aside>
 
 <div class="wrap">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px">
-      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menú">
-        <span></span><span></span><span></span>
-      </button>
+      <button class="hamburger" onclick="openSidebar()"><span></span><span></span><span></span></button>
       <div>
         <div class="topbar-title" id="page-title">Registro de horas</div>
-        <div class="topbar-breadcrumb">CleanHours · <span id="page-crumb">Registro</span></div>
+        <div class="topbar-breadcrumb">CleanHours &middot; <span id="page-crumb">Registro</span></div>
       </div>
     </div>
-    <span class="user-chip">🧹 Limpieza Pisos</span>
+    <span class="user-chip">&#129529; Limpieza Pisos</span>
   </div>
-  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
   <div class="content">
 
   <!-- REGISTRO -->
   <div class="panel active" id="panel-registro">
 
-    <div id="apikey-section" class="apikey-box">
-      <div class="ak-title">🔑 API Key de Claude</div>
-      <div class="ak-input-row">
-        <input type="password" id="api-key-input" placeholder="sk-ant-api03-...">
-        <button class="btn btn-primary" onclick="saveApiKey()" style="white-space:nowrap">Guardar</button>
+    <!-- 1. TEXTO NATURAL (primero) -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header colored">
+        <div>
+          <div class="card-title"><div class="card-title-icon" style="color:var(--primary)">&#10024;</div>Registro rapido</div>
+          <div class="card-sub">Escribe en lenguaje natural</div>
+        </div>
       </div>
-      <div class="apikey-help">Necesaria para reconocimiento natural. <a href="https://console.anthropic.com" target="_blank">Obtener API key →</a></div>
+      <div class="card-body">
+        <div id="apikey-section" style="background:#FFF8DD;border:1px solid #FFE066;border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;color:#8A6500;margin-bottom:10px">&#128273; API Key de Claude</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." style="font-family:monospace;font-size:13px;flex:1;min-width:200px">
+            <button class="btn btn-primary" onclick="saveApiKey()" style="white-space:nowrap">Guardar</button>
+          </div>
+          <div style="font-size:12px;color:#8A6500;margin-top:8px">Necesaria para reconocimiento de texto. <a href="https://console.anthropic.com" target="_blank" style="color:var(--primary)">Obtener key</a></div>
+        </div>
+        <div style="background:var(--bg);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:2">
+          <div style="font-weight:700;color:var(--primary);margin-bottom:4px">Ejemplos (toca para usar):</div>
+          <div style="cursor:pointer;padding:2px 0;border-bottom:1px dashed #ddd" onclick="useEx(this)">14 a 18 en Sapporo 20 por Manuel hoy</div>
+          <div style="cursor:pointer;padding:2px 0;border-bottom:1px dashed #ddd" onclick="useEx(this)">Ana trabajo Circuito de 9:30 a 13:00 ayer</div>
+          <div style="cursor:pointer;padding:2px 0" onclick="useEx(this)">Claudia y Manuel limpiaron D43 de 10 a 14 hoy</div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>Enviado por</label>
+          <select id="wa-sender"></select>
+        </div>
+        <div style="margin-bottom:14px">
+          <label>Mensaje</label>
+          <textarea id="wa-input" rows="3"
+            placeholder="Ej: 14 a 18 en Sapporo 20 por Manuel hoy"
+            style="width:100%;padding:13px;font-size:15px;border:2px solid var(--primary);border-radius:var(--radius);font-family:inherit;resize:vertical;background:var(--surface);color:var(--text);outline:none;line-height:1.5"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
+        </div>
+        <button id="wa-send-btn" onclick="sendMsg()" class="btn btn-primary btn-full" style="font-size:15px;padding:13px">
+          &#10024; Interpretar y registrar
+        </button>
+        <div id="wa-body" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
+      </div>
     </div>
 
+    <!-- 2. FORMULARIO MANUAL (despues) -->
     <div class="role-bar">
-      <button class="role-btn active" id="role-worker-btn" onclick="setRole('worker')">👤 Trabajador</button>
-      <button class="role-btn" id="role-admin-btn" onclick="setRole('admin')">🛡 Administrador</button>
+      <button class="role-btn active" id="role-worker-btn" onclick="setRole('worker')">&#128100; Trabajador</button>
+      <button class="role-btn" id="role-admin-btn" onclick="setRole('admin')">&#128737; Administrador</button>
     </div>
 
     <div id="form-worker">
       <div class="card">
         <div class="card-header colored">
-          <div><div class="card-title"><div class="card-title-icon">📋</div>Formulario manual</div><div class="card-sub">Inicio y término · teclado numérico en móvil</div></div>
+          <div><div class="card-title"><div class="card-title-icon">&#128203;</div>Formulario manual</div><div class="card-sub">Teclado numerico en movil</div></div>
         </div>
         <div class="card-body">
           <div class="form-row">
-            <div><label>Trabajador</label><select id="w-user"><option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option></select></div>
+            <div><label>Trabajador</label><select id="w-user"></select></div>
             <div><label>Fecha</label><input type="date" id="w-date"></div>
           </div>
           <div class="form-row">
-            <div><label>Inicio (HH:MM)</label><input type="time" id="w-start" inputmode="numeric" onchange="updateHours('w')" style="font-size:18px;font-weight:600;text-align:center;padding:12px;letter-spacing:2px"></div>
-            <div><label>Término (HH:MM)</label><input type="time" id="w-end" inputmode="numeric" onchange="updateHours('w')" style="font-size:18px;font-weight:600;text-align:center;padding:12px;letter-spacing:2px"></div>
+            <div><label>Inicio</label><input type="time" id="w-start" onchange="calcPill('w')" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
+            <div><label>Termino</label><input type="time" id="w-end" onchange="calcPill('w')" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
           </div>
-          <div id="w-hours-pill" style="display:none"><div class="hours-pill">⏱ <span id="w-hours-text">0:00 hrs</span></div></div>
+          <div id="w-hours-pill" style="display:none;margin-bottom:14px"><div class="hours-pill">&#9201; <span id="w-hours-text"></span></div></div>
           <div class="form-full"><label>Negocio / Piso</label><select id="w-negocio"></select></div>
           <div class="form-full"><label>Observaciones</label><input type="text" id="w-obs" placeholder="Notas adicionales..."></div>
-          <button class="btn btn-primary btn-full" onclick="submitWorkerForm()">💬 Enviar al grupo</button>
+          <button class="btn btn-primary btn-full" onclick="submitWorker()">&#128172; Enviar</button>
         </div>
       </div>
     </div>
@@ -300,89 +350,50 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
     <div id="form-admin" style="display:none">
       <div class="card">
         <div class="card-header colored success">
-          <div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">🛡</div>Modo administrador</div><div class="card-sub">Registra y confirma horas</div></div>
+          <div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">&#128737;</div>Modo administrador</div><div class="card-sub">Registra y confirma horas</div></div>
         </div>
         <div class="card-body">
           <div class="form-row">
-            <div><label>Admin</label><select id="a-admin"><option>Manuel (Admin)</option><option>Claudia (Admin)</option></select></div>
-            <div><label>Trabajador</label><select id="a-user"><option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option></select></div>
+            <div><label>Admin</label><select id="a-admin"></select></div>
+            <div><label>Trabajador</label><select id="a-user"></select></div>
           </div>
           <div class="form-row">
             <div><label>Fecha</label><input type="date" id="a-date"></div>
             <div><label>Negocio</label><select id="a-negocio"></select></div>
           </div>
           <div class="form-row">
-            <div><label>Inicio (HH:MM)</label><input type="time" id="a-start" inputmode="numeric" onchange="updateHours('a')" style="font-size:18px;font-weight:600;text-align:center;padding:12px;letter-spacing:2px"></div>
-            <div><label>Término (HH:MM)</label><input type="time" id="a-end" inputmode="numeric" onchange="updateHours('a')" style="font-size:18px;font-weight:600;text-align:center;padding:12px;letter-spacing:2px"></div>
+            <div><label>Inicio</label><input type="time" id="a-start" onchange="calcPill('a')" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
+            <div><label>Termino</label><input type="time" id="a-end" onchange="calcPill('a')" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
           </div>
-          <div id="a-hours-pill" style="display:none"><div class="hours-pill">⏱ <span id="a-hours-text">0:00 hrs</span></div></div>
+          <div id="a-hours-pill" style="display:none;margin-bottom:14px"><div class="hours-pill">&#9201; <span id="a-hours-text"></span></div></div>
           <div class="form-full"><label>Observaciones</label><input type="text" id="a-obs"></div>
-          <button class="btn btn-success btn-full" onclick="submitAdminForm()">🛡 Guardar registro admin</button>
+          <button class="btn btn-success btn-full" onclick="submitAdmin()">&#128737; Guardar</button>
         </div>
       </div>
     </div>
 
-    <!-- REGISTRO NATURAL -->
-    <div class="card">
-      <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon" style="background:linear-gradient(89deg,var(--primary-light),var(--secondary-light));color:var(--primary)">✨</div>Registro por texto libre</div><div class="card-sub">Escribe en lenguaje natural — la IA interpreta el registro</div></div>
-      </div>
-      <div class="card-body">
-
-        <!-- EJEMPLOS -->
-        <div style="background:var(--bg);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.9">
-          <div style="font-weight:700;color:var(--primary);margin-bottom:6px">💡 Ejemplos:</div>
-          <div onclick="setExample(this)" style="cursor:pointer;padding:3px 0" title="Toca para usar">▸ "14 a 18 en Sapporo 20 por Manuel hoy"</div>
-          <div onclick="setExample(this)" style="cursor:pointer;padding:3px 0" title="Toca para usar">▸ "Ana trabajó Circuito de 9:30 a 13:00 ayer"</div>
-          <div onclick="setExample(this)" style="cursor:pointer;padding:3px 0" title="Toca para usar">▸ "Claudia y Manuel limpiaron D43 de 10 a 14 hoy"</div>
-        </div>
-
-        <!-- SENDER -->
-        <div style="margin-bottom:12px">
-          <label>Enviado por</label>
-          <select id="wa-sender" style="max-width:260px">
-            <option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option><option value="Manuel (Admin)">Admin</option>
-          </select>
-        </div>
-
-        <!-- TEXT INPUT -->
-        <div style="margin-bottom:14px">
-          <label>Mensaje</label>
-          <textarea id="wa-input"
-            placeholder="Ej: 14 a 18 en Sapporo 20 por Manuel hoy"
-            rows="3"
-            style="width:100%;padding:14px;font-size:15px;border:2px solid var(--primary);border-radius:var(--radius);font-family:inherit;resize:vertical;background:var(--surface);color:var(--text);outline:none;line-height:1.5"
-            onkeydown="handleKey(event)"></textarea>
-        </div>
-
-        <button class="btn btn-primary btn-full" id="wa-send-btn" onclick="sendMessage()" style="font-size:15px;padding:13px">
-          ✨ Interpretar y registrar
-        </button>
-
-        <!-- RESPUESTA IA -->
-        <div id="wa-body" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
-
-      </div>
-    </div>
   </div><!-- /panel-registro -->
 
-  <!-- AUDITORÍA -->
+  <!-- AUDITORIA -->
   <div class="panel" id="panel-auditoria">
-    <div class="section-title">Auditoría</div>
+    <div class="section-title">Auditoria</div>
     <div class="section-sub">Contraste registros trabajadores vs admin</div>
-
     <div class="card"><div class="card-body">
       <div class="filter-bar">
-        <select id="filter-worker" onchange="renderAudit()"><option value="">Todos los trabajadores</option><option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option></select>
-        <select id="filter-status" onchange="renderAudit()"><option value="">Todos los estados</option><option value="ok">Cuadra</option><option value="pending">Pendiente</option><option value="mismatch">Conflicto</option></select>
-        <select id="filter-neg-audit" onchange="renderAudit()"></select>
+        <select id="filter-worker" onchange="renderAudit()"><option value="">Todos los trabajadores</option></select>
+        <select id="filter-status" onchange="renderAudit()">
+          <option value="">Todos los estados</option>
+          <option value="ok">Cuadra</option>
+          <option value="pending">Pendiente</option>
+          <option value="mismatch">Conflicto</option>
+        </select>
+        <select id="filter-neg-audit" onchange="renderAudit()"><option value="">Todos los negocios</option></select>
       </div>
     </div></div>
-
     <div class="card">
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Reg. trab.</th><th>Reg. admin</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Trabajador</th><th>Admin</th><th>Estado</th><th></th></tr></thead>
           <tbody id="audit-tbody"></tbody>
         </table>
       </div>
@@ -392,114 +403,98 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
   <!-- DASHBOARD -->
   <div class="panel" id="panel-dashboard">
     <div class="section-title">Dashboard</div>
-    <div class="section-sub">Resumen mensual · Mayo 2026</div>
-
-    <div class="kpi-grid" id="dash-metrics"></div>
-
+    <div class="section-sub">Resumen mensual Mayo 2026</div>
+    <div class="kpi-grid" id="dash-kpis"></div>
     <div class="card">
-      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon">👥</div>Horas por trabajador</div><div class="card-sub">Mayo 2026</div></div></div>
-      <div class="card-body">
-        <div class="kpi-grid" id="workers-grid" style="margin-bottom:0"></div>
-      </div>
+      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon">&#128101;</div>Horas por trabajador</div></div></div>
+      <div class="card-body"><div class="kpi-grid" id="dash-workers" style="margin-bottom:0"></div></div>
     </div>
-
     <div class="card">
-      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--info-light);color:var(--info)">🏠</div>Horas por piso</div><div class="card-sub">Por agrupación</div></div></div>
-      <div class="card-body">
-        <div id="pisos-grid"></div>
-      </div>
+      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--info-light);color:var(--info)">&#127968;</div>Horas por piso</div></div></div>
+      <div class="card-body"><div id="dash-pisos"></div></div>
     </div>
-
     <div class="card">
-      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">✓</div>Estado auditoría</div><div class="card-sub">Confirmado vs pendiente</div></div></div>
+      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">&#10003;</div>Estado auditoria</div></div></div>
       <div class="card-body" style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">
         <div style="position:relative;width:180px;height:180px;flex-shrink:0"><canvas id="chart-status"></canvas></div>
-        <div id="legend-status"></div>
+        <div id="dash-donut-legend"></div>
       </div>
     </div>
+  </div>
+
   <!-- CONFIG -->
   <div class="panel" id="panel-config">
-    <div class="section-title">Configuración</div>
-    <div class="section-sub">Gestiona trabajadores y negocios</div>
+    <div class="section-title">Configuracion</div>
+    <div class="section-sub">Gestiona trabajadores, pisos y admins</div>
 
-    <!-- TRABAJADORES -->
     <div class="card">
       <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">👥</div>Trabajadores</div><div class="card-sub">Agrega o elimina personas del equipo</div></div>
+        <div><div class="card-title"><div class="card-title-icon">&#128101;</div>Trabajadores</div><div class="card-sub">Agrega o elimina del equipo</div></div>
       </div>
       <div class="card-body">
-        <div id="workers-list" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px"></div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <input type="text" id="new-worker-input" placeholder="Nombre del trabajador" style="max-width:260px" onkeydown="if(event.key==='Enter')addWorker()">
-          <button class="btn btn-primary" onclick="addWorker()">+ Agregar</button>
+        <div id="cfg-workers" style="display:flex;flex-wrap:wrap;gap:8px;min-height:42px;margin-bottom:16px;align-items:flex-start"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input type="text" id="inp-worker" placeholder="Nombre del trabajador" style="max-width:250px">
+          <button class="btn btn-primary" onclick="cfgAddWorker()">+ Agregar</button>
         </div>
       </div>
     </div>
 
-    <!-- NEGOCIOS -->
     <div class="card">
       <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">🏠</div>Negocios / Pisos</div><div class="card-sub">Agrega pisos a cada grupo</div></div>
+        <div><div class="card-title"><div class="card-title-icon">&#127968;</div>Pisos por grupo</div><div class="card-sub">Agrega pisos a cada grupo</div></div>
       </div>
       <div class="card-body">
-        <div id="grupos-list"></div>
-        <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border)">
-          <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)">Agregar nuevo piso</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            <input type="text" id="new-piso-input" placeholder="Nombre del piso" style="max-width:220px" onkeydown="if(event.key==='Enter')addPiso()">
-            <select id="new-piso-grupo" style="max-width:200px">
-              <option value="Tarter Izard">Tarter Izard</option>
-              <option value="Pas de la Casa">Pas de la Casa</option>
-              <option value="Otros">Otros</option>
-              <option value="Servicios">Servicios</option>
+        <div id="cfg-grupos" style="min-height:42px;margin-bottom:20px"></div>
+        <div style="padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">Nuevo piso</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <input type="text" id="inp-piso" placeholder="Nombre del piso" style="max-width:200px">
+            <select id="inp-grupo" style="max-width:180px">
+              <option>Tarter Izard</option><option>Pas de la Casa</option><option>Otros</option><option>Servicios</option>
             </select>
-            <button class="btn btn-primary" onclick="addPiso()">+ Agregar</button>
+            <button class="btn btn-primary" onclick="cfgAddPiso()">+ Agregar</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ADMINS -->
     <div class="card">
       <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">🛡</div>Administradores</div><div class="card-sub">Usuarios con acceso admin</div></div>
+        <div><div class="card-title"><div class="card-title-icon">&#128737;</div>Administradores</div><div class="card-sub">Usuarios con permiso admin</div></div>
       </div>
       <div class="card-body">
-        <div id="admins-list" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px"></div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <input type="text" id="new-admin-input" placeholder="Nombre (Admin)" style="max-width:260px" onkeydown="if(event.key==='Enter')addAdmin()">
-          <button class="btn btn-success" onclick="addAdmin()">+ Agregar</button>
+        <div id="cfg-admins" style="display:flex;flex-wrap:wrap;gap:8px;min-height:42px;margin-bottom:16px;align-items:flex-start"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input type="text" id="inp-admin" placeholder="Nombre Admin" style="max-width:250px">
+          <button class="btn btn-success" onclick="cfgAddAdmin()">+ Agregar</button>
         </div>
       </div>
     </div>
-
-  </div><!-- /panel-config -->
+  </div>
 
   </div><!-- /content -->
 </div><!-- /wrap -->
-
 <div id="toast"></div>
 
 <script>
-const PISOS = [
-  'A01','B21','B24','C21','C22','D11 (Kristine)','D12','D13','D43 (Atico)',
-  'Sapporo 20','Morera 5C','Dolsa 3','Madriu 45','Chamoix 47','Nevada 32','Nevada 33','Nuria 3A',
-  'Xalet Tarter (Rosa)','Pisos David','Eventuales',
-  'Circuito Pas de la Casa','Lavandería'
-];
-const GRUPOS = {
-  'Tarter Izard': ['A01','B21','B24','C21','C22','D11 (Kristine)','D12','D13','D43 (Atico)'],
+//=== CONSTANTES =============================================================
+var GRUPOS_BASE = {
+  'Tarter Izard':   ['A01','B21','B24','C21','C22','D11 (Kristine)','D12','D13','D43 (Atico)'],
   'Pas de la Casa': ['Sapporo 20','Morera 5C','Dolsa 3','Madriu 45','Chamoix 47','Nevada 32','Nevada 33','Nuria 3A'],
-  'Otros': ['Xalet Tarter (Rosa)','Pisos David','Eventuales'],
-  'Servicios': ['Circuito Pas de la Casa','Lavandería']
+  'Otros':          ['Xalet Tarter (Rosa)','Pisos David','Eventuales'],
+  'Servicios':      ['Circuito Pas de la Casa','Lavanderia']
 };
-const NOMBRE_MAP = {
-  'Atico':'D43 (Atico)', 'D11':'D11 (Kristine)', 'Circuito':'Circuito Pas de la Casa',
-  'Dolsa':'Dolsa 3', 'Dolsa (arreglo)':'Dolsa 3', 'Lavanderia':'Lavandería',
-  'Madriu':'Madriu 45', 'Morera':'Morera 5C', 'Sapporo':'Sapporo 20',
-  'David':'Pisos David', 'Geraldine':'Xalet Tarter (Rosa)'
+var WORKERS_BASE = ['Ana','Claudia','Diego','Manuel'];
+var ADMINS_BASE  = ['Manuel (Admin)','Claudia (Admin)'];
+var NOMBRE_MAP   = {
+  'Atico':'D43 (Atico)','D11':'D11 (Kristine)','Circuito':'Circuito Pas de la Casa',
+  'Dolsa':'Dolsa 3','Dolsa (arreglo)':'Dolsa 3','Lavanderia':'Lavanderia',
+  'Lavanderia':'Lavanderia','Madriu':'Madriu 45','Morera':'Morera 5C',
+  'Sapporo':'Sapporo 20','David':'Pisos David','Geraldine':'Xalet Tarter (Rosa)'
 };
-const WORKERS = ['Ana','Claudia','Diego','Manuel'];
+var GC = {'Tarter Izard':'#7366FF','Pas de la Casa':'#F73164','Otros':'#51BB25','Servicios':'#00CFE8'};
+var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwn3asBxPc3wJD6vxYRGRPIgehhkbDMdM6El1Y1rbsuHvN229FlnYl_MqXvXL9gh7Y/exec';
 
 const MAY_RECORDS = [
   {date:'2026-05-01',negocio:'Circuito Pas de la Casa',start:'11:30',end:'15:00',hrs:3.5,user:'Ana',obs:'',adminHrs:3.5,admin:'Manuel (Admin)',status:'ok'},
@@ -536,7 +531,7 @@ const MAY_RECORDS = [
   {date:'2026-05-15',negocio:'D12',start:'16:00',end:'17:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-19',negocio:'Circuito Pas de la Casa',start:'16:00',end:'18:00',hrs:2.0,user:'Diego',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-19',negocio:'Circuito Pas de la Casa',start:'16:00',end:'18:00',hrs:2.0,user:'Manuel',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
-  {date:'2026-05-19',negocio:'Lavandería',start:'16:00',end:'17:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-19',negocio:'Lavanderia',start:'16:00',end:'17:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-22',negocio:'Circuito Pas de la Casa',start:'10:00',end:'12:00',hrs:2.0,user:'Manuel',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-22',negocio:'Circuito Pas de la Casa',start:'10:00',end:'12:00',hrs:2.0,user:'Ana',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-24',negocio:'Dolsa 3',start:'17:00',end:'19:00',hrs:2.0,user:'Manuel',obs:'',adminHrs:2.0,admin:'Manuel (Admin)',status:'ok'},
@@ -549,10 +544,10 @@ const MAY_RECORDS = [
   {date:'2026-05-25',negocio:'Circuito Pas de la Casa',start:'16:30',end:'17:30',hrs:1.0,user:'Claudia',obs:'',adminHrs:null,admin:null,status:'pending'},
   {date:'2026-05-25',negocio:'Morera 5C',start:'17:30',end:'19:00',hrs:1.5,user:'Claudia',obs:'',adminHrs:null,admin:null,status:'pending'},
   {date:'2026-05-25',negocio:'Dolsa 3',start:'16:30',end:'18:00',hrs:1.5,user:'Manuel',obs:'',adminHrs:null,admin:null,status:'pending'},
-  {date:'2026-05-29',negocio:'Lavandería',start:'11:00',end:'12:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-29',negocio:'Lavanderia',start:'11:00',end:'12:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-29',negocio:'Dolsa 3',start:'12:00',end:'13:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-29',negocio:'Circuito Pas de la Casa',start:'13:00',end:'14:00',hrs:1.0,user:'Ana',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
-  {date:'2026-05-29',negocio:'Lavandería',start:'11:00',end:'12:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
+  {date:'2026-05-29',negocio:'Lavanderia',start:'11:00',end:'12:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-29',negocio:'Dolsa 3',start:'12:00',end:'13:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-29',negocio:'Circuito Pas de la Casa',start:'13:00',end:'14:00',hrs:1.0,user:'Manuel',obs:'',adminHrs:1.0,admin:'Manuel (Admin)',status:'ok'},
   {date:'2026-05-30',negocio:'Xalet Tarter (Rosa)',start:'10:00',end:'14:00',hrs:4.0,user:'Ana',obs:'Xalet Pas',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
@@ -560,722 +555,477 @@ const MAY_RECORDS = [
   {date:'2026-05-30',negocio:'Xalet Tarter (Rosa)',start:'10:00',end:'14:00',hrs:4.0,user:'Claudia',obs:'Xalet Pas',adminHrs:4.0,admin:'Manuel (Admin)',status:'ok'},
 ];
 
-let records = JSON.parse(localStorage.getItem('horas_records') || 'null') || [...MAY_RECORDS];
-// Migrar nombres antiguos a nuevos en todos los registros cargados
-records = records.map(r => ({ ...r, negocio: NOMBRE_MAP[r.negocio] || r.negocio }));
-let waMessages = JSON.parse(localStorage.getItem('horas_wa') || '[]');
-let apiKey = localStorage.getItem('horas_apikey') || '';
-let pendingPreview = null;
-let chartW = null, chartN = null, chartS = null;
-let currentRole = 'worker';
+//=== ESTADO =================================================================
+var records = (function(){
+  var stored = null;
+  try { stored = JSON.parse(localStorage.getItem('horas_records')); } catch(e){}
+  var base = stored || MAY_RECORDS.map(function(r){ return Object.assign({},r); });
+  return base.map(function(r){ return Object.assign({},r,{negocio:NOMBRE_MAP[r.negocio]||r.negocio}); });
+})();
+var apiKey = localStorage.getItem('horas_apikey')||'';
+var pendingPreview = null;
+var chartS = null;
+var waMessages = [];
 
-function saveData() {
-  try {
-    localStorage.setItem('horas_records', JSON.stringify(records));
-    localStorage.setItem('horas_wa', JSON.stringify(waMessages));
-  } catch(e) {}
+//=== PERSISTENCIA ===========================================================
+function saveRec(){ try{localStorage.setItem('horas_records',JSON.stringify(records));}catch(e){} }
+function getCfg(){
+  var stored=null; try{stored=JSON.parse(localStorage.getItem('horas_config'));}catch(e){}
+  if(stored&&stored.workers&&stored.grupos&&stored.admins) return stored;
+  return {workers:WORKERS_BASE.slice(),grupos:JSON.parse(JSON.stringify(GRUPOS_BASE)),admins:ADMINS_BASE.slice()};
+}
+function saveCfg(c){ try{localStorage.setItem('horas_config',JSON.stringify(c));}catch(e){} }
+
+//=== HELPERS ================================================================
+function t2m(t){var p=(t||'00:00').split(':');return (+p[0])*60+(+p[1]);}
+function calcHrs(s,e){var d=t2m(e)-t2m(s);return d>0?d/60:0;}
+function fmtHrs(h){var hh=Math.floor(h),mm=Math.round((h-hh)*60);return hh+':'+(mm<10?'0':'')+mm+' hrs';}
+function fmtDate(iso){var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function fmtNow(){var d=new Date();return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}
+function isoToDate(iso){var p=iso.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function esc(s){return (s||'').replace(/\\/g,'\\\\').replace(/"/g,'&quot;');}
+
+function toast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(function(){el.classList.remove('show');},3000);
+}
+function setPendBadge(){
+  var n=records.filter(function(r){return r.status==='pending';}).length;
+  var el=document.getElementById('pending-count');
+  el.style.display=n>0?'inline-flex':'none'; el.textContent=n;
+}
+function sheet(rec){
+  fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({fecha:fmtDate(rec.date),trabajador:rec.user,negocio:rec.negocio,
+    inicio:rec.start,termino:rec.end,horas:rec.hrs,observaciones:rec.obs||'',
+    admin:rec.admin||'',estado:rec.status,registrado:new Date().toLocaleString('es-ES')})
+  }).catch(function(){});
 }
 
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwn3asBxPc3wJD6vxYRGRPIgehhkbDMdM6El1Y1rbsuHvN229FlnYl_MqXvXL9gh7Y/exec';
+//=== SIDEBAR MOBILE =========================================================
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 
-function syncToSheets(rec) {
-  const payload = {
-    fecha:         fmtDate(rec.date),
-    trabajador:    rec.user,
-    negocio:       rec.negocio,
-    inicio:        rec.start,
-    termino:       rec.end,
-    horas:         rec.hrs,
-    observaciones: rec.obs || '',
-    admin:         rec.admin || '',
-    estado:        rec.status,
-    registrado:    new Date().toLocaleString('es-ES')
-  };
-  fetch(SHEETS_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).catch(() => {});
+//=== TABS ===================================================================
+function showTab(name){
+  ['registro','auditoria','dashboard','config'].forEach(function(t){
+    var p=document.getElementById('panel-'+t); if(p) p.className='panel'+(t===name?' active':'');
+    var b=document.getElementById('tab-'+t);   if(b) b.className='sidebar-item'+(t===name?' active':'');
+  });
+  var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion'};
+  document.getElementById('page-title').textContent=titles[name]||name;
+  document.getElementById('page-crumb').textContent=titles[name]||name;
+  if(name==='auditoria') renderAudit();
+  if(name==='dashboard') renderDashboard();
+  if(name==='config')    renderConfig();
+  closeSidebar();
 }
 
-function syncManyToSheets(recs) {
-  recs.forEach(r => syncToSheets(r));
+//=== SELECTS ================================================================
+function buildSelects(){
+  var cfg=getCfg();
+  // workers
+  var wo=cfg.workers.map(function(w){return '<option>'+w+'</option>';}).join('');
+  setO('w-user',wo); setO('a-user',wo);
+  setO('filter-worker','<option value="">Todos los trabajadores</option>'+wo);
+  // admins
+  var ao=cfg.admins.map(function(a){return '<option>'+a+'</option>';}).join('');
+  setO('a-admin',ao);
+  setO('wa-sender',wo+ao);
+  // negocios
+  var neg=negOpts(cfg.grupos);
+  setO('w-negocio',neg); setO('a-negocio',neg);
+  setO('filter-neg-audit','<option value="">Todos los negocios</option>'+neg);
 }
+function setO(id,html){var el=document.getElementById(id);if(!el)return;var v=el.value;el.innerHTML=html;try{if(v)el.value=v;}catch(e){}}
+function negOpts(g){var h='';Object.keys(g).forEach(function(k){h+='<optgroup label="'+k+'">';g[k].forEach(function(p){h+='<option>'+p+'</option>';});h+='</optgroup>';});return h;}
 
-function t2m(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
-function calcHrs(s,e){const d=t2m(e)-t2m(s);return d>0?d/60:0;}
-function fmtHrs(h){const hh=Math.floor(h),mm=Math.round((h-hh)*60);return `${hh}:${String(mm).padStart(2,'0')} hrs`;}
-function fmtDate(iso){const[y,m,d]=iso.split('-');return `${d}/${m}/${y}`;}
-function fmtTime(d){return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
-function isoToDate(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d);}
-
-function genTimes() {
-  const t = [];
-  for (let h=6; h<=23; h++) for (let m=0; m<60; m+=10) t.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-  return t;
+//=== FORM ===================================================================
+function setRole(r){
+  document.getElementById('form-worker').style.display=r==='worker'?'block':'none';
+  document.getElementById('form-admin').style.display=r==='admin'?'block':'none';
+  document.getElementById('role-worker-btn').className='role-btn'+(r==='worker'?' active':'');
+  document.getElementById('role-admin-btn').className='role-btn'+(r==='admin'?' active':'');
 }
-
-function updateHours(p) {
-  const s = document.getElementById(`${p}-start`).value;
-  const e = document.getElementById(`${p}-end`).value;
-  const h = calcHrs(s, e);
-  const pill = document.getElementById(`${p}-hours-pill`);
-  if (pill) pill.style.display = h > 0 ? 'block' : 'none';
-  const txt = document.getElementById(`${p}-hours-text`);
-  if (txt) txt.textContent = fmtHrs(h);
+function calcPill(p){
+  var s=document.getElementById(p+'-start').value, e=document.getElementById(p+'-end').value;
+  if(!s||!e) return;
+  var h=calcHrs(s,e);
+  document.getElementById(p+'-hours-pill').style.display=h>0?'block':'none';
+  if(h>0) document.getElementById(p+'-hours-text').textContent=fmtHrs(h);
 }
-
-function updatePendingBadge() {
-  const n = records.filter(r => r.status === 'pending').length;
-  const el = document.getElementById('pending-count');
-  if (!el) return;
-  el.style.display = n > 0 ? 'inline-flex' : 'none';
-  el.textContent = n;
-}
-
-function saveApiKey() {
-  const k = document.getElementById('api-key-input').value.trim();
-  if (!k.startsWith('sk-ant')) { toast('La API key debe empezar con sk-ant...'); return; }
-  apiKey = k;
-  localStorage.setItem('horas_apikey', k);
-  const sec = document.getElementById('apikey-section');
-  if (sec) sec.style.display = 'none';
+function saveApiKey(){
+  var k=document.getElementById('api-key-input').value.trim();
+  if(!k.startsWith('sk-ant')) return toast('La key debe empezar con sk-ant...');
+  apiKey=k; localStorage.setItem('horas_apikey',k);
+  document.getElementById('apikey-section').style.display='none';
   toast('API key guardada');
 }
 
-function setRole(r) {
-  currentRole = r;
-  const w = document.getElementById('form-worker'), a = document.getElementById('form-admin');
-  if (w) w.style.display = r === 'worker' ? 'block' : 'none';
-  if (a) a.style.display = r === 'admin' ? 'block' : 'none';
-  const wb = document.getElementById('role-worker-btn'), ab = document.getElementById('role-admin-btn');
-  if (wb) wb.classList.toggle('active', r === 'worker');
-  if (ab) ab.classList.toggle('active', r === 'admin');
+//=== SUBMIT =================================================================
+function submitWorker(){
+  var user=document.getElementById('w-user').value, date=document.getElementById('w-date').value;
+  var s=document.getElementById('w-start').value, e=document.getElementById('w-end').value;
+  var neg=document.getElementById('w-negocio').value, obs=document.getElementById('w-obs').value.trim();
+  if(!date) return toast('Selecciona una fecha');
+  var hrs=calcHrs(s,e); if(hrs<=0) return toast('Termino debe ser posterior al inicio');
+  var rec={date:date,negocio:neg,start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:null,admin:null,status:'pending'};
+  records.push(rec); saveRec(); sheet(rec);
+  addMsg('<b>'+user+'</b> - '+neg+' - '+fmtDate(date)+'<br>'+s+' a '+e+' = <b>'+fmtHrs(hrs)+'</b>'+(obs?'<br>'+obs:''),user,'out',false);
+  document.getElementById('w-obs').value=''; setPendBadge();
+  toast('Enviado - pendiente confirmacion del admin');
 }
-
-function addWaMsg(text, sender, dir, isAdmin) {
-  waMessages.push({ text, sender, dir, isAdmin, time: fmtTime(new Date()) });
-  saveData();
-  renderWa();
-}
-
-function addTyping() {
-  const body = document.getElementById('wa-body');
-  if (!body) return;
-  const el = document.createElement('div');
-  el.id = 'typing-indicator';
-  el.style.cssText = 'display:flex;justify-content:flex-start';
-  el.innerHTML = `<div style="background:var(--surface);border-radius:12px;padding:11px 15px;box-shadow:0 2px 8px rgba(8,21,66,0.08)"><div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:6px">IA interpretando...</div><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-  body.appendChild(el);
-  body.scrollTop = body.scrollHeight;
-}
-
-function removeTyping() {
-  const el = document.getElementById('typing-indicator');
-  if (el) el.remove();
-}
-
-function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
-
-async function sendMessage() {
-  const input = document.getElementById('wa-input');
-  const text = input.value.trim();
-  if (!text) return;
-  const sender = document.getElementById('wa-sender').value;
-  const isAdminSender = sender.includes('Admin');
-  addWaMsg(text, sender, 'out', isAdminSender);
-  input.value = '';
-  input.style.height = 'auto';
-  const btn = document.getElementById('wa-send-btn');
-  if (btn) btn.disabled = true;
-  if (!apiKey) {
-    addWaMsg('No hay API key configurada. Ingresa tu API key arriba para usar reconocimiento de texto.', 'IA', 'in', false);
-    if (btn) btn.disabled = false;
-    return;
-  }
-  addTyping();
-  try {
-    const parsed = await parseWithClaude(text, sender);
-    removeTyping();
-    if (parsed.error) {
-      addWaMsg(`No pude interpretar el mensaje. <small style="color:#888">${parsed.error}</small>`, 'IA', 'in', false);
-    } else {
-      showPreview(parsed, sender, isAdminSender);
-    }
-  } catch(e) {
-    removeTyping();
-    addWaMsg(`Error al conectar con la API: ${e.message}`, 'IA', 'in', false);
-  }
-  if (btn) btn.disabled = false;
-}
-
-async function parseWithClaude(text, senderName) {
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-  const prompt = `Eres un asistente que extrae datos de registros de horas de trabajo en limpieza de pisos.
-Hoy es ${today}. Ayer fue ${yesterday}.
-El mensaje fue enviado por: ${senderName}
-Trabajadores válidos: ${WORKERS.join(', ')}
-Negocios/pisos válidos: ${PISOS.join(', ')}
-Mensaje del usuario: "${text}"
-Extrae los datos y responde SOLO con un JSON válido, sin texto adicional, sin markdown.
-Si no se menciona trabajador, usa "${senderName}" (si es un trabajador válido).
-Si se dice "hoy", usa la fecha ${today}. Si dice "ayer", usa ${yesterday}.
-Redondea los tiempos al múltiplo de 10 minutos más cercano.
-Si el mensaje menciona múltiples trabajadores, crea un entry por cada uno.
-Formato:
-{"entries":[{"user":"nombre","date":"YYYY-MM-DD","negocio":"piso","start":"HH:MM","end":"HH:MM","obs":""}],"error":null}
-Si no puedes interpretar:
-{"entries":[],"error":"descripción"}`;
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 500, messages: [{ role: 'user', content: prompt }] })
-  });
-  if (!resp.ok) { const err = await resp.json().catch(()=>({})); throw new Error(err.error?.message || `HTTP ${resp.status}`); }
-  const data = await resp.json();
-  const raw = data.content[0].text.trim().replace(/```json|```/g, '').trim();
-  return JSON.parse(raw);
-}
-
-function showPreview(parsed, sender, isAdmin) {
-  if (!parsed.entries || !parsed.entries.length) {
-    addWaMsg('No encontré datos de registro. Intenta con: <em>"14 a 18 en Sapporo por Manuel hoy"</em>', 'IA', 'in', false);
-    return;
-  }
-  pendingPreview = { entries: parsed.entries, sender, isAdmin };
-  const lines = parsed.entries.map(e => {
-    const hrs = calcHrs(e.start, e.end);
-    return `<b>${e.user}</b> · ${e.negocio} · ${fmtDate(e.date)}<br>${e.start}–${e.end} = <b>${fmtHrs(hrs)}</b>${e.obs ? '<br><em>' + e.obs + '</em>' : ''}`;
-  }).join('<hr style="border:none;border-top:1px solid #ddd;margin:6px 0">');
-  const html = `<div style="font-weight:600;color:#5A2D8C;margin-bottom:6px">IA detectó:</div>${lines}
-<div style="display:flex;gap:6px;margin-top:10px">
-  <button class="wa-btn-ok" onclick="confirmPreview()">Confirmar</button>
-  <button class="wa-btn-no" onclick="cancelPreview()">Cancelar</button>
-</div>`;
-  addWaMsg(html, 'IA', 'in', false);
-}
-
-function confirmPreview() {
-  if (!pendingPreview) return;
-  const { entries, sender } = pendingPreview;
-  pendingPreview = null;
-  const isAdmin = sender.includes('Admin');
-  entries.forEach(e => {
-    const hrs = calcHrs(e.start, e.end);
-    if (hrs <= 0) return;
-    if (isAdmin) {
-      const p = records.find(r => r.date === e.date && r.negocio === e.negocio && r.user === e.user && r.status === 'pending');
-      if (p) {
-        p.adminHrs = hrs;
-        p.admin = sender;
-        p.status = Math.abs(p.hrs - hrs) < 0.09 ? 'ok' : 'mismatch';
-        syncToSheets(p);
-      } else {
-        const nr = { date: e.date, negocio: e.negocio, start: e.start, end: e.end, hrs, user: e.user, obs: e.obs || '', adminHrs: hrs, admin: sender, status: 'admin-only' };
-        records.push(nr);
-        syncToSheets(nr);
-      }
-    } else {
-      const nr = { date: e.date, negocio: e.negocio, start: e.start, end: e.end, hrs, user: e.user, obs: e.obs || '', adminHrs: null, admin: null, status: 'pending' };
-      records.push(nr);
-      syncToSheets(nr);
-    }
-  });
-  saveData();
-  updatePendingBadge();
-  const summary = entries.map(e => `${e.user} · ${e.negocio} · ${fmtDate(e.date)} · ${fmtHrs(calcHrs(e.start, e.end))}`).join('<br>');
-  addWaMsg(`Registrado:<br>${summary}`, 'Sistema', 'system', false);
-  toast(`${entries.length} registro(s) guardado(s)`);
-}
-
-function cancelPreview() {
-  pendingPreview = null;
-  addWaMsg('Registro cancelado.', 'Sistema', 'system', false);
-}
-
-function submitWorkerForm() {
-  const user = document.getElementById('w-user').value;
-  const date = document.getElementById('w-date').value;
-  const start = document.getElementById('w-start').value;
-  const end = document.getElementById('w-end').value;
-  const negocio = document.getElementById('w-negocio').value;
-  const obs = document.getElementById('w-obs').value.trim();
-  const hrs = calcHrs(start, end);
-  if (!date) return toast('Selecciona una fecha');
-  if (hrs <= 0) return toast('El término debe ser posterior al inicio');
-  const wRec = { date, negocio, start, end, hrs, user, obs, adminHrs: null, admin: null, status: 'pending' };
-  records.push(wRec);
-  saveData();
-  syncToSheets(wRec);
-  addWaMsg(`<b>${user}</b> · ${negocio} · ${fmtDate(date)}<br>${start}→${end} = <b>${fmtHrs(hrs)}</b>${obs ? '<br>' + obs : ''}`, user, 'out', false);
-  document.getElementById('w-obs').value = '';
-  updatePendingBadge();
-  toast('Enviado — pendiente confirmación del admin');
-}
-
-function submitAdminForm() {
-  const admin = document.getElementById('a-admin').value;
-  const user = document.getElementById('a-user').value;
-  const date = document.getElementById('a-date').value;
-  const start = document.getElementById('a-start').value;
-  const end = document.getElementById('a-end').value;
-  const negocio = document.getElementById('a-negocio').value;
-  const obs = document.getElementById('a-obs').value.trim();
-  const hrs = calcHrs(start, end);
-  if (!date) return toast('Selecciona una fecha');
-  if (hrs <= 0) return toast('El término debe ser posterior al inicio');
-  const pending = records.find(r => r.date === date && r.negocio === negocio && r.user === user && r.status === 'pending');
-  if (pending) {
-    pending.adminHrs = hrs;
-    pending.admin = admin;
-    const match = Math.abs(pending.hrs - hrs) < 0.09;
-    pending.status = match ? 'ok' : 'mismatch';
-    addWaMsg(`<b>Confirmación</b> — ${admin}<br>${user} · ${negocio} · ${fmtDate(date)}<br>${fmtHrs(hrs)} ${match ? '= Cuadra ✓' : '≠ Trabajador: ' + fmtHrs(pending.hrs)}`, admin, 'in', true);
-    toast(match ? 'Cuadra — registro confirmado' : 'Conflicto detectado');
-    syncToSheets(pending);
+function submitAdmin(){
+  var admin=document.getElementById('a-admin').value, user=document.getElementById('a-user').value;
+  var date=document.getElementById('a-date').value, neg=document.getElementById('a-negocio').value;
+  var s=document.getElementById('a-start').value, e=document.getElementById('a-end').value;
+  var obs=document.getElementById('a-obs').value.trim();
+  if(!date) return toast('Selecciona una fecha');
+  var hrs=calcHrs(s,e); if(hrs<=0) return toast('Termino debe ser posterior al inicio');
+  var p=null;
+  for(var i=0;i<records.length;i++){if(records[i].date===date&&records[i].negocio===neg&&records[i].user===user&&records[i].status==='pending'){p=records[i];break;}}
+  if(p){
+    p.adminHrs=hrs; p.admin=admin; p.status=Math.abs(p.hrs-hrs)<0.09?'ok':'mismatch';
+    addMsg((p.status==='ok'?'Cuadra':'Conflicto')+' - '+admin+'<br>'+user+' - '+neg+' - '+fmtDate(date)+'<br>'+fmtHrs(hrs),admin,'in',true);
+    sheet(p); toast(p.status==='ok'?'Cuadra - confirmado':'Conflicto detectado');
   } else {
-    const aRec = { date, negocio, start, end, hrs, user, obs, adminHrs: hrs, admin, status: 'admin-only' };
-    records.push(aRec);
-    addWaMsg(`<b>Registro admin</b> — ${admin}<br>${user} · ${negocio} · ${fmtDate(date)}<br>${fmtHrs(hrs)}${obs ? '<br>' + obs : ''}`, admin, 'in', true);
+    var rec={date:date,negocio:neg,start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:hrs,admin:admin,status:'admin-only'};
+    records.push(rec); sheet(rec);
+    addMsg('Registro admin - '+admin+'<br>'+user+' - '+neg+'<br>'+fmtHrs(hrs),admin,'in',true);
     toast('Registro admin guardado');
-    syncToSheets(aRec);
   }
-  saveData();
-  updatePendingBadge();
-  document.getElementById('a-obs').value = '';
+  saveRec(); setPendBadge(); document.getElementById('a-obs').value='';
 }
 
-function confirmRecord(idx) {
-  records[idx].status = 'ok';
-  records[idx].adminHrs = records[idx].hrs;
-  if (!records[idx].admin) records[idx].admin = 'Admin';
-  saveData(); updatePendingBadge(); renderAudit();
-  syncToSheets(records[idx]);
-  toast('Confirmado');
-}
-function rejectRecord(idx) {
-  records[idx].status = 'mismatch';
-  saveData(); updatePendingBadge(); renderAudit();
-  syncToSheets(records[idx]);
-  toast('Marcado como conflicto');
-}
-
-function switchTab(name) {
-  ['registro','auditoria','dashboard','config'].forEach(t => {
-    const p = document.getElementById(`panel-${t}`);
-    const b = document.getElementById(`tab-${t}`);
-    if (p) p.classList.toggle('active', t === name);
-    if (b) b.classList.toggle('active', t === name);
-  });
-  if (name === 'auditoria') renderAudit();
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'config') renderConfig();
-}
-
-let toastTimer;
-function toast(msg) {
-  const el = document.getElementById('toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
-}
-
-function commonInit() {
-  const now = new Date();
-  const hd = document.getElementById('header-date');
-  if (hd) hd.textContent = now.toLocaleDateString('es-ES', {weekday:'short',day:'numeric',month:'short',year:'numeric'});
-
-  // time inputs — no population needed
-  const ws = document.getElementById('w-start'); if(ws) ws.value='09:00';
-  const we = document.getElementById('w-end'); if(we) we.value='13:00';
-  const asx = document.getElementById('a-start'); if(asx) asx.value='09:00';
-  const ae = document.getElementById('a-end'); if(ae) ae.value='13:00';
-
-  const today = now.toISOString().split('T')[0];
-  const wd = document.getElementById('w-date'); if(wd) wd.value=today;
-  const ad = document.getElementById('a-date'); if(ad) ad.value=today;
-
-  // Build optgroup selects for negocios
-  function buildNegocioSelect(id, withAll) {
-    const s = document.getElementById(id);
-    if (!s) return;
-    let html = withAll ? '<option value="">Todos los negocios</option>' : '';
-    for (const [grupo, pisos] of Object.entries(GRUPOS)) {
-      html += `<optgroup label="${grupo}">`;
-      pisos.forEach(p => { html += `<option>${p}</option>`; });
-      html += '</optgroup>';
-    }
-    s.innerHTML = html;
-  }
-  buildNegocioSelect('w-negocio', false);
-  buildNegocioSelect('a-negocio', false);
-  buildNegocioSelect('filter-neg-audit', true);
-
-  updateHours('w');
-  updateHours('a');
-
-  if (apiKey) {
-    const k = document.getElementById('api-key-input'); if (k) k.value = apiKey;
-    const sec = document.getElementById('apikey-section'); if (sec) sec.style.display = 'none';
-  }
-
-  if (waMessages.length === 0) {
-    waMessages.push({ text: 'Grupo creado. Escribe en lenguaje natural: <em>"14 a 18 en Sapporo por Manuel hoy"</em>', sender: 'Sistema', dir: 'system', isAdmin: false, time: fmtTime(now) });
-    saveData();
-  }
+//=== CHAT IA ================================================================
+function useEx(el){ document.getElementById('wa-input').value=el.textContent.trim(); document.getElementById('wa-input').focus(); }
+function addMsg(text,sender,dir,isAdm){
+  waMessages.push({text:text,sender:sender,dir:dir,isAdm:isAdm,time:fmtNow()});
   renderWa();
-  updatePendingBadge();
 }
-
-
-const W_COLORS = ['#7366FF','#F73164','#51BB25','#A927F9'];
-const N_COLORS = ['#7366FF','#F73164','#51BB25','#A927F9','#F8D62B','#DC3545','#00CFE8','#5B4FE8','#FF7B92','#7BD64A','#C566FA','#FFE066','#FF9F87','#5BC5DE'];
-
-function setExample(el) {
-  const txt = el.textContent.replace('▸ "','').replace('"','').trim();
-  document.getElementById('wa-input').value = txt;
-  document.getElementById('wa-input').focus();
-}
-
-function renderWa() {
-  const body = document.getElementById('wa-body');
-  if (!body) return;
-  body.innerHTML = waMessages.slice(-20).map(m => {
-    if (m.dir === 'system') return `<div style="background:var(--warning-light);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:#8A6500;text-align:center">${m.text}</div>`;
-    const isOut = m.dir === 'out';
-    const bg = isOut ? 'linear-gradient(89deg,var(--primary),var(--primary-dark))' : 'var(--surface)';
-    const color = isOut ? 'white' : 'var(--text)';
-    const nameColor = isOut ? 'rgba(255,255,255,0.75)' : (m.isAdmin ? 'var(--success)' : 'var(--primary)');
-    const align = isOut ? 'flex-end' : 'flex-start';
-    return `<div style="display:flex;justify-content:${align}">
-      <div style="max-width:90%;background:${bg};color:${color};border-radius:12px;padding:11px 15px;font-size:13px;line-height:1.5;box-shadow:0 2px 8px rgba(8,21,66,0.08)">
-        <div style="font-size:11px;font-weight:700;margin-bottom:4px;color:${nameColor}">${m.sender}${m.isAdmin?' 🛡':''}</div>
-        ${m.text}
-        <div style="font-size:10px;opacity:0.5;text-align:right;margin-top:4px">${m.time}</div>
-      </div>
-    </div>`;
-  }).join('');
-  body.scrollTop = body.scrollHeight;
-}
-
-function renderAudit() {
-  const fw = document.getElementById('filter-worker').value;
-  const fs = document.getElementById('filter-status').value;
-  const fn = document.getElementById('filter-neg-audit').value;
-  let data = [...records];
-  if (fw) data = data.filter(r => r.user === fw);
-  if (fs) data = data.filter(r => r.status === fs);
-  if (fn) data = data.filter(r => r.negocio === fn);
-  data.sort((a,b) => isoToDate(a.date) - isoToDate(b.date));
-  const tbody = document.getElementById('audit-tbody');
-  if (!data.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)">Sin registros</td></tr>`; return; }
-  tbody.innerHTML = data.map(r => {
-    const idx = records.indexOf(r);
-    let badge;
-    if (r.status === 'ok') badge = `<span class="badge badge-ok">✓ Cuadra</span>`;
-    else if (r.status === 'pending') badge = `<span class="badge badge-pending">⏳ Pendiente</span>`;
-    else if (r.status === 'mismatch') badge = `<span class="badge badge-mismatch">⚠ Conflicto</span>`;
-    else badge = `<span class="badge badge-info">🛡 Admin</span>`;
-    const w = r.hrs ? `<div style="font-weight:600">${fmtHrs(r.hrs)}</div><div style="font-size:11px;color:var(--text3)">${r.start}–${r.end}</div>` : '—';
-    const a = r.adminHrs ? `<div style="font-weight:600">${fmtHrs(r.adminHrs)}</div>` : '<span style="color:var(--text3)">—</span>';
-    const acts = r.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="confirmRecord(${idx})">✓</button> <button class="btn btn-danger btn-sm" onclick="rejectRecord(${idx})">✗</button>` : '';
-    const cls = r.status === 'mismatch' ? 'row-mismatch' : r.status === 'pending' ? 'row-pending' : '';
-    return `<tr class="${cls}"><td style="white-space:nowrap;font-weight:600">${fmtDate(r.date)}</td><td>${r.negocio}</td><td><span class="badge badge-worker">${r.user}</span></td><td>${w}</td><td>${a}</td><td>${badge}</td><td>${acts}</td></tr>`;
-  }).join('');
-}
-
-function renderDashboard() {
-  const data = records.filter(r => r.date.startsWith('2026-05'));
-  const totalHrs = data.reduce((s,r) => s+(r.hrs||0), 0);
-  const okCount = data.filter(r => r.status === 'ok').length;
-  const pendingCount = data.filter(r => r.status === 'pending').length;
-  const conflictCount = data.filter(r => r.status === 'mismatch').length;
-
-  document.getElementById('dash-metrics').innerHTML = `
-    <div class="kpi primary"><div class="kpi-icon">⏱</div><div class="kpi-value">${totalHrs.toFixed(1)}</div><div class="kpi-label">Total horas</div></div>
-    <div class="kpi success"><div class="kpi-icon">✓</div><div class="kpi-value">${okCount}</div><div class="kpi-label">Confirmados</div></div>
-    <div class="kpi warning"><div class="kpi-icon">⏳</div><div class="kpi-value">${pendingCount}</div><div class="kpi-label">Pendientes</div></div>
-    <div class="kpi secondary"><div class="kpi-icon">⚠</div><div class="kpi-value">${conflictCount}</div><div class="kpi-label">Conflictos</div></div>`;
-
-  // Workers as KPI cards matching the summary style
-  const wKpiColors = ['primary','secondary','success','info'];
-  const wHrs = WORKERS.map(w => data.filter(r => r.user === w).reduce((s,r) => s+(r.hrs||0), 0));
-  document.getElementById('workers-grid').innerHTML = WORKERS.map((w,i) =>
-    `<div style="background:#F5F0E8;border:1px solid #E0D8C8;border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden">
-      <div style="font-size:28px;margin-bottom:12px">👤</div>
-      <div style="font-size:30px;font-weight:700;color:#3A3020;letter-spacing:-0.5px;line-height:1">${wHrs[i].toFixed(1)}</div>
-      <div style="font-size:12px;font-weight:600;color:#7A6A50;margin-top:6px;text-transform:uppercase;letter-spacing:0.04em">${w}</div>
-    </div>`
-  ).join('');
-
-  // Pisos grouped multi-column table
-  const grupoColors = { 'Tarter Izard':'#7366FF', 'Pas de la Casa':'#F73164', 'Otros':'#51BB25', 'Servicios':'#00CFE8' };
-  let pisosHtml = '';
-  for (const [grupo, pisos] of Object.entries(GRUPOS)) {
-    const grupoTotal = pisos.reduce((s,p) => s + data.filter(r => r.negocio === p).reduce((ss,r) => ss+(r.hrs||0), 0), 0);
-    if (grupoTotal === 0) continue;
-    const col = grupoColors[grupo] || '#999';
-    pisosHtml += `<div style="margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid ${col}22">
-        <div style="width:10px;height:10px;border-radius:3px;background:${col};flex-shrink:0"></div>
-        <span style="font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.04em">${grupo}</span>
-        <span style="margin-left:auto;background:${col}22;color:${col};padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">${grupoTotal.toFixed(1)} hrs</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">
-        ${pisos.map(p => {
-          const hrs = data.filter(r => r.negocio === p).reduce((s,r) => s+(r.hrs||0), 0);
-          if (hrs === 0) return '';
-          return `<div style="background:${col}0d;border:1px solid ${col}33;border-radius:10px;padding:12px 14px">
-            <div style="font-size:22px;font-weight:700;color:${col};line-height:1">${hrs.toFixed(1)}</div>
-            <div style="font-size:11px;color:var(--text2);margin-top:4px;line-height:1.3">${p}</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  }
-  document.getElementById('pisos-grid').innerHTML = pisosHtml || '<div style="color:var(--text3);font-size:13px">Sin datos</div>';
-
-  const sColors = ['#51BB25','#F8D62B','#DC3545'];
-  const sLabels = ['Confirmados','Pendientes','Conflictos'];
-  const sData = [okCount, pendingCount, conflictCount];
-  document.getElementById('legend-status').innerHTML = sLabels.map((l,i) => {
-    const pct = data.length ? Math.round(sData[i]/data.length*100) : 0;
-    return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-      <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(89deg,${sColors[i]},${sColors[i]}cc);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px">${sData[i]}</div>
-      <div><div style="font-size:14px;font-weight:600">${l}</div><div style="font-size:12px;color:var(--text3)">${pct}%</div></div>
-    </div>`;
-  }).join('');
-  if (chartS) chartS.destroy();
-  chartS = new Chart(document.getElementById('chart-status'), {
-    type:'doughnut', data:{ labels:sLabels, datasets:[{ data:sData, backgroundColor:sColors, borderWidth:0, hoverOffset:8 }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{legend:{display:false}} }
+function renderWa(){
+  var body=document.getElementById('wa-body'); if(!body) return;
+  var h='';
+  waMessages.slice(-20).forEach(function(m){
+    if(m.dir==='system'){h+='<div style="background:#FEF3C7;border-radius:8px;padding:10px 14px;font-size:12px;color:#8A6500;text-align:center">'+m.text+'</div>';return;}
+    var out=m.dir==='out';
+    var bg=out?'linear-gradient(89deg,var(--primary),var(--primary-dark))':'var(--surface)';
+    var tc=out?'white':'var(--text)';
+    var nc=out?'rgba(255,255,255,0.8)':(m.isAdm?'var(--success)':'var(--primary)');
+    h+='<div style="display:flex;justify-content:'+(out?'flex-end':'flex-start')+'">';
+    h+='<div style="max-width:88%;background:'+bg+';color:'+tc+';border-radius:12px;padding:11px 15px;font-size:13px;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,0.08)">';
+    h+='<div style="font-size:11px;font-weight:700;color:'+nc+';margin-bottom:4px">'+m.sender+'</div>';
+    h+=m.text;
+    h+='<div style="font-size:10px;opacity:0.5;text-align:right;margin-top:4px">'+m.time+'</div>';
+    h+='</div></div>';
   });
+  body.innerHTML=h; body.scrollTop=body.scrollHeight;
 }
-
-function toggleSidebar() {
-  var sb = document.querySelector('.sidebar');
-  var ov = document.getElementById('sidebar-overlay');
-  sb.classList.toggle('open');
-  ov.classList.toggle('open');
+function addTyping(){
+  var body=document.getElementById('wa-body'); if(!body) return;
+  var el=document.createElement('div'); el.id='typing-el';
+  el.style.cssText='display:flex;justify-content:flex-start';
+  el.innerHTML='<div style="background:var(--surface);border-radius:12px;padding:11px 15px;box-shadow:0 2px 8px rgba(0,0,0,0.08)"><div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:6px">IA procesando...</div><div class=\"typing-dots\"><span></span><span></span><span></span></div></div>';
+  body.appendChild(el); body.scrollTop=body.scrollHeight;
 }
+function removeTyping(){var el=document.getElementById('typing-el');if(el)el.remove();}
 
-// Auto-close sidebar when a tab is clicked on mobile
-var origSwitchTab = switchTab;
-switchTab = function(name) {
-  origSwitchTab(name);
-  var sb = document.querySelector('.sidebar');
-  var ov = document.getElementById('sidebar-overlay');
-  if (sb && sb.classList.contains('open')) {
-    sb.classList.remove('open');
-    ov.classList.remove('open');
-  }
-  var titles = { registro:'Registro de horas', auditoria:'Auditoría', dashboard:'Dashboard', config:'Configuración' };
-  document.getElementById('page-title').textContent = titles[name] || name;
-  document.getElementById('page-crumb').textContent = titles[name] || name;
-};
-
-// ── CONFIG DATA (stored in localStorage) ────────────────────────────────────
-function loadConfig() {
-  const def = {
-    workers: [...WORKERS],
-    grupos: JSON.parse(JSON.stringify(GRUPOS)),
-    admins: ['Manuel (Admin)','Claudia (Admin)']
-  };
-  try { return JSON.parse(localStorage.getItem('horas_config') || 'null') || def; }
-  catch(e) { return def; }
+async function sendMsg(){
+  var input=document.getElementById('wa-input'), text=input.value.trim();
+  if(!text) return;
+  var sender=document.getElementById('wa-sender').value, isAdm=sender.indexOf('Admin')>=0;
+  addMsg(text,sender,'out',isAdm); input.value='';
+  var btn=document.getElementById('wa-send-btn'); btn.disabled=true;
+  if(!apiKey){addMsg('No hay API key. Ingrésala arriba.','IA','in',false);btn.disabled=false;return;}
+  addTyping();
+  try{
+    var parsed=await callIA(text,sender); removeTyping();
+    if(!parsed.entries||!parsed.entries.length){addMsg('No encontre datos. Ej: "14 a 18 en Sapporo 20 hoy"','IA','in',false);}
+    else showPreview(parsed,sender,isAdm);
+  }catch(ex){removeTyping();addMsg('Error API: '+ex.message,'IA','in',false);}
+  btn.disabled=false;
 }
-function saveConfig(cfg) {
-  localStorage.setItem('horas_config', JSON.stringify(cfg));
+async function callIA(text,sender){
+  var cfg=getCfg();
+  var today=new Date().toISOString().split('T')[0];
+  var ayer=new Date(Date.now()-86400000).toISOString().split('T')[0];
+  var allPisos=[];Object.keys(cfg.grupos).forEach(function(g){allPisos=allPisos.concat(cfg.grupos[g]);});
+  var prompt='Eres un asistente que extrae registros de horas de limpieza.\nHoy:'+today+' Ayer:'+ayer+'\nRemitente:'+sender+'\nTrabajadores:'+cfg.workers.join(',')+'\nPisos:'+allPisos.join(',')+'\nMensaje:"'+text+'"\nResponde SOLO JSON sin markdown.\nFormato:{"entries":[{"user":"","date":"YYYY-MM-DD","negocio":"","start":"HH:MM","end":"HH:MM","obs":""}],"error":null}\nSi no puedes:{"entries":[],"error":"motivo"}';
+  var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:600,messages:[{role:'user',content:prompt}]})});
+  if(!r.ok){var e=await r.json().catch(function(){return {};});throw new Error((e.error&&e.error.message)||'HTTP '+r.status);}
+  var d=await r.json();
+  return JSON.parse(d.content[0].text.trim().replace(/```json|```/g,'').trim());
 }
-function getConfig() { return loadConfig(); }
-
-function rebuildSelects() {
-  const cfg = getConfig();
-  // Workers selects
-  const wOpts = cfg.workers.map(w => `<option>${w}</option>`).join('');
-  ['w-user','a-user','filter-worker'].forEach(id => {
-    const el = document.getElementById(id); if (!el) return;
-    const prev = el.value;
-    if (id === 'filter-worker') el.innerHTML = '<option value="">Todos los trabajadores</option>' + wOpts;
-    else el.innerHTML = wOpts;
-    if ([...el.options].some(o => o.value === prev)) el.value = prev;
-  });
-  // Admin selects
-  const aOpts = cfg.admins.map(a => `<option>${a}</option>`).join('');
-  ['a-admin','wa-sender'].forEach(id => {
-    const el = document.getElementById(id); if (!el) return;
-    const prev = el.value;
-    if (id === 'wa-sender') el.innerHTML = cfg.workers.map(w => `<option>${w}</option>`).join('') + aOpts;
-    else el.innerHTML = aOpts;
-    if ([...el.options].some(o => o.value === prev)) el.value = prev;
-  });
-  // Negocio selects with optgroups
-  function buildOpts(withAll) {
-    let h = withAll ? '<option value="">Todos los negocios</option>' : '';
-    for (const [g, pisos] of Object.entries(cfg.grupos)) {
-      h += `<optgroup label="${g}">${pisos.map(p=>`<option>${p}</option>`).join('')}</optgroup>`;
+function showPreview(parsed,sender,isAdm){
+  pendingPreview={entries:parsed.entries,sender:sender,isAdm:isAdm};
+  var lines='';
+  parsed.entries.forEach(function(e){var h=calcHrs(e.start,e.end);lines+='<b>'+e.user+'</b> - '+e.negocio+' - '+fmtDate(e.date)+'<br>'+e.start+' a '+e.end+' = <b>'+fmtHrs(h)+'</b><br>';});
+  var html='<div style="font-weight:700;color:var(--primary);margin-bottom:8px">IA detecto:</div>'+lines
+    +'<div style="display:flex;gap:8px;margin-top:10px">'
+    +'<button onclick="confPrev()" style="padding:7px 16px;border-radius:20px;border:none;background:var(--success);color:white;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Confirmar</button>'
+    +'<button onclick="cancelPrev()" style="padding:7px 16px;border-radius:20px;border:none;background:#EEE;color:#444;font-family:inherit;font-size:12px;cursor:pointer">Cancelar</button></div>';
+  addMsg(html,'IA','in',false);
+}
+function confPrev(){
+  if(!pendingPreview) return;
+  var entries=pendingPreview.entries,sender=pendingPreview.sender,isAdm=pendingPreview.isAdm;
+  pendingPreview=null;
+  entries.forEach(function(e){
+    var h=calcHrs(e.start,e.end); if(h<=0) return;
+    if(isAdm){
+      var p=null;for(var i=0;i<records.length;i++){if(records[i].date===e.date&&records[i].negocio===e.negocio&&records[i].user===e.user&&records[i].status==='pending'){p=records[i];break;}}
+      if(p){p.adminHrs=h;p.admin=sender;p.status=Math.abs(p.hrs-h)<0.09?'ok':'mismatch';sheet(p);}
+      else{var rec={date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:h,admin:sender,status:'admin-only'};records.push(rec);sheet(rec);}
+    }else{
+      var rec={date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:null,admin:null,status:'pending'};
+      records.push(rec);sheet(rec);
     }
-    return h;
-  }
-  ['w-negocio','a-negocio'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=buildOpts(false); });
-  const fn = document.getElementById('filter-neg-audit'); if(fn) fn.innerHTML=buildOpts(true);
+  });
+  saveRec();setPendBadge();
+  addMsg('Registrado: '+entries.length+' entrada(s)','Sistema','system',false);
+  toast(entries.length+' registro(s) guardado(s)');
+}
+function cancelPrev(){pendingPreview=null;addMsg('Cancelado.','Sistema','system',false);}
+
+//=== AUDITORIA ==============================================================
+function confRec(idx){
+  records[idx].status='ok';records[idx].adminHrs=records[idx].hrs;
+  if(!records[idx].admin)records[idx].admin='Admin';
+  saveRec();setPendBadge();sheet(records[idx]);renderAudit();toast('Confirmado');
+}
+function rejRec(idx){
+  records[idx].status='mismatch';
+  saveRec();setPendBadge();sheet(records[idx]);renderAudit();toast('Conflicto marcado');
+}
+function delRec(idx){
+  if(!confirm('Eliminar este registro? Esta accion no se puede deshacer.')) return;
+  records.splice(idx,1);
+  saveRec();setPendBadge();renderAudit();toast('Registro eliminado');
+}
+function renderAudit(){
+  var fw=document.getElementById('filter-worker').value;
+  var fs=document.getElementById('filter-status').value;
+  var fn=document.getElementById('filter-neg-audit').value;
+  var data=records.filter(function(r){return(!fw||r.user===fw)&&(!fs||r.status===fs)&&(!fn||r.negocio===fn);});
+  data.sort(function(a,b){return isoToDate(a.date)-isoToDate(b.date);});
+  var tb=document.getElementById('audit-tbody');
+  if(!data.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#999">Sin registros para los filtros seleccionados</td></tr>';return;}
+  var h='';
+  data.forEach(function(r){
+    var idx=records.indexOf(r);
+    var badge=r.status==='ok'?'<span class="badge badge-ok">Cuadra</span>':r.status==='pending'?'<span class="badge badge-pending">Pendiente</span>':r.status==='mismatch'?'<span class="badge badge-mismatch">Conflicto</span>':'<span class="badge badge-info">Admin</span>';
+    var wc=r.hrs?'<b>'+fmtHrs(r.hrs)+'</b><br><span style="font-size:11px;color:#999">'+r.start+'-'+r.end+'</span>':'—';
+    var ac=r.adminHrs?'<b>'+fmtHrs(r.adminHrs)+'</b>':'—';
+    var acts=r.status==='pending'?'<button onclick="confRec('+idx+')" style="padding:5px 10px;border-radius:6px;border:none;background:#51BB25;color:white;cursor:pointer;font-size:11px;font-weight:600;margin-right:4px">OK</button><button onclick="rejRec('+idx+')" style="padding:5px 10px;border-radius:6px;border:none;background:#DC3545;color:white;cursor:pointer;font-size:11px;font-weight:600;margin-right:4px">X</button>':'';
+    acts+='<button onclick="delRec('+idx+')" title="Eliminar registro" style="padding:5px 10px;border-radius:6px;border:1px solid #DDD;background:white;color:#DC3545;cursor:pointer;font-size:13px;line-height:1">&#128465;</button>';
+    var rbg=r.status==='mismatch'?'#FFF0F0':r.status==='pending'?'#FFFBEA':'';
+    h+='<tr style="background:'+rbg+'">';
+    h+='<td style="white-space:nowrap;font-weight:500">'+fmtDate(r.date)+'</td>';
+    h+='<td>'+r.negocio+'</td>';
+    h+='<td><span class="badge badge-worker">'+r.user+'</span></td>';
+    h+='<td>'+wc+'</td><td>'+ac+'</td><td>'+badge+'</td><td>'+acts+'</td></tr>';
+  });
+  tb.innerHTML=h;
 }
 
-function renderConfig() {
-  var cfg = getConfig();
+//=== DASHBOARD ==============================================================
+function renderDashboard(){
+  var cfg=getCfg();
+  var data=records.filter(function(r){return r.date.indexOf('2026-05')===0;});
+  var tot=data.reduce(function(s,r){return s+(r.hrs||0);},0);
+  var ok=data.filter(function(r){return r.status==='ok';}).length;
+  var pend=data.filter(function(r){return r.status==='pending';}).length;
+  var conf=data.filter(function(r){return r.status==='mismatch';}).length;
 
-  // --- WORKERS ---
-  var wEl = document.getElementById('workers-list');
-  if (wEl) {
-    var wHtml = '';
-    cfg.workers.forEach(function(w) {
-      wHtml += '<div class="cfg-pill" style="display:inline-flex;align-items:center;gap:8px;background:#EEEDFF;border:1px solid #C0B8FF;border-radius:50px;padding:7px 14px;font-size:13px;font-weight:500;color:#5B4FE8;margin:3px">';
-      wHtml += w;
-      wHtml += ' <span class="cfg-del" data-type="worker" data-val="' + w + '" style="cursor:pointer;color:#DC3545;font-weight:900;font-size:18px;line-height:1">&#215;</span>';
-      wHtml += '</div>';
+  document.getElementById('dash-kpis').innerHTML=
+    '<div class="kpi primary"><div class="kpi-icon">&#9201;</div><div class="kpi-value">'+tot.toFixed(1)+'</div><div class="kpi-label">Total horas</div></div>'+
+    '<div class="kpi success"><div class="kpi-icon">&#10003;</div><div class="kpi-value">'+ok+'</div><div class="kpi-label">Confirmados</div></div>'+
+    '<div class="kpi warning"><div class="kpi-icon">&#8987;</div><div class="kpi-value">'+pend+'</div><div class="kpi-label">Pendientes</div></div>'+
+    '<div class="kpi secondary"><div class="kpi-icon">&#9888;</div><div class="kpi-value">'+conf+'</div><div class="kpi-label">Conflictos</div></div>';
+
+  var wh='';
+  cfg.workers.forEach(function(w){
+    var h=data.filter(function(r){return r.user===w;}).reduce(function(s,r){return s+(r.hrs||0);},0);
+    wh+='<div style="background:#F5F0E8;border:1px solid #E0D8C8;border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow)">';
+    wh+='<div style="font-size:26px;margin-bottom:10px">&#128100;</div>';
+    wh+='<div style="font-size:28px;font-weight:700;color:#3A3020;line-height:1">'+h.toFixed(1)+'</div>';
+    wh+='<div style="font-size:12px;font-weight:600;color:#7A6A50;margin-top:6px;text-transform:uppercase;letter-spacing:.04em">'+w+'</div>';
+    wh+='</div>';
+  });
+  document.getElementById('dash-workers').innerHTML=wh;
+
+  var ph='';
+  Object.keys(cfg.grupos).forEach(function(grupo){
+    var ps=cfg.grupos[grupo], c=GC[grupo]||'#888';
+    var gt=ps.reduce(function(s,p){return s+data.filter(function(r){return r.negocio===p;}).reduce(function(ss,r){return ss+(r.hrs||0);},0);},0);
+    if(!gt) return;
+    ph+='<div style="margin-bottom:20px">';
+    ph+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid '+c+'">';
+    ph+='<div style="width:10px;height:10px;border-radius:3px;background:'+c+'"></div>';
+    ph+='<b style="font-size:13px;text-transform:uppercase;letter-spacing:.04em">'+grupo+'</b>';
+    ph+='<span style="margin-left:auto;background:'+c+';color:white;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">'+gt.toFixed(1)+' hrs</span>';
+    ph+='</div>';
+    ph+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px">';
+    ps.forEach(function(p){
+      var h=data.filter(function(r){return r.negocio===p;}).reduce(function(s,r){return s+(r.hrs||0);},0);
+      if(!h) return;
+      ph+='<div style="background:white;border:1px solid #E8E8E8;border-top:3px solid '+c+';border-radius:10px;padding:12px 14px">';
+      ph+='<div style="font-size:22px;font-weight:700;color:'+c+';line-height:1">'+h.toFixed(1)+'</div>';
+      ph+='<div style="font-size:11px;color:#666;margin-top:4px;line-height:1.3">'+p+'</div>';
+      ph+='</div>';
     });
-    wEl.innerHTML = wHtml || '<p style="color:#999;font-size:13px">Sin trabajadores</p>';
+    ph+='</div></div>';
+  });
+  document.getElementById('dash-pisos').innerHTML=ph||'<p style="color:#999;font-size:13px">Sin datos</p>';
+
+  var sc=['#51BB25','#F8D62B','#DC3545'],sl=['Confirmados','Pendientes','Conflictos'],sd=[ok,pend,conf];
+  var lh='';
+  sl.forEach(function(l,i){
+    var pct=data.length?Math.round(sd[i]/data.length*100):0;
+    lh+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
+    lh+='<div style="width:44px;height:44px;border-radius:50%;background:'+sc[i]+';color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">'+sd[i]+'</div>';
+    lh+='<div><div style="font-size:13px;font-weight:600">'+l+'</div><div style="font-size:12px;color:#999">'+pct+'%</div></div>';
+    lh+='</div>';
+  });
+  document.getElementById('dash-donut-legend').innerHTML=lh;
+  if(chartS) chartS.destroy();
+  chartS=new Chart(document.getElementById('chart-status'),{type:'doughnut',
+    data:{labels:sl,datasets:[{data:sd,backgroundColor:sc,borderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+}
+
+//=== CONFIG =================================================================
+function renderConfig(){
+  var cfg=getCfg();
+
+  // Workers
+  var wEl=document.getElementById('cfg-workers');
+  if(wEl){
+    var h='';
+    cfg.workers.forEach(function(w){
+      h+='<div style="display:inline-flex;align-items:center;gap:8px;background:#EEEDFF;border:1px solid #C0B8FF;border-radius:50px;padding:7px 14px;font-size:13px;font-weight:500;color:#5B4FE8;margin:2px">';
+      h+=w;
+      h+='<button data-action="delW" data-val="'+esc(w)+'" style="background:none;border:none;cursor:pointer;color:#DC3545;font-weight:900;font-size:18px;line-height:1;padding:0 0 0 4px">&#215;</button>';
+      h+='</div>';
+    });
+    wEl.innerHTML=h||'<span style="color:#999">Sin trabajadores</span>';
   }
 
-  // --- ADMINS ---
-  var aEl = document.getElementById('admins-list');
-  if (aEl) {
-    var aHtml = '';
-    cfg.admins.forEach(function(a) {
-      aHtml += '<div class="cfg-pill" style="display:inline-flex;align-items:center;gap:8px;background:#E8F8DD;border:1px solid #B8E8A0;border-radius:50px;padding:7px 14px;font-size:13px;font-weight:500;color:#3E9E1B;margin:3px">';
-      aHtml += a;
-      aHtml += ' <span class="cfg-del" data-type="admin" data-val="' + a + '" style="cursor:pointer;color:#DC3545;font-weight:900;font-size:18px;line-height:1">&#215;</span>';
-      aHtml += '</div>';
+  // Admins
+  var aEl=document.getElementById('cfg-admins');
+  if(aEl){
+    var h='';
+    cfg.admins.forEach(function(a){
+      h+='<div style="display:inline-flex;align-items:center;gap:8px;background:#E8F8DD;border:1px solid #B8E8A0;border-radius:50px;padding:7px 14px;font-size:13px;font-weight:500;color:#3E9E1B;margin:2px">';
+      h+=a;
+      h+='<button data-action="delA" data-val="'+esc(a)+'" style="background:none;border:none;cursor:pointer;color:#DC3545;font-weight:900;font-size:18px;line-height:1;padding:0 0 0 4px">&#215;</button>';
+      h+='</div>';
     });
-    aEl.innerHTML = aHtml || '<p style="color:#999;font-size:13px">Sin administradores</p>';
+    aEl.innerHTML=h||'<span style="color:#999">Sin admins</span>';
   }
 
-  // --- GRUPOS ---
-  var gEl = document.getElementById('grupos-list');
-  if (gEl) {
-    var gc = {'Tarter Izard':'#7366FF','Pas de la Casa':'#F73164','Otros':'#51BB25','Servicios':'#00CFE8'};
-    var h = '';
-    Object.keys(cfg.grupos).forEach(function(g) {
-      var ps = cfg.grupos[g];
-      var c = gc[g] || '#888';
-      h += '<div style="margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid ' + c + '33">';
-      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
-      h += '<div style="width:12px;height:12px;border-radius:3px;background:' + c + '"></div>';
-      h += '<b style="font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#2F2F3B">' + g + '</b>';
-      h += '<span style="background:#F0F0F0;color:#666;padding:2px 10px;border-radius:20px;font-size:11px">' + ps.length + ' pisos</span>';
-      h += '</div>';
-      h += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
-      ps.forEach(function(p) {
-        h += '<div style="display:inline-flex;align-items:center;gap:6px;background:#F8F8F8;border:1px solid #E0E0E0;border-radius:50px;padding:5px 12px;font-size:12px;color:#444">';
-        h += p;
-        h += ' <span class="cfg-del" data-type="piso" data-grupo="' + g + '" data-val="' + p + '" style="cursor:pointer;color:#DC3545;font-weight:900;font-size:15px;line-height:1">&#215;</span>';
-        h += '</div>';
+  // Grupos
+  var gEl=document.getElementById('cfg-grupos');
+  if(gEl){
+    var h='';
+    Object.keys(cfg.grupos).forEach(function(g){
+      var ps=cfg.grupos[g],c=GC[g]||'#888';
+      h+='<div style="margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #eee">';
+      h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+      h+='<div style="width:10px;height:10px;border-radius:3px;background:'+c+'"></div>';
+      h+='<b style="font-size:13px;text-transform:uppercase;letter-spacing:.04em">'+g+'</b>';
+      h+='<span style="background:#F0F0F0;color:#666;padding:2px 9px;border-radius:20px;font-size:11px">'+ps.length+' pisos</span>';
+      h+='</div><div style="display:flex;flex-wrap:wrap;gap:8px">';
+      ps.forEach(function(p){
+        h+='<div style="display:inline-flex;align-items:center;gap:6px;background:#F8F8F8;border:1px solid #E0E0E0;border-radius:50px;padding:5px 12px;font-size:12px;color:#444">';
+        h+=p;
+        h+='<button data-action="delP" data-grupo="'+esc(g)+'" data-val="'+esc(p)+'" style="background:none;border:none;cursor:pointer;color:#DC3545;font-weight:900;font-size:15px;line-height:1;padding:0 0 0 4px">&#215;</button>';
+        h+='</div>';
       });
-      h += '</div></div>';
+      h+='</div></div>';
     });
-    gEl.innerHTML = h || '<p style="color:#999;font-size:13px">Sin pisos</p>';
+    gEl.innerHTML=h||'<span style="color:#999">Sin pisos</span>';
   }
 
-  // Attach delete events via delegation on panel-config
-  var panel = document.getElementById('panel-config');
-  if (panel) {
-    panel.onclick = function(e) {
-      var el = e.target.closest ? e.target.closest('.cfg-del') : null;
-      if (!el) return;
-      var type = el.getAttribute('data-type');
-      var val  = el.getAttribute('data-val');
-      if (type === 'worker') removeWorker(val);
-      else if (type === 'admin') removeAdmin(val);
-      else if (type === 'piso') removePiso(el.getAttribute('data-grupo'), val);
-    };
+  // Attach ONE delegated click handler on panel-config
+  var panel=document.getElementById('panel-config');
+  panel.onclick=function(ev){
+    var btn=ev.target.closest('button[data-action]');
+    if(!btn) return;
+    var action=btn.getAttribute('data-action');
+    var val=btn.getAttribute('data-val');
+    var grupo=btn.getAttribute('data-grupo');
+    if(action==='delW') cfgDelWorker(val);
+    else if(action==='delA') cfgDelAdmin(val);
+    else if(action==='delP') cfgDelPiso(grupo,val);
+  };
+}
+
+function cfgAddWorker(){
+  var inp=document.getElementById('inp-worker'),name=inp.value.trim();
+  if(!name) return toast('Escribe el nombre');
+  var cfg=getCfg();
+  if(cfg.workers.indexOf(name)>=0) return toast('Ya existe');
+  cfg.workers.push(name); saveCfg(cfg); inp.value=''; buildSelects(); renderConfig();
+  toast('Trabajador '+name+' agregado');
+}
+function cfgDelWorker(name){
+  var cfg=getCfg();
+  if(cfg.workers.length<=1) return toast('Debe haber al menos uno');
+  cfg.workers=cfg.workers.filter(function(w){return w!==name;});
+  saveCfg(cfg); buildSelects(); renderConfig(); toast('Trabajador eliminado');
+}
+function cfgAddAdmin(){
+  var inp=document.getElementById('inp-admin'),name=inp.value.trim();
+  if(!name) return toast('Escribe el nombre');
+  var cfg=getCfg();
+  if(cfg.admins.indexOf(name)>=0) return toast('Ya existe');
+  cfg.admins.push(name); saveCfg(cfg); inp.value=''; buildSelects(); renderConfig();
+  toast('Admin '+name+' agregado');
+}
+function cfgDelAdmin(name){
+  var cfg=getCfg();
+  if(cfg.admins.length<=1) return toast('Debe haber al menos uno');
+  cfg.admins=cfg.admins.filter(function(a){return a!==name;});
+  saveCfg(cfg); buildSelects(); renderConfig(); toast('Admin eliminado');
+}
+function cfgAddPiso(){
+  var inp=document.getElementById('inp-piso'),grupo=document.getElementById('inp-grupo').value,name=inp.value.trim();
+  if(!name) return toast('Escribe el nombre del piso');
+  var cfg=getCfg(),all=[];
+  Object.keys(cfg.grupos).forEach(function(g){all=all.concat(cfg.grupos[g]);});
+  if(all.indexOf(name)>=0) return toast('Ya existe en un grupo');
+  if(!cfg.grupos[grupo]) cfg.grupos[grupo]=[];
+  cfg.grupos[grupo].push(name); saveCfg(cfg); inp.value=''; buildSelects(); renderConfig();
+  toast('Piso '+name+' agregado a '+grupo);
+}
+function cfgDelPiso(grupo,piso){
+  var cfg=getCfg();
+  if(!cfg.grupos[grupo]) return;
+  cfg.grupos[grupo]=cfg.grupos[grupo].filter(function(p){return p!==piso;});
+  saveCfg(cfg); buildSelects(); renderConfig(); toast('Piso eliminado');
+}
+
+//=== INIT ===================================================================
+(function(){
+  var now=new Date();
+  var el=document.getElementById('header-date');
+  if(el) el.textContent=now.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  var today=now.toISOString().split('T')[0];
+  ['w-date','a-date'].forEach(function(id){var e=document.getElementById(id);if(e)e.value=today;});
+  ['w-start','a-start'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='09:00';});
+  ['w-end','a-end'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='13:00';});
+  if(apiKey){
+    var ki=document.getElementById('api-key-input');if(ki)ki.value=apiKey;
+    var ks=document.getElementById('apikey-section');if(ks)ks.style.display='none';
   }
-}
-
-
-function addWorker() {
-  const inp = document.getElementById('new-worker-input');
-  const name = inp.value.trim();
-  if (!name) return toast('Escribe el nombre del trabajador');
-  const cfg = getConfig();
-  if (cfg.workers.includes(name)) return toast('Este trabajador ya existe');
-  cfg.workers.push(name);
-  saveConfig(cfg);
-  inp.value = '';
-  rebuildSelects();
+  buildSelects();
+  setPendBadge();
   renderConfig();
-  toast(`✓ Trabajador "${name}" agregado`);
-}
-
-function removeWorker(name) {
-  const cfg = getConfig();
-  if (cfg.workers.length <= 1) return toast('Debe haber al menos un trabajador');
-  cfg.workers = cfg.workers.filter(w => w !== name);
-  saveConfig(cfg);
-  rebuildSelects();
-  renderConfig();
-  toast(`Trabajador "${name}" eliminado`);
-}
-
-function addAdmin() {
-  const inp = document.getElementById('new-admin-input');
-  const name = inp.value.trim();
-  if (!name) return toast('Escribe el nombre del administrador');
-  const cfg = getConfig();
-  if (cfg.admins.includes(name)) return toast('Este admin ya existe');
-  cfg.admins.push(name);
-  saveConfig(cfg);
-  inp.value = '';
-  rebuildSelects();
-  renderConfig();
-  toast(`✓ Admin "${name}" agregado`);
-}
-
-function removeAdmin(name) {
-  const cfg = getConfig();
-  if (cfg.admins.length <= 1) return toast('Debe haber al menos un administrador');
-  cfg.admins = cfg.admins.filter(a => a !== name);
-  saveConfig(cfg);
-  rebuildSelects();
-  renderConfig();
-  toast(`Admin "${name}" eliminado`);
-}
-
-function addPiso() {
-  const inp = document.getElementById('new-piso-input');
-  const grupo = document.getElementById('new-piso-grupo').value;
-  const name = inp.value.trim();
-  if (!name) return toast('Escribe el nombre del piso');
-  const cfg = getConfig();
-  const allPisos = Object.values(cfg.grupos).flat();
-  if (allPisos.includes(name)) return toast('Este piso ya existe');
-  if (!cfg.grupos[grupo]) cfg.grupos[grupo] = [];
-  cfg.grupos[grupo].push(name);
-  saveConfig(cfg);
-  inp.value = '';
-  rebuildSelects();
-  renderConfig();
-  toast(`✓ Piso "${name}" agregado a ${grupo}`);
-}
-
-function removePiso(grupo, piso) {
-  const cfg = getConfig();
-  cfg.grupos[grupo] = cfg.grupos[grupo].filter(p => p !== piso);
-  saveConfig(cfg);
-  rebuildSelects();
-  renderConfig();
-  toast(`Piso "${piso}" eliminado`);
-}
-
-commonInit();
-rebuildSelects();
-// Pre-render config so it's ready when panel opens
-try { renderConfig(); } catch(e) { console.error('renderConfig init error:', e); }
-
+})();
 </script>
 </body>
 </html>
