@@ -196,10 +196,16 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
 
 @media (max-width: 900px) {
   .sidebar { position: fixed; left: -270px; z-index: 100; transition: left 0.3s; }
+  .sidebar.open { left: 0; box-shadow: 4px 0 20px rgba(0,0,0,0.3); }
+  .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:99; }
+  .sidebar-overlay.open { display:block; }
   .form-row { grid-template-columns: 1fr; }
   .content { padding: 20px 16px; }
   .topbar { padding: 14px 18px; }
+  .hamburger { display:flex !important; }
 }
+.hamburger { display:none; align-items:center; justify-content:center; width:36px; height:36px; background:rgba(255,255,255,0.1); border:none; border-radius:8px; cursor:pointer; flex-direction:column; gap:5px; padding:0; flex-shrink:0; }
+.hamburger span { display:block; width:18px; height:2px; background:white; border-radius:2px; transition:all 0.2s; }
 </style>
 </head>
 <body>
@@ -224,6 +230,10 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
     <button class="sidebar-item" onclick="switchTab('dashboard')" id="tab-dashboard">
       <span class="sidebar-icon">📊</span> Dashboard
     </button>
+    <div class="sidebar-section">Sistema</div>
+    <button class="sidebar-item" onclick="switchTab('config')" id="tab-config">
+      <span class="sidebar-icon">⚙️</span> Configuración
+    </button>
   </nav>
   <div class="sidebar-footer">
     <div id="header-date"></div>
@@ -233,12 +243,18 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
 
 <div class="wrap">
   <div class="topbar">
-    <div>
-      <div class="topbar-title" id="page-title">Registro de horas</div>
-      <div class="topbar-breadcrumb">CleanHours · <span id="page-crumb">Registro</span></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+      <div>
+        <div class="topbar-title" id="page-title">Registro de horas</div>
+        <div class="topbar-breadcrumb">CleanHours · <span id="page-crumb">Registro</span></div>
+      </div>
     </div>
     <span class="user-chip">🧹 Limpieza Pisos</span>
   </div>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
   <div class="content">
 
@@ -306,28 +322,49 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
       </div>
     </div>
 
+    <!-- REGISTRO NATURAL -->
     <div class="card">
       <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon" style="background:linear-gradient(89deg,var(--primary-light),var(--secondary-light));color:var(--primary)">💬</div>Grupo WhatsApp</div><div class="card-sub">Escribe natural — IA interpreta</div></div>
+        <div><div class="card-title"><div class="card-title-icon" style="background:linear-gradient(89deg,var(--primary-light),var(--secondary-light));color:var(--primary)">✨</div>Registro por texto libre</div><div class="card-sub">Escribe en lenguaje natural — la IA interpreta el registro</div></div>
       </div>
-      <div class="card-body" style="padding:0">
-        <div class="wa-wrap" style="border-radius:0">
-          <div class="wa-header">
-            <div class="wa-avatar">🧹</div>
-            <div><div class="wa-info-name">Limpieza Pisos</div><div class="wa-info-sub">5 participantes</div></div>
-          </div>
-          <div class="wa-body" id="wa-body"></div>
-          <div class="wa-input-area">
-            <div class="wa-input-wrap">
-              <select class="wa-sender-sel" id="wa-sender"><option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option><option value="Manuel (Admin)">Admin</option></select>
-              <textarea class="wa-textarea" id="wa-input" rows="1" placeholder='14 a 18 en Sapporo por Manuel hoy' onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-            </div>
-            <button class="wa-send" id="wa-send-btn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg></button>
-          </div>
+      <div class="card-body">
+
+        <!-- EJEMPLOS -->
+        <div style="background:var(--bg);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.9">
+          <div style="font-weight:700;color:var(--primary);margin-bottom:6px">💡 Ejemplos:</div>
+          <div onclick="setExample(this)" style="cursor:pointer;padding:3px 0" title="Toca para usar">▸ "14 a 18 en Sapporo 20 por Manuel hoy"</div>
+          <div onclick="setExample(this)" style="cursor:pointer;padding:3px 0" title="Toca para usar">▸ "Ana trabajó Circuito de 9:30 a 13:00 ayer"</div>
+          <div onclick="setExample(this)" style="cursor:pointer;padding:3px 0" title="Toca para usar">▸ "Claudia y Manuel limpiaron D43 de 10 a 14 hoy"</div>
         </div>
+
+        <!-- SENDER -->
+        <div style="margin-bottom:12px">
+          <label>Enviado por</label>
+          <select id="wa-sender" style="max-width:260px">
+            <option>Ana</option><option>Claudia</option><option>Diego</option><option>Manuel</option><option value="Manuel (Admin)">Admin</option>
+          </select>
+        </div>
+
+        <!-- TEXT INPUT -->
+        <div style="margin-bottom:14px">
+          <label>Mensaje</label>
+          <textarea id="wa-input"
+            placeholder="Ej: 14 a 18 en Sapporo 20 por Manuel hoy"
+            rows="3"
+            style="width:100%;padding:14px;font-size:15px;border:2px solid var(--primary);border-radius:var(--radius);font-family:inherit;resize:vertical;background:var(--surface);color:var(--text);outline:none;line-height:1.5"
+            onkeydown="handleKey(event)"></textarea>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="wa-send-btn" onclick="sendMessage()" style="font-size:15px;padding:13px">
+          ✨ Interpretar y registrar
+        </button>
+
+        <!-- RESPUESTA IA -->
+        <div id="wa-body" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
+
       </div>
     </div>
-  </div>
+  </div><!-- /panel-registro -->
 
   <!-- AUDITORÍA -->
   <div class="panel" id="panel-auditoria">
@@ -380,10 +417,66 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
         <div id="legend-status"></div>
       </div>
     </div>
-  </div>
+  <!-- CONFIG -->
+  <div class="panel" id="panel-config">
+    <div class="section-title">Configuración</div>
+    <div class="section-sub">Gestiona trabajadores y negocios</div>
 
-  </div>
-</div>
+    <!-- TRABAJADORES -->
+    <div class="card">
+      <div class="card-header colored">
+        <div><div class="card-title"><div class="card-title-icon">👥</div>Trabajadores</div><div class="card-sub">Agrega o elimina personas del equipo</div></div>
+      </div>
+      <div class="card-body">
+        <div id="workers-list" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px"></div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="text" id="new-worker-input" placeholder="Nombre del trabajador" style="max-width:260px" onkeydown="if(event.key==='Enter')addWorker()">
+          <button class="btn btn-primary" onclick="addWorker()">+ Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEGOCIOS -->
+    <div class="card">
+      <div class="card-header colored">
+        <div><div class="card-title"><div class="card-title-icon">🏠</div>Negocios / Pisos</div><div class="card-sub">Agrega pisos a cada grupo</div></div>
+      </div>
+      <div class="card-body">
+        <div id="grupos-list"></div>
+        <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)">Agregar nuevo piso</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <input type="text" id="new-piso-input" placeholder="Nombre del piso" style="max-width:220px" onkeydown="if(event.key==='Enter')addPiso()">
+            <select id="new-piso-grupo" style="max-width:200px">
+              <option value="Tarter Izard">Tarter Izard</option>
+              <option value="Pas de la Casa">Pas de la Casa</option>
+              <option value="Otros">Otros</option>
+              <option value="Servicios">Servicios</option>
+            </select>
+            <button class="btn btn-primary" onclick="addPiso()">+ Agregar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMINS -->
+    <div class="card">
+      <div class="card-header colored">
+        <div><div class="card-title"><div class="card-title-icon">🛡</div>Administradores</div><div class="card-sub">Usuarios con acceso admin</div></div>
+      </div>
+      <div class="card-body">
+        <div id="admins-list" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px"></div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="text" id="new-admin-input" placeholder="Nombre (Admin)" style="max-width:260px" onkeydown="if(event.key==='Enter')addAdmin()">
+          <button class="btn btn-success" onclick="addAdmin()">+ Agregar</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-config -->
+
+  </div><!-- /content -->
+</div><!-- /wrap -->
 
 <div id="toast"></div>
 
@@ -571,9 +664,9 @@ function addTyping() {
   const body = document.getElementById('wa-body');
   if (!body) return;
   const el = document.createElement('div');
-  el.className = 'wa-msg in thinking';
   el.id = 'typing-indicator';
-  el.innerHTML = `<div class="wa-bubble"><div class="wa-name" style="color:#5A2D8C">IA</div><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  el.style.cssText = 'display:flex;justify-content:flex-start';
+  el.innerHTML = `<div style="background:var(--surface);border-radius:12px;padding:11px 15px;box-shadow:0 2px 8px rgba(8,21,66,0.08)"><div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:6px">IA interpretando...</div><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
   body.appendChild(el);
   body.scrollTop = body.scrollHeight;
 }
@@ -771,7 +864,7 @@ function rejectRecord(idx) {
 }
 
 function switchTab(name) {
-  ['registro','auditoria','dashboard'].forEach(t => {
+  ['registro','auditoria','dashboard','config'].forEach(t => {
     const p = document.getElementById(`panel-${t}`);
     const b = document.getElementById(`tab-${t}`);
     if (p) p.classList.toggle('active', t === name);
@@ -779,6 +872,7 @@ function switchTab(name) {
   });
   if (name === 'auditoria') renderAudit();
   if (name === 'dashboard') renderDashboard();
+  if (name === 'config') renderConfig();
 }
 
 let toastTimer;
@@ -838,16 +932,33 @@ function commonInit() {
   updatePendingBadge();
 }
 
-</script>
-<script>
+
 const W_COLORS = ['#7366FF','#F73164','#51BB25','#A927F9'];
 const N_COLORS = ['#7366FF','#F73164','#51BB25','#A927F9','#F8D62B','#DC3545','#00CFE8','#5B4FE8','#FF7B92','#7BD64A','#C566FA','#FFE066','#FF9F87','#5BC5DE'];
 
+function setExample(el) {
+  const txt = el.textContent.replace('▸ "','').replace('"','').trim();
+  document.getElementById('wa-input').value = txt;
+  document.getElementById('wa-input').focus();
+}
+
 function renderWa() {
   const body = document.getElementById('wa-body');
-  body.innerHTML = waMessages.map(m => {
-    if (m.dir === 'system') return `<div class="wa-msg system"><div class="wa-bubble">${m.text}</div></div>`;
-    return `<div class="wa-msg ${m.dir}"><div class="wa-bubble"><div class="wa-name">${m.sender}${m.isAdmin?' 🛡':''}</div>${m.text}<div class="wa-ts">${m.time}</div></div></div>`;
+  if (!body) return;
+  body.innerHTML = waMessages.slice(-20).map(m => {
+    if (m.dir === 'system') return `<div style="background:var(--warning-light);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:#8A6500;text-align:center">${m.text}</div>`;
+    const isOut = m.dir === 'out';
+    const bg = isOut ? 'linear-gradient(89deg,var(--primary),var(--primary-dark))' : 'var(--surface)';
+    const color = isOut ? 'white' : 'var(--text)';
+    const nameColor = isOut ? 'rgba(255,255,255,0.75)' : (m.isAdmin ? 'var(--success)' : 'var(--primary)');
+    const align = isOut ? 'flex-end' : 'flex-start';
+    return `<div style="display:flex;justify-content:${align}">
+      <div style="max-width:90%;background:${bg};color:${color};border-radius:12px;padding:11px 15px;font-size:13px;line-height:1.5;box-shadow:0 2px 8px rgba(8,21,66,0.08)">
+        <div style="font-size:11px;font-weight:700;margin-bottom:4px;color:${nameColor}">${m.sender}${m.isAdmin?' 🛡':''}</div>
+        ${m.text}
+        <div style="font-size:10px;opacity:0.5;text-align:right;margin-top:4px">${m.time}</div>
+      </div>
+    </div>`;
   }).join('');
   body.scrollTop = body.scrollHeight;
 }
@@ -895,10 +1006,10 @@ function renderDashboard() {
   const wKpiColors = ['primary','secondary','success','info'];
   const wHrs = WORKERS.map(w => data.filter(r => r.user === w).reduce((s,r) => s+(r.hrs||0), 0));
   document.getElementById('workers-grid').innerHTML = WORKERS.map((w,i) =>
-    `<div class="kpi ${wKpiColors[i]}">
-      <div class="kpi-icon">👤</div>
-      <div class="kpi-value">${wHrs[i].toFixed(1)}</div>
-      <div class="kpi-label">${w}</div>
+    `<div style="background:#F5F0E8;border:1px solid #E0D8C8;border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden">
+      <div style="font-size:28px;margin-bottom:12px">👤</div>
+      <div style="font-size:30px;font-weight:700;color:#3A3020;letter-spacing:-0.5px;line-height:1">${wHrs[i].toFixed(1)}</div>
+      <div style="font-size:12px;font-weight:600;color:#7A6A50;margin-top:6px;text-transform:uppercase;letter-spacing:0.04em">${w}</div>
     </div>`
   ).join('');
 
@@ -946,15 +1057,225 @@ function renderDashboard() {
   });
 }
 
-const _origSwitch = switchTab;
+function toggleSidebar() {
+  var sb = document.querySelector('.sidebar');
+  var ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+}
+
+// Auto-close sidebar when a tab is clicked on mobile
+var origSwitchTab = switchTab;
 switchTab = function(name) {
-  _origSwitch(name);
-  const titles = { registro:'Registro de horas', auditoria:'Auditoría', dashboard:'Dashboard' };
-  document.getElementById('page-title').textContent = titles[name];
-  document.getElementById('page-crumb').textContent = titles[name];
+  origSwitchTab(name);
+  var sb = document.querySelector('.sidebar');
+  var ov = document.getElementById('sidebar-overlay');
+  if (sb && sb.classList.contains('open')) {
+    sb.classList.remove('open');
+    ov.classList.remove('open');
+  }
+  var titles = { registro:'Registro de horas', auditoria:'Auditoría', dashboard:'Dashboard', config:'Configuración' };
+  document.getElementById('page-title').textContent = titles[name] || name;
+  document.getElementById('page-crumb').textContent = titles[name] || name;
 };
 
+// ── CONFIG DATA (stored in localStorage) ────────────────────────────────────
+function loadConfig() {
+  const def = {
+    workers: [...WORKERS],
+    grupos: JSON.parse(JSON.stringify(GRUPOS)),
+    admins: ['Manuel (Admin)','Claudia (Admin)']
+  };
+  try { return JSON.parse(localStorage.getItem('horas_config') || 'null') || def; }
+  catch(e) { return def; }
+}
+function saveConfig(cfg) {
+  localStorage.setItem('horas_config', JSON.stringify(cfg));
+}
+function getConfig() { return loadConfig(); }
+
+function rebuildSelects() {
+  const cfg = getConfig();
+  // Workers selects
+  const wOpts = cfg.workers.map(w => `<option>${w}</option>`).join('');
+  ['w-user','a-user','filter-worker'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    const prev = el.value;
+    if (id === 'filter-worker') el.innerHTML = '<option value="">Todos los trabajadores</option>' + wOpts;
+    else el.innerHTML = wOpts;
+    if ([...el.options].some(o => o.value === prev)) el.value = prev;
+  });
+  // Admin selects
+  const aOpts = cfg.admins.map(a => `<option>${a}</option>`).join('');
+  ['a-admin','wa-sender'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    const prev = el.value;
+    if (id === 'wa-sender') el.innerHTML = cfg.workers.map(w => `<option>${w}</option>`).join('') + aOpts;
+    else el.innerHTML = aOpts;
+    if ([...el.options].some(o => o.value === prev)) el.value = prev;
+  });
+  // Negocio selects with optgroups
+  function buildOpts(withAll) {
+    let h = withAll ? '<option value="">Todos los negocios</option>' : '';
+    for (const [g, pisos] of Object.entries(cfg.grupos)) {
+      h += `<optgroup label="${g}">${pisos.map(p=>`<option>${p}</option>`).join('')}</optgroup>`;
+    }
+    return h;
+  }
+  ['w-negocio','a-negocio'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=buildOpts(false); });
+  const fn = document.getElementById('filter-neg-audit'); if(fn) fn.innerHTML=buildOpts(true);
+}
+
+function renderConfig() {
+  var cfg = getConfig();
+
+  // --- WORKERS ---
+  var wEl = document.getElementById('workers-list');
+  if (wEl) {
+    var wHtml = '';
+    cfg.workers.forEach(function(w) {
+      wHtml += '<div class="cfg-pill" style="display:inline-flex;align-items:center;gap:8px;background:#EEEDFF;border:1px solid #C0B8FF;border-radius:50px;padding:7px 14px;font-size:13px;font-weight:500;color:#5B4FE8;margin:3px">';
+      wHtml += w;
+      wHtml += ' <span class="cfg-del" data-type="worker" data-val="' + w + '" style="cursor:pointer;color:#DC3545;font-weight:900;font-size:18px;line-height:1">&#215;</span>';
+      wHtml += '</div>';
+    });
+    wEl.innerHTML = wHtml || '<p style="color:#999;font-size:13px">Sin trabajadores</p>';
+  }
+
+  // --- ADMINS ---
+  var aEl = document.getElementById('admins-list');
+  if (aEl) {
+    var aHtml = '';
+    cfg.admins.forEach(function(a) {
+      aHtml += '<div class="cfg-pill" style="display:inline-flex;align-items:center;gap:8px;background:#E8F8DD;border:1px solid #B8E8A0;border-radius:50px;padding:7px 14px;font-size:13px;font-weight:500;color:#3E9E1B;margin:3px">';
+      aHtml += a;
+      aHtml += ' <span class="cfg-del" data-type="admin" data-val="' + a + '" style="cursor:pointer;color:#DC3545;font-weight:900;font-size:18px;line-height:1">&#215;</span>';
+      aHtml += '</div>';
+    });
+    aEl.innerHTML = aHtml || '<p style="color:#999;font-size:13px">Sin administradores</p>';
+  }
+
+  // --- GRUPOS ---
+  var gEl = document.getElementById('grupos-list');
+  if (gEl) {
+    var gc = {'Tarter Izard':'#7366FF','Pas de la Casa':'#F73164','Otros':'#51BB25','Servicios':'#00CFE8'};
+    var h = '';
+    Object.keys(cfg.grupos).forEach(function(g) {
+      var ps = cfg.grupos[g];
+      var c = gc[g] || '#888';
+      h += '<div style="margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid ' + c + '33">';
+      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
+      h += '<div style="width:12px;height:12px;border-radius:3px;background:' + c + '"></div>';
+      h += '<b style="font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#2F2F3B">' + g + '</b>';
+      h += '<span style="background:#F0F0F0;color:#666;padding:2px 10px;border-radius:20px;font-size:11px">' + ps.length + ' pisos</span>';
+      h += '</div>';
+      h += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+      ps.forEach(function(p) {
+        h += '<div style="display:inline-flex;align-items:center;gap:6px;background:#F8F8F8;border:1px solid #E0E0E0;border-radius:50px;padding:5px 12px;font-size:12px;color:#444">';
+        h += p;
+        h += ' <span class="cfg-del" data-type="piso" data-grupo="' + g + '" data-val="' + p + '" style="cursor:pointer;color:#DC3545;font-weight:900;font-size:15px;line-height:1">&#215;</span>';
+        h += '</div>';
+      });
+      h += '</div></div>';
+    });
+    gEl.innerHTML = h || '<p style="color:#999;font-size:13px">Sin pisos</p>';
+  }
+
+  // Attach delete events via delegation on panel-config
+  var panel = document.getElementById('panel-config');
+  if (panel) {
+    panel.onclick = function(e) {
+      var el = e.target.closest ? e.target.closest('.cfg-del') : null;
+      if (!el) return;
+      var type = el.getAttribute('data-type');
+      var val  = el.getAttribute('data-val');
+      if (type === 'worker') removeWorker(val);
+      else if (type === 'admin') removeAdmin(val);
+      else if (type === 'piso') removePiso(el.getAttribute('data-grupo'), val);
+    };
+  }
+}
+
+
+function addWorker() {
+  const inp = document.getElementById('new-worker-input');
+  const name = inp.value.trim();
+  if (!name) return toast('Escribe el nombre del trabajador');
+  const cfg = getConfig();
+  if (cfg.workers.includes(name)) return toast('Este trabajador ya existe');
+  cfg.workers.push(name);
+  saveConfig(cfg);
+  inp.value = '';
+  rebuildSelects();
+  renderConfig();
+  toast(`✓ Trabajador "${name}" agregado`);
+}
+
+function removeWorker(name) {
+  const cfg = getConfig();
+  if (cfg.workers.length <= 1) return toast('Debe haber al menos un trabajador');
+  cfg.workers = cfg.workers.filter(w => w !== name);
+  saveConfig(cfg);
+  rebuildSelects();
+  renderConfig();
+  toast(`Trabajador "${name}" eliminado`);
+}
+
+function addAdmin() {
+  const inp = document.getElementById('new-admin-input');
+  const name = inp.value.trim();
+  if (!name) return toast('Escribe el nombre del administrador');
+  const cfg = getConfig();
+  if (cfg.admins.includes(name)) return toast('Este admin ya existe');
+  cfg.admins.push(name);
+  saveConfig(cfg);
+  inp.value = '';
+  rebuildSelects();
+  renderConfig();
+  toast(`✓ Admin "${name}" agregado`);
+}
+
+function removeAdmin(name) {
+  const cfg = getConfig();
+  if (cfg.admins.length <= 1) return toast('Debe haber al menos un administrador');
+  cfg.admins = cfg.admins.filter(a => a !== name);
+  saveConfig(cfg);
+  rebuildSelects();
+  renderConfig();
+  toast(`Admin "${name}" eliminado`);
+}
+
+function addPiso() {
+  const inp = document.getElementById('new-piso-input');
+  const grupo = document.getElementById('new-piso-grupo').value;
+  const name = inp.value.trim();
+  if (!name) return toast('Escribe el nombre del piso');
+  const cfg = getConfig();
+  const allPisos = Object.values(cfg.grupos).flat();
+  if (allPisos.includes(name)) return toast('Este piso ya existe');
+  if (!cfg.grupos[grupo]) cfg.grupos[grupo] = [];
+  cfg.grupos[grupo].push(name);
+  saveConfig(cfg);
+  inp.value = '';
+  rebuildSelects();
+  renderConfig();
+  toast(`✓ Piso "${name}" agregado a ${grupo}`);
+}
+
+function removePiso(grupo, piso) {
+  const cfg = getConfig();
+  cfg.grupos[grupo] = cfg.grupos[grupo].filter(p => p !== piso);
+  saveConfig(cfg);
+  rebuildSelects();
+  renderConfig();
+  toast(`Piso "${piso}" eliminado`);
+}
+
 commonInit();
+rebuildSelects();
+// Pre-render config so it's ready when panel opens
+try { renderConfig(); } catch(e) { console.error('renderConfig init error:', e); }
+
 </script>
 </body>
 </html>
