@@ -1979,6 +1979,10 @@ function exportPDF(){
   var mLabel=document.getElementById('inf-month').options[document.getElementById('inf-month').selectedIndex].text;
   var wLabel=document.getElementById('inf-worker').value==='all'?'Todos':document.getElementById('inf-worker').value;
   var nLabel=document.getElementById('inf-negocio').value==='all'?'Todos':document.getElementById('inf-negocio').value;
+  var pdfDisW=getCfg().disabled||[];
+  var pdfActW=getCfg().workers.filter(function(w){return pdfDisW.indexOf(w)<0;});
+  var pdfUniqW=pdfActW.filter(function(w){return data.some(function(r){return r.user===w;});}).length;
+  var pdfUniqD=Object.keys(data.reduce(function(m,r){m[r.date]=1;return m;},{})).length;
 
   // Build Circuito contractual data
   var mf2=document.getElementById('inf-month').value;
@@ -2027,9 +2031,9 @@ function exportPDF(){
     +'<div class="section">Resumen</div>'
     +'<div class="kpi-row">'
     +'<div class="kpi-box"><div class="kpi-val">'+total.toFixed(1)+'</div><div class="kpi-lbl">Total horas</div></div>'
-    +'<div class="kpi-box"><div class="kpi-val" style="color:#51BB25">'+ok+'</div><div class="kpi-lbl">Confirmados</div></div>'
+    +'<div class="kpi-box"><div class="kpi-val" style="color:#51BB25">'+pdfUniqW+'</div><div class="kpi-lbl">Trabajadores</div></div>'
     +'<div class="kpi-box"><div class="kpi-val" style="color:#F8D62B">'+pend+'</div><div class="kpi-lbl">Pendientes</div></div>'
-    +'<div class="kpi-box"><div class="kpi-val">'+data.length+'</div><div class="kpi-lbl">Registros</div></div>'
+    +'<div class="kpi-box"><div class="kpi-val">'+pdfUniqD+'</div><div class="kpi-lbl">Dias del mes</div></div>'
     +'</div>'
 
     // POR TRABAJADOR + POR NEGOCIO en dos columnas
