@@ -380,6 +380,15 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
     <div class="section-sub">Contraste registros trabajadores vs admin</div>
     <div class="card"><div class="card-body">
       <div class="filter-bar">
+        <select id="filter-month-audit" onchange="renderAudit()" style="min-width:140px">
+          <option value="">Todos los meses</option>
+          <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
+          <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
+          <option value="2026-05">Mayo 2026</option><option value="2026-06">Junio 2026</option>
+          <option value="2026-07">Julio 2026</option><option value="2026-08">Agosto 2026</option>
+          <option value="2026-09">Septiembre 2026</option><option value="2026-10">Octubre 2026</option>
+          <option value="2026-11">Noviembre 2026</option><option value="2026-12">Diciembre 2026</option>
+        </select>
         <select id="filter-worker" onchange="renderAudit()"><option value="">Todos los trabajadores</option></select>
         <select id="filter-status" onchange="renderAudit()">
           <option value="">Todos los estados</option>
@@ -585,6 +594,48 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
         <div id="cal-list"></div>
       </div>
     </div>
+
+    <!-- DISPONIBILIDAD -->
+    <div class="card" id="disp-form-card">
+      <div class="card-header" style="cursor:pointer;padding:14px 20px" onclick="toggleDispForm()">
+        <div><div class="card-title" style="font-size:14px">
+          <div class="card-title-icon" style="background:#FEF3C7;color:#B45309">&#128100;</div>
+          Mi disponibilidad
+        </div><div class="card-sub">Registra tu disponibilidad para trabajar</div></div>
+        <span id="disp-toggle-icon" style="font-size:18px;color:var(--text3)">&#43;</span>
+      </div>
+      <div id="disp-form-body" style="display:none">
+        <div class="card-body">
+          <div class="form-row">
+            <div><label>Trabajador</label><select id="disp-worker"></select></div>
+            <div><label>Fecha</label><input type="date" id="disp-date"></div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label>Disponibilidad</label>
+              <select id="disp-tipo" onchange="toggleDispHoras()">
+                <option value="dia">Todo el dia</option>
+                <option value="horario">Horario especifico</option>
+                <option value="no">No disponible</option>
+              </select>
+            </div>
+            <div id="disp-horas-wrap">
+              <label>Horario</label>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="time" id="disp-start" style="flex:1;font-size:15px;font-weight:600;text-align:center;padding:9px">
+                <span style="color:var(--text3);font-size:13px">a</span>
+                <input type="time" id="disp-end" style="flex:1;font-size:15px;font-weight:600;text-align:center;padding:9px">
+              </div>
+            </div>
+          </div>
+          <div class="form-full"><label>Nota</label><input type="text" id="disp-nota" placeholder="Ej: solo manana, sin transporte..."></div>
+          <button class="btn btn-full" onclick="dispAdd()" style="background:#FEF3C7;color:#B45309;border:1px solid #FDE68A;font-weight:600">
+            &#128100; Registrar disponibilidad
+          </button>
+        </div>
+        <div id="disp-list" style="border-top:1px solid var(--border)"></div>
+      </div>
+    </div>
   </div>
 
   <!-- INFORME -->
@@ -675,7 +726,7 @@ var GRUPOS_BASE = {
   'Tarter Izard':   ['A01','B21','B24','C21','C22','D11 (Kristine)','D12','D13','D43 (Atico)'],
   'Pas de la Casa': ['Sapporo 20','Morera 5C','Dolsa 3','Madriu 45','Chamoix 47','Nevada 32','Nevada 33','Nuria 3A'],
   'Otros':          ['Xalet Tarter (Rosa)','Pisos David','Eventuales'],
-  'Servicios':      ['Circuito','Lavanderia']
+  'Servicios':      ['Circuito','Circuito Evento','Lavanderia']
 };
 var WORKERS_BASE = ['Ana','Claudia','Diego','Manuel'];
 var ADMINS_BASE  = ['Manuel (Admin)','Claudia (Admin)'];
@@ -755,6 +806,15 @@ var records = (function(){
   return base.map(function(r){ return Object.assign({},r,{negocio:NOMBRE_MAP[r.negocio]||r.negocio}); });
 })();
 var apiKey = localStorage.getItem('horas_apikey')||'';
+
+// ID consecutivo (6 digitos desde 111111)
+function getNextId(){
+  var n=0; try{n=parseInt(localStorage.getItem('rec_next_id')||'0');}catch(e){}
+  if(n<111111) n=111111;
+  localStorage.setItem('rec_next_id', n+1);
+  return n;
+}
+records = records.map(function(r,i){ if(!r.id) r.id=111111+i; return r; });
 var pendingPreview = null;
 var chartS = null;
 var waMessages = [];
@@ -763,8 +823,11 @@ var waMessages = [];
 function saveRec(){ try{localStorage.setItem('horas_records',JSON.stringify(records));}catch(e){} }
 function getCfg(){
   var stored=null; try{stored=JSON.parse(localStorage.getItem('horas_config'));}catch(e){}
-  if(stored&&stored.workers&&stored.grupos&&stored.admins) return stored;
-  return {workers:WORKERS_BASE.slice(),grupos:JSON.parse(JSON.stringify(GRUPOS_BASE)),admins:ADMINS_BASE.slice()};
+  if(stored&&stored.workers&&stored.grupos&&stored.admins){
+    if(!stored.disabled) stored.disabled=[];
+    return stored;
+  }
+  return {workers:WORKERS_BASE.slice(),grupos:JSON.parse(JSON.stringify(GRUPOS_BASE)),admins:ADMINS_BASE.slice(),disabled:[]};
 }
 function saveCfg(c){ try{localStorage.setItem('horas_config',JSON.stringify(c));}catch(e){} }
 
@@ -787,11 +850,12 @@ function setPendBadge(){
   var el=document.getElementById('pending-count');
   el.style.display=n>0?'inline-flex':'none'; el.textContent=n;
 }
-function sheet(rec){
+function sheet(rec,accion){
   fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({fecha:fmtDate(rec.date),trabajador:rec.user,negocio:rec.negocio,
     inicio:rec.start,termino:rec.end,horas:rec.hrs,observaciones:rec.obs||'',
-    admin:rec.admin||'',estado:rec.status,registrado:new Date().toLocaleString('es-ES')})
+    admin:rec.admin||'',estado:rec.status,registrado:new Date().toLocaleString('es-ES'),
+    accion:accion||'',id:rec.id||''})
   }).catch(function(){});
 }
 
@@ -826,15 +890,23 @@ function showTab(name){
 //=== SELECTS ================================================================
 function buildSelects(){
   var cfg=getCfg();
-  // workers
-  var wo=cfg.workers.map(function(w){return '<option>'+w+'</option>';}).join('');
+  var disabled=cfg.disabled||[];
+  var activeW=cfg.workers.filter(function(w){return disabled.indexOf(w)<0;});
+  var allW=cfg.workers;
+  // Registration forms — only active workers
+  var wo=activeW.map(function(w){return '<option>'+w+'</option>';}).join('');
   setO('w-user',wo); setO('a-user',wo);
-  setO('filter-worker','<option value="">Todos los trabajadores</option>'+wo);
-  // admins
+  // Filters — all workers (to see historical records of disabled workers)
+  var woAll=allW.map(function(w){
+    var dis=disabled.indexOf(w)>=0;
+    return '<option value="'+w+'"'+(dis?' style="color:#9CA3AF"':'')+'>'+w+(dis?' (deshabilitado)':'')+'</option>';
+  }).join('');
+  setO('filter-worker','<option value="">Todos los trabajadores</option>'+woAll);
+  // Admins
   var ao=cfg.admins.map(function(a){return '<option>'+a+'</option>';}).join('');
   setO('a-admin',ao);
   setO('wa-sender',wo+ao);
-  // negocios
+  // Negocios
   var neg=negOpts(cfg.grupos);
   setO('w-negocio',neg); setO('a-negocio',neg);
   setO('filter-neg-audit','<option value="">Todos los negocios</option>'+neg);
@@ -871,7 +943,7 @@ function submitWorker(){
   var neg=document.getElementById('w-negocio').value, obs=document.getElementById('w-obs').value.trim();
   if(!date) return toast('Selecciona una fecha');
   var hrs=calcHrs(s,e); if(hrs<=0) return toast('Termino debe ser posterior al inicio');
-  var rec={date:date,negocio:neg,start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:null,admin:null,status:'pending'};
+  var rec={id:getNextId(),date:date,negocio:neg,start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:null,admin:null,status:'pending'};
   records.push(rec); saveRec(); sheet(rec);
   addMsg('<b>'+user+'</b> - '+neg+' - '+fmtDate(date)+'<br>'+s+' a '+e+' = <b>'+fmtHrs(hrs)+'</b>'+(obs?'<br>'+obs:''),user,'out',false);
   document.getElementById('w-obs').value=''; setPendBadge();
@@ -891,7 +963,7 @@ function submitAdmin(){
     addMsg((p.status==='ok'?'Cuadra':'Conflicto')+' - '+admin+'<br>'+user+' - '+neg+' - '+fmtDate(date)+'<br>'+fmtHrs(hrs),admin,'in',true);
     sheet(p); toast(p.status==='ok'?'Cuadra - confirmado':'Conflicto detectado');
   } else {
-    var rec={date:date,negocio:neg,start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:hrs,admin:admin,status:'admin-only'};
+    var rec={id:getNextId(),date:date,negocio:neg,start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:hrs,admin:admin,status:'admin-only'};
     records.push(rec); sheet(rec);
     addMsg('Registro admin - '+admin+'<br>'+user+' - '+neg+'<br>'+fmtHrs(hrs),admin,'in',true);
     toast('Registro admin guardado');
@@ -908,7 +980,7 @@ function addMsg(text,sender,dir,isAdm){
 function renderWa(){
   var body=document.getElementById('wa-body'); if(!body) return;
   var h='';
-  waMessages.slice(-20).forEach(function(m){
+  waMessages.slice(-3).forEach(function(m){
     if(m.dir==='system'){h+='<div style="background:#FEF3C7;border-radius:8px;padding:10px 14px;font-size:12px;color:#8A6500;text-align:center">'+m.text+'</div>';return;}
     var out=m.dir==='out';
     var bg=out?'linear-gradient(89deg,var(--primary),var(--primary-dark))':'var(--surface)';
@@ -1003,14 +1075,17 @@ function rejRec(idx){
 }
 function delRec(idx){
   if(!confirm('Eliminar este registro? Esta accion no se puede deshacer.')) return;
+  var deleted=records[idx];
+  sheet(deleted,'null');
   records.splice(idx,1);
   saveRec();setPendBadge();renderAudit();toast('Registro eliminado');
 }
 function renderAudit(){
+  var fm=document.getElementById('filter-month-audit').value;
   var fw=document.getElementById('filter-worker').value;
   var fs=document.getElementById('filter-status').value;
   var fn=document.getElementById('filter-neg-audit').value;
-  var data=records.filter(function(r){return(!fw||r.user===fw)&&(!fs||r.status===fs)&&(!fn||r.negocio===fn);});
+  var data=records.filter(function(r){return(!fm||r.date.indexOf(fm)===0)&&(!fw||r.user===fw)&&(!fs||r.status===fs)&&(!fn||r.negocio===fn);});
   data.sort(function(a,b){return isoToDate(a.date)-isoToDate(b.date);});
   var tb=document.getElementById('audit-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#999">Sin registros para los filtros seleccionados</td></tr>';return;}
@@ -1043,14 +1118,21 @@ function renderDashboard(){
   var pend=data.filter(function(r){return r.status==='pending';}).length;
   var conf=data.filter(function(r){return r.status==='mismatch';}).length;
 
+  var disabledW=cfg.disabled||[];
+  var activeW2=cfg.workers.filter(function(w){return disabledW.indexOf(w)<0;});
+  var uniqW=activeW2.filter(function(w){return data.some(function(r){return r.user===w;});}).length;
+  var uniqD=Object.keys(data.reduce(function(m,r){m[r.date]=1;return m;},{})).length;
   document.getElementById('dash-kpis').innerHTML=
     '<div class="kpi primary"><div class="kpi-icon">&#9201;</div><div class="kpi-value">'+tot.toFixed(1)+'</div><div class="kpi-label">Total horas</div></div>'+
-    '<div class="kpi success"><div class="kpi-icon">&#10003;</div><div class="kpi-value">'+ok+'</div><div class="kpi-label">Confirmados</div></div>'+
+    '<div class="kpi success"><div class="kpi-icon">&#128101;</div><div class="kpi-value">'+uniqW+'</div><div class="kpi-label">Trabajadores</div></div>'+
     '<div class="kpi warning"><div class="kpi-icon">&#8987;</div><div class="kpi-value">'+pend+'</div><div class="kpi-label">Pendientes</div></div>'+
-    '<div class="kpi secondary"><div class="kpi-icon">&#9888;</div><div class="kpi-value">'+conf+'</div><div class="kpi-label">Conflictos</div></div>';
+    '<div class="kpi secondary"><div class="kpi-icon">&#128197;</div><div class="kpi-value">'+uniqD+'</div><div class="kpi-label">Dias del mes</div></div>';
 
+  // Workers beige cards — solo trabajadores habilitados
+  var disabled=cfg.disabled||[];
+  var activeWorkers=cfg.workers.filter(function(w){return disabled.indexOf(w)<0;});
   var wh='';
-  cfg.workers.forEach(function(w){
+  activeWorkers.forEach(function(w){
     var h=data.filter(function(r){return r.user===w;}).reduce(function(s,r){return s+(r.hrs||0);},0);
     wh+='<div style="background:#F5F0E8;border:1px solid #E0D8C8;border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow)">';
     wh+='<div style="font-size:26px;margin-bottom:10px">&#128100;</div>';
@@ -1161,11 +1243,20 @@ function renderConfig(){
   // Workers
   var wEl=document.getElementById('cfg-workers');
   if(wEl){
+    var disabled=cfg.disabled||[];
     var h='';
     cfg.workers.forEach(function(w){
-      h+='<div style="display:inline-flex;align-items:center;gap:8px;background:#EEEDFF;border:1px solid #C0B8FF;border-radius:50px;padding:7px 14px;font-size:13px;font-weight:500;color:#5B4FE8;margin:2px">';
-      h+=w;
-      h+='<button data-action="delW" data-val="'+esc(w)+'" style="background:none;border:none;cursor:pointer;color:#DC3545;font-weight:900;font-size:18px;line-height:1;padding:0 0 0 4px">&#215;</button>';
+      var isDisabled=disabled.indexOf(w)>=0;
+      var bg=isDisabled?'#F3F4F6':'#EEEDFF';
+      var border=isDisabled?'#D1D5DB':'#C0B8FF';
+      var color=isDisabled?'#9CA3AF':'#5B4FE8';
+      var toggleLabel=isDisabled?'Habilitar':'Deshabilitar';
+      var toggleBg=isDisabled?'#D1FAE5':'#FEE2E2';
+      var toggleColor=isDisabled?'#059669':'#DC2626';
+      h+='<div style="display:inline-flex;align-items:center;gap:6px;background:'+bg+';border:1px solid '+border+';border-radius:50px;padding:6px 12px;font-size:13px;font-weight:500;color:'+color+';margin:3px">';
+      h+=(isDisabled?'<s>':'')+w+(isDisabled?'</s>':'');
+      h+='<button data-action="toggleW" data-val="'+esc(w)+'" title="'+toggleLabel+'" style="background:'+toggleBg+';border:none;cursor:pointer;color:'+toggleColor+';font-weight:700;font-size:10px;line-height:1;padding:2px 6px;border-radius:10px;margin-left:2px">'+toggleLabel+'</button>';
+      h+='<button data-action="delW" data-val="'+esc(w)+'" style="background:none;border:none;cursor:pointer;color:#DC3545;font-weight:900;font-size:16px;line-height:1;padding:0 0 0 2px">&#215;</button>';
       h+='</div>';
     });
     wEl.innerHTML=h||'<span style="color:#999">Sin trabajadores</span>';
@@ -1217,6 +1308,7 @@ function renderConfig(){
     var val=btn.getAttribute('data-val');
     var grupo=btn.getAttribute('data-grupo');
     if(action==='delW') cfgDelWorker(val);
+    else if(action==='toggleW') cfgToggleWorker(val);
     else if(action==='delA') cfgDelAdmin(val);
     else if(action==='delP') cfgDelPiso(grupo,val);
   };
@@ -1234,7 +1326,17 @@ function cfgDelWorker(name){
   var cfg=getCfg();
   if(cfg.workers.length<=1) return toast('Debe haber al menos uno');
   cfg.workers=cfg.workers.filter(function(w){return w!==name;});
+  cfg.disabled=cfg.disabled.filter(function(w){return w!==name;});
   saveCfg(cfg); buildSelects(); renderConfig(); toast('Trabajador eliminado');
+}
+function cfgToggleWorker(name){
+  var cfg=getCfg();
+  if(!cfg.disabled) cfg.disabled=[];
+  var idx=cfg.disabled.indexOf(name);
+  if(idx>=0) cfg.disabled.splice(idx,1);
+  else cfg.disabled.push(name);
+  saveCfg(cfg); buildSelects(); renderConfig();
+  toast(idx>=0?name+' habilitado':name+' deshabilitado');
 }
 function cfgAddAdmin(){
   var inp=document.getElementById('inp-admin'),name=inp.value.trim();
@@ -1271,6 +1373,10 @@ function cfgDelPiso(grupo,piso){
 var calJobs = (function(){
   try { return JSON.parse(localStorage.getItem('cal_jobs')||'[]'); } catch(e){ return []; }
 })();
+var calDisp = (function(){
+  try { return JSON.parse(localStorage.getItem('cal_disp')||'[]'); } catch(e){ return []; }
+})();
+var DISP_COLORS = {'Ana':'#F97316','Claudia':'#8B5CF6','Diego':'#06B6D4','Manuel':'#10B981','default':'#6B7280'};
 var calYear  = new Date().getFullYear();
 var calMonth = new Date().getMonth(); // 0-based
 
@@ -1281,7 +1387,10 @@ function calBuildSelects(){
   var wo=cfg.workers.map(function(w){return '<option>'+w+'</option>';}).join('');
   document.getElementById('cal-worker').innerHTML=wo;
   document.getElementById('cal-negocio').innerHTML=negOpts(cfg.grupos);
+  setO('disp-worker',wo);
   setO('filter-worker','<option value="">Todos los trabajadores</option>'+wo);
+  // Init disp horas visibility
+  toggleDispHoras();
 }
 
 function calAdd(){
@@ -1371,6 +1480,19 @@ function renderCal(){
       grid+='<div style="background:'+(isToday?'rgba(255,255,255,0.22)':'var(--primary-light)')+';color:'+(isToday?'white':'var(--primary)')+';border-radius:3px;font-size:9px;font-weight:600;padding:2px 4px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer" onclick="event.stopPropagation();showCalTooltip(this,\''+safeTip+'\')">'+info.time.substring(0,5)+' '+shortNeg+'</div>';
     });
     if(extra>0) grid+='<div style="font-size:9px;color:'+(isToday?'rgba(255,255,255,0.65)':'var(--text3)')+'">+'+extra+' mas</div>';
+    // Disponibilidad dots (small colored circles per worker)
+    var dayDisp=calDisp.filter(function(x){return x.date===ds&&x.tipo!=='no';});
+    if(dayDisp.length>0){
+      var dotTip=dayDisp.map(function(x){return x.worker+(x.tipo==='horario'?' '+x.start+'-'+x.end:'')+(x.nota?' ('+x.nota+')':'');}).join(' | ');
+      var safeDT=dotTip.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+      grid+='<div style="display:flex;gap:2px;margin-top:2px;flex-wrap:wrap" onclick="event.stopPropagation();showCalTooltip(this,\'' +safeDT+ '\')">';
+      dayDisp.forEach(function(x){
+        var dc=DISP_COLORS[x.worker]||DISP_COLORS.default;
+        var initials=x.worker.split(' ').map(function(p){return p[0];}).join('').substring(0,2).toUpperCase();
+        grid+='<div style="background:'+dc+';color:white;border-radius:3px;font-size:7px;font-weight:700;padding:1px 3px;line-height:1.4;flex-shrink:0">'+initials+'</div>';
+      });
+      grid+='</div>';
+    }
     grid+='</div>';
   }
   document.getElementById('cal-grid').innerHTML=grid;
@@ -1399,9 +1521,78 @@ function renderCal(){
 }
 
 function calClickDay(ds){
-  // Set date in form and scroll to it
   document.getElementById('cal-date').value=ds;
+  document.getElementById('disp-date').value=ds;
   document.getElementById('cal-worker').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+//=== DISPONIBILIDAD =========================================================
+function saveDisp(){ try{localStorage.setItem('cal_disp',JSON.stringify(calDisp));}catch(e){} }
+
+function toggleDispForm(){
+  var body=document.getElementById('disp-form-body');
+  var icon=document.getElementById('disp-toggle-icon');
+  var open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  icon.textContent=open?'−':'+';
+  if(open) renderDispList();
+}
+
+function toggleDispHoras(){
+  var tipo=document.getElementById('disp-tipo').value;
+  var wrap=document.getElementById('disp-horas-wrap');
+  wrap.style.display=tipo==='horario'?'block':'none';
+}
+
+function dispAdd(){
+  var worker=document.getElementById('disp-worker').value;
+  var date=document.getElementById('disp-date').value;
+  var tipo=document.getElementById('disp-tipo').value;
+  var start=document.getElementById('disp-start').value||'';
+  var end=document.getElementById('disp-end').value||'';
+  var nota=document.getElementById('disp-nota').value.trim();
+  if(!date) return toast('Selecciona una fecha');
+  if(tipo==='horario'&&(!start||!end)) return toast('Indica el horario de inicio y termino');
+  calDisp=calDisp.filter(function(d){return !(d.worker===worker&&d.date===date);});
+  calDisp.push({id:Date.now(),worker:worker,date:date,tipo:tipo,start:start,end:end,nota:nota});
+  saveDisp();
+  document.getElementById('disp-nota').value='';
+  renderDispList();
+  renderCal();
+  toast(worker+' - disponibilidad registrada el '+fmtDate(date));
+}
+
+function dispDel(id){
+  calDisp=calDisp.filter(function(d){return d.id!==id;});
+  saveDisp(); renderDispList(); renderCal(); toast('Disponibilidad eliminada');
+}
+
+function renderDispList(){
+  var el=document.getElementById('disp-list');
+  if(!el) return;
+  var pfx=calYear+'-'+(calMonth<9?'0':'')+(calMonth+1);
+  var month=calDisp.filter(function(d){return d.date.indexOf(pfx)===0;})
+    .sort(function(a,b){return a.date.localeCompare(b.date);});
+  if(!month.length){el.innerHTML='<div style="padding:16px 18px;font-size:12px;color:#999">Sin disponibilidades registradas este mes</div>';return;}
+  var tipoLabel={dia:'Todo el dia',horario:'Horario',no:'No disponible'};
+  var tipoBg={dia:'#ECFDF5',horario:'#EFF6FF',no:'#FEF2F2'};
+  var tipoColor={dia:'#059669',horario:'#2563EB',no:'#DC2626'};
+  var h='';
+  month.forEach(function(d){
+    var dc=DISP_COLORS[d.worker]||DISP_COLORS.default;
+    var bg=tipoBg[d.tipo]||'#F9F9F9';
+    var tc=tipoColor[d.tipo]||'#666';
+    var horario=d.tipo==='horario'?' · '+d.start+'-'+d.end:'';
+    h+='<div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border)">';
+    h+='<div style="width:8px;height:8px;border-radius:50%;background:'+dc+';flex-shrink:0"></div>';
+    h+='<div style="flex:1;min-width:0">';
+    h+='<div style="font-size:13px;font-weight:600">'+d.worker+' <span style="font-size:11px;color:#999">'+fmtDate(d.date)+'</span></div>';
+    h+='<div style="font-size:12px;margin-top:2px"><span style="background:'+bg+';color:'+tc+';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">'+tipoLabel[d.tipo]+horario+'</span>'+(d.nota?' <span style="color:#999">'+d.nota+'</span>':'')+'</div>';
+    h+='</div>';
+    h+='<button onclick="dispDel('+d.id+')" style="background:none;border:none;cursor:pointer;color:#DC3545;font-size:14px;padding:2px 4px">&#128465;</button>';
+    h+='</div>';
+  });
+  el.innerHTML=h;
 }
 
 //=== AUTH ===================================================================
@@ -1596,25 +1787,167 @@ function renderInforme(){
 
   // By worker table
   h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128101; Por trabajador</div></div></div>';
-  h+='<div class="table-wrap"><table><thead><tr><th>Trabajador</th><th>Horas</th><th>Registros</th><th>% del total</th></tr></thead><tbody>';
+  h+='<div class="table-wrap"><table><thead><tr><th>Trabajador</th><th>Horas</th><th>Dias trabajados</th><th>% del total</th></tr></thead><tbody>';
   Object.keys(byWorker).sort(function(a,b){return byWorker[b]-byWorker[a];}).forEach(function(w){
-    var cnt=data.filter(function(r){return r.user===w;}).length;
+    var wdays=Object.keys(data.filter(function(r){return r.user===w;}).reduce(function(m,r){m[r.date]=1;return m;},{})).length; var cnt=wdays;
     var pct=total>0?Math.round(byWorker[w]/total*100):0;
     h+='<tr><td style="font-weight:600">'+w+'</td><td><b>'+byWorker[w].toFixed(1)+'</b> hrs</td><td>'+cnt+'</td>';
     h+='<td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#EEE;border-radius:4px"><div style="width:'+pct+'%;height:8px;background:var(--primary);border-radius:4px"></div></div><span style="font-size:12px;color:#666;min-width:32px">'+pct+'%</span></div></td></tr>';
   });
   h+='</tbody></table></div></div>';
 
-  // By negocio table
+  // By negocio table — agrupado por GRUPOS_BASE
   h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#127968; Por negocio</div></div></div>';
-  h+='<div class="table-wrap"><table><thead><tr><th>Negocio</th><th>Horas</th><th>Registros</th><th>% del total</th></tr></thead><tbody>';
-  Object.keys(byNeg).sort(function(a,b){return byNeg[b]-byNeg[a];}).forEach(function(n){
-    var cnt=data.filter(function(r){return r.negocio===n;}).length;
-    var pct=total>0?Math.round(byNeg[n]/total*100):0;
-    h+='<tr><td style="font-weight:600">'+n+'</td><td><b>'+byNeg[n].toFixed(1)+'</b> hrs</td><td>'+cnt+'</td>';
-    h+='<td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#EEE;border-radius:4px"><div style="width:'+pct+'%;height:8px;background:var(--secondary);border-radius:4px"></div></div><span style="font-size:12px;color:#666;min-width:32px">'+pct+'%</span></div></td></tr>';
+  h+='<div class="table-wrap"><table><thead><tr><th>Negocio</th><th>Horas</th><th>Dias trabajados</th><th>% del total</th></tr></thead><tbody>';
+  var GC_INF={'Tarter Izard':'#7366FF','Pas de la Casa':'#F73164','Otros':'#51BB25','Servicios':'#00CFE8'};
+  // First render groups, then any unclassified
+  var knownNegs=[];
+  Object.keys(GRUPOS_BASE).forEach(function(grupo){
+    var ps=GRUPOS_BASE[grupo];
+    var grupoTotal=ps.reduce(function(s,p){return s+(byNeg[p]||0);},0);
+    if(!grupoTotal) return;
+    var gc=GC_INF[grupo]||'#888';
+    // Group header row
+    h+='<tr style="background:'+gc+'18"><td colspan="4" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:'+gc+';padding:7px 14px">'+grupo+'</td></tr>';
+    ps.forEach(function(n){
+      if(!(byNeg[n]>0)) return;
+      knownNegs.push(n);
+      var cnt=Object.keys(data.filter(function(r){return r.negocio===n;}).reduce(function(m,r){m[r.date]=1;return m;},{})).length;
+      var pct=total>0?Math.round(byNeg[n]/total*100):0;
+      h+='<tr><td style="font-weight:500;padding-left:22px">'+n+'</td><td><b>'+byNeg[n].toFixed(1)+'</b> hrs</td><td>'+cnt+'</td>';
+      h+='<td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#EEE;border-radius:4px"><div style="width:'+pct+'%;height:8px;background:'+gc+';border-radius:4px"></div></div><span style="font-size:12px;color:#666;min-width:32px">'+pct+'%</span></div></td></tr>';
+    });
+    // Subtotal row
+    var grupoTotal2=ps.reduce(function(s,p){return s+(byNeg[p]||0);},0);
+    var grpCnt=Object.keys(data.filter(function(r){return ps.indexOf(r.negocio)>=0;}).reduce(function(m,r){m[r.date]=1;return m;},{})).length;
+    var grpPct=total>0?Math.round(grupoTotal2/total*100):0;
+    h+='<tr style="background:'+gc+'12;border-top:1px solid '+gc+'44"><td style="font-size:11px;font-weight:700;color:'+gc+';padding-left:14px">Subtotal '+grupo+'</td><td><b style="color:'+gc+'">'+grupoTotal2.toFixed(1)+'</b> hrs</td><td style="color:#666">'+grpCnt+'</td><td style="font-size:12px;color:'+gc+';font-weight:600">'+grpPct+'%</td></tr>';
   });
+  // Unclassified
+  var unclNeg=Object.keys(byNeg).filter(function(n){return knownNegs.indexOf(n)<0&&byNeg[n]>0;});
+  if(unclNeg.length>0){
+    var unclTotal=unclNeg.reduce(function(s,n){return s+(byNeg[n]||0);},0);
+    h+='<tr style="background:#F3F4F618"><td colspan="4" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9CA3AF;padding:7px 14px">Sin clasificar</td></tr>';
+    unclNeg.forEach(function(n){
+      var cnt=Object.keys(data.filter(function(r){return r.negocio===n;}).reduce(function(m,r){m[r.date]=1;return m;},{})).length;
+      var pct=total>0?Math.round(byNeg[n]/total*100):0;
+      h+='<tr><td style="font-weight:500;padding-left:22px">'+n+'</td><td><b>'+byNeg[n].toFixed(1)+'</b> hrs</td><td>'+cnt+'</td>';
+      h+='<td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#EEE;border-radius:4px"><div style="width:'+pct+'%;height:8px;background:#9CA3AF;border-radius:4px"></div></div><span style="font-size:12px;color:#666;min-width:32px">'+pct+'%</span></div></td></tr>';
+    });
+    var unclCnt=data.filter(function(r){return unclNeg.indexOf(r.negocio)>=0;}).length;
+    h+='<tr style="background:#F3F4F612;border-top:1px solid #D1D5DB"><td style="font-size:11px;font-weight:700;color:#6B7280;padding-left:14px">Subtotal Sin clasificar</td><td><b style="color:#6B7280">'+unclTotal.toFixed(1)+'</b> hrs</td><td style="color:#666">'+unclCnt+'</td><td></td></tr>';
+  }
   h+='</tbody></table></div></div>';
+
+  // ── CONTROL CONTRACTUAL CIRCUITO ─────────────────────────────────────────
+  // Solo mostrar si el filtro incluye Circuito o todos los negocios
+  var nfVal=document.getElementById('inf-negocio').value;
+  var inclCircuito = nfVal==='all' || nfVal==='Circuito';
+  var inclEvento   = nfVal==='all' || nfVal==='Circuito Evento';
+  // Para el control contractual siempre usar TODOS los trabajadores
+  // (las horas del Circuito se suman entre todos, no por trabajador individual)
+  var mf2=document.getElementById('inf-month').value;
+  var sf2=document.getElementById('inf-status').value;
+  var allData = records.filter(function(r){
+    return (mf2==='all'||r.date.indexOf(mf2)===0)
+      && (sf2==='all'||r.status===sf2);
+  });
+
+  if(inclCircuito || inclEvento){
+    var circData   = allData.filter(function(r){return r.negocio==='Circuito';});
+    var eventoData = allData.filter(function(r){return r.negocio==='Circuito Evento';});
+    var META_SEMANA = 6;
+
+    if(circData.length>0 || eventoData.length>0){
+      h+='<div class="card" style="margin-bottom:16px;border-top:4px solid var(--primary)">';
+      h+='<div class="card-header" style="background:var(--primary-light)">';
+      h+='<div><div class="card-title" style="color:var(--primary)">&#128336; Control contractual — Circuito</div>';
+      h+='<div class="card-sub">Meta: '+META_SEMANA+' hrs/semana (suma de todos los trabajadores por dia)</div></div>';
+      h+='</div><div class="card-body">';
+
+      // Helper: get Monday of a date
+      function getMon(dateStr){
+        var d=new Date(dateStr+'T00:00:00');
+        var day=d.getDay(); // 0=Sun
+        var diff=day===0?-6:1-day;
+        d.setDate(d.getDate()+diff);
+        return d.toISOString().split('T')[0];
+      }
+
+      if(circData.length>0){
+        // Build weeks
+        var weekMap={};
+        circData.forEach(function(r){
+          var mon=getMon(r.date);
+          if(!weekMap[mon]) weekMap[mon]={days:{},workers:{}};
+          if(!weekMap[mon].days[r.date]) weekMap[mon].days[r.date]=0;
+          weekMap[mon].days[r.date]+=(r.hrs||0);
+          weekMap[mon].workers[r.user]=(weekMap[mon].workers[r.user]||0)+(r.hrs||0);
+        });
+
+        h+='<div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text)">Horas contractuales (Circuito)</div>';
+        h+='<div class="table-wrap"><table><thead><tr>';
+        h+='<th>Semana</th><th>Lun</th><th>Mar</th><th>Mie</th><th>Jue</th><th>Vie</th><th>Sab</th><th>Dom</th>';
+        h+='<th>Total sem.</th><th>Meta</th><th>Estado</th><th>Trabajadores</th>';
+        h+='</tr></thead><tbody>';
+
+        var totalCircuito=0;
+        Object.keys(weekMap).sort().forEach(function(mon){
+          var wk=weekMap[mon];
+          var days=['','','','','','',''];
+          var dayLabels=['Lun','Mar','Mie','Jue','Vie','Sab','Dom'];
+          var monDate=new Date(mon+'T00:00:00');
+          var semTotal=0;
+          for(var d=0;d<7;d++){
+            var dd=new Date(monDate); dd.setDate(monDate.getDate()+d);
+            var ds=dd.toISOString().split('T')[0];
+            var dayHrs=wk.days[ds]||0;
+            days[d]=dayHrs>0?'<b>'+dayHrs.toFixed(1)+'</b>':'<span style="color:#CCC">—</span>';
+            semTotal+=dayHrs;
+          }
+          totalCircuito+=semTotal;
+          var pct=Math.min(semTotal/META_SEMANA*100,100);
+          var color=semTotal>=META_SEMANA?'#51BB25':semTotal>=META_SEMANA/2?'#F8D62B':'#DC3545';
+          var semLabel=fmtDate(mon)+' – '+fmtDate(new Date(new Date(mon+'T00:00:00').setDate(new Date(mon+'T00:00:00').getDate()+6)).toISOString().split('T')[0]);
+          var workers=Object.keys(wk.workers).map(function(w){return w+' ('+wk.workers[w].toFixed(1)+'h)';}).join(', ');
+          var estado=semTotal>=META_SEMANA
+            ?'<span style="color:#51BB25;font-weight:700">&#10003; Completa</span>'
+            :semTotal>0
+              ?'<span style="color:#F8D62B;font-weight:700">&#9654; '+semTotal.toFixed(1)+'/'+META_SEMANA+'h</span>'
+              :'<span style="color:#DC3545;font-weight:700">&#9888; Sin horas</span>';
+          h+='<tr>';
+          h+='<td style="font-size:11px;white-space:nowrap">'+semLabel+'</td>';
+          days.forEach(function(dv){h+='<td style="text-align:center;font-size:12px">'+dv+'</td>';});
+          h+='<td style="text-align:center"><b style="color:'+color+'">'+semTotal.toFixed(1)+'</b></td>';
+          h+='<td style="text-align:center;color:#999">'+META_SEMANA+'</td>';
+          h+='<td>'+estado+'</td>';
+          h+='<td style="font-size:11px;color:#666">'+workers+'</td>';
+          h+='</tr>';
+        });
+        h+='</tbody></table></div>';
+        h+='<div style="margin-top:10px;padding:10px 14px;background:var(--primary-light);border-radius:8px;font-size:13px">';
+        h+='Total horas contractuales Circuito en el periodo: <b>'+totalCircuito.toFixed(1)+' hrs</b>';
+        h+='</div>';
+      }
+
+      if(eventoData.length>0){
+        h+='<div style="margin-top:24px">';
+        h+='<div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--secondary)">Horas fuera de contrato (Circuito Evento)</div>';
+        h+='<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Trabajador</th><th>Horas</th><th>Observaciones</th></tr></thead><tbody>';
+        var totalEvento=0;
+        eventoData.sort(function(a,b){return a.date.localeCompare(b.date);}).forEach(function(r){
+          totalEvento+=(r.hrs||0);
+          h+='<tr><td>'+fmtDate(r.date)+'</td><td>'+r.user+'</td><td><b>'+fmtHrs(r.hrs||0)+'</b></td><td style="font-size:12px;color:#666">'+( r.obs||'—')+'</td></tr>';
+        });
+        h+='</tbody></table></div>';
+        h+='<div style="margin-top:10px;padding:10px 14px;background:var(--secondary-light,#FEE7EE);border-radius:8px;font-size:13px">';
+        h+='Total horas Circuito Evento: <b>'+totalEvento.toFixed(1)+' hrs</b>';
+        h+='</div></div>';
+      }
+
+      h+='</div></div>'; // /card-body /card
+    }
+  }
 
   // Detail table
   h+='<div class="card"><div class="card-header colored"><div><div class="card-title">&#128203; Detalle de registros</div></div></div>';
@@ -1637,29 +1970,54 @@ function exportPDF(){
   var byWorker={},byNeg={};
   data.forEach(function(r){byWorker[r.user]=(byWorker[r.user]||0)+(r.hrs||0);});
   data.forEach(function(r){byNeg[r.negocio]=(byNeg[r.negocio]||0)+(r.hrs||0);});
-
   var mLabel=document.getElementById('inf-month').options[document.getElementById('inf-month').selectedIndex].text;
   var wLabel=document.getElementById('inf-worker').value==='all'?'Todos':document.getElementById('inf-worker').value;
   var nLabel=document.getElementById('inf-negocio').value==='all'?'Todos':document.getElementById('inf-negocio').value;
 
-  var html='<html><head><meta charset="UTF-8"><style>'
-    +'body{font-family:Arial,sans-serif;font-size:13px;color:#222;margin:32px}'
-    +'h1{font-size:22px;color:#7366FF;margin-bottom:4px}'
-    +'.sub{color:#888;font-size:12px;margin-bottom:24px}'
-    +'.section{font-size:15px;font-weight:700;color:#7366FF;border-bottom:2px solid #7366FF;padding-bottom:6px;margin:22px 0 12px}'
-    +'table{width:100%;border-collapse:collapse;margin-bottom:18px}'
-    +'th{background:#F0EEFF;color:#5B4FE8;text-align:left;padding:8px 12px;font-size:12px}'
-    +'td{padding:8px 12px;border-bottom:1px solid #EEE;font-size:13px}'
-    +'.kpi-row{display:flex;gap:20px;margin-bottom:20px}'
-    +'.kpi-box{background:#F0EEFF;border-radius:10px;padding:14px 20px;flex:1;text-align:center}'
-    +'.kpi-val{font-size:28px;font-weight:700;color:#7366FF}'
-    +'.kpi-lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.05em}'
-    +'.bar{height:8px;background:#EEE;border-radius:4px;display:inline-block;width:100px;vertical-align:middle}'
-    +'.bar-fill{height:8px;background:#7366FF;border-radius:4px;display:inline-block}'
-    +'</style></head><body>'
-    +'<h1>&#9203; CleanHours - Informe de Horas</h1>'
-    +'<div class="sub">Periodo: '+mLabel+' &nbsp;|&nbsp; Trabajador: '+wLabel+' &nbsp;|&nbsp; Negocio: '+nLabel+'<br>Generado: '+new Date().toLocaleString('es-ES')+'</div>'
+  // Build Circuito contractual data
+  var mf2=document.getElementById('inf-month').value;
+  var sf2=document.getElementById('inf-status').value;
+  var allData=records.filter(function(r){return(mf2==='all'||r.date.indexOf(mf2)===0)&&(sf2==='all'||r.status===sf2);});
+  var circData=allData.filter(function(r){return r.negocio==='Circuito';});
+  var eventoData=allData.filter(function(r){return r.negocio==='Circuito Evento';});
+  function getMon2(ds){var d=new Date(ds+'T00:00:00');var day=d.getDay();var diff=day===0?-6:1-day;d.setDate(d.getDate()+diff);return d.toISOString().split('T')[0];}
+  var weekMap2={};
+  circData.forEach(function(r){
+    var mon=getMon2(r.date);
+    if(!weekMap2[mon]) weekMap2[mon]={days:{},workers:{}};
+    if(!weekMap2[mon].days[r.date]) weekMap2[mon].days[r.date]=0;
+    weekMap2[mon].days[r.date]+=(r.hrs||0);
+    weekMap2[mon].workers[r.user]=(weekMap2[mon].workers[r.user]||0)+(r.hrs||0);
+  });
 
+  var html='<html><head><meta charset="UTF-8"><style>'
+    +'*{box-sizing:border-box}'
+    +'@page{size:A4;margin:14mm 12mm}'
+    +'body{font-family:Arial,sans-serif;font-size:11px;color:#222;margin:0}'
+    +'h1{font-size:17px;color:#7366FF;margin:0 0 2px}'
+    +'.sub{color:#888;font-size:10px;margin-bottom:16px}'
+    +'.section{font-size:12px;font-weight:700;color:#7366FF;border-bottom:2px solid #7366FF;padding-bottom:4px;margin:14px 0 8px;page-break-after:avoid}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:10px}'
+    +'th{background:#F0EEFF;color:#5B4FE8;text-align:left;padding:5px 8px;font-size:10px}'
+    +'td{padding:5px 8px;border-bottom:1px solid #EEE}'
+    +'.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}'
+    +'.kpi-row{display:flex;gap:10px;margin-bottom:14px}'
+    +'.kpi-box{background:#F0EEFF;border-radius:8px;padding:10px 14px;flex:1;text-align:center}'
+    +'.kpi-val{font-size:22px;font-weight:700;color:#7366FF}'
+    +'.kpi-lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.05em}'
+    +'.bar{height:6px;background:#EEE;border-radius:3px;display:inline-block;width:80px;vertical-align:middle}'
+    +'.bar-fill{height:6px;border-radius:3px;display:inline-block}'
+    +'.circ-card{border:2px solid #7366FF;border-radius:8px;padding:12px;margin-bottom:12px}'
+    +'.circ-title{font-size:12px;font-weight:700;color:#7366FF;margin-bottom:2px}'
+    +'.circ-sub{font-size:9px;color:#888;margin-bottom:10px}'
+    +'.ok{color:#51BB25;font-weight:700} .warn{color:#F8D62B;font-weight:700} .bad{color:#DC3545;font-weight:700}'
+    +'@media print{.no-print{display:none}}'
+    +'</style></head><body>'
+
+    +'<h1>CleanHours — Informe de Horas</h1>'
+    +'<div class="sub">Periodo: '+mLabel+' &nbsp;·&nbsp; Trabajador: '+wLabel+' &nbsp;·&nbsp; Negocio: '+nLabel+' &nbsp;·&nbsp; '+new Date().toLocaleDateString('es-ES')+'</div>'
+
+    // RESUMEN
     +'<div class="section">Resumen</div>'
     +'<div class="kpi-row">'
     +'<div class="kpi-box"><div class="kpi-val">'+total.toFixed(1)+'</div><div class="kpi-lbl">Total horas</div></div>'
@@ -1668,28 +2026,84 @@ function exportPDF(){
     +'<div class="kpi-box"><div class="kpi-val">'+data.length+'</div><div class="kpi-lbl">Registros</div></div>'
     +'</div>'
 
+    // POR TRABAJADOR + POR NEGOCIO en dos columnas
+    +'<div class="two-col">'
+    +'<div>'
     +'<div class="section">Por Trabajador</div>'
-    +'<table><thead><tr><th>Trabajador</th><th>Horas</th><th>Registros</th><th>%</th></tr></thead><tbody>';
+    +'<table><thead><tr><th>Trabajador</th><th>Horas</th><th>%</th></tr></thead><tbody>';
   Object.keys(byWorker).sort(function(a,b){return byWorker[b]-byWorker[a];}).forEach(function(w){
-    var cnt=data.filter(function(r){return r.user===w;}).length;
     var pct=total>0?Math.round(byWorker[w]/total*100):0;
-    html+='<tr><td><b>'+w+'</b></td><td>'+byWorker[w].toFixed(1)+' hrs</td><td>'+cnt+'</td><td><span class="bar"><span class="bar-fill" style="width:'+pct+'px"></span></span> '+pct+'%</td></tr>';
+    html+='<tr><td><b>'+w+'</b></td><td>'+byWorker[w].toFixed(1)+' hrs</td><td><span class="bar"><span class="bar-fill" style="width:'+pct*0.8+'px;background:#7366FF"></span></span> '+pct+'%</td></tr>';
   });
-  html+='</tbody></table>'
+  html+='</tbody></table></div>'
+    +'<div>'
     +'<div class="section">Por Negocio</div>'
-    +'<table><thead><tr><th>Negocio</th><th>Horas</th><th>Registros</th><th>%</th></tr></thead><tbody>';
-  Object.keys(byNeg).sort(function(a,b){return byNeg[b]-byNeg[a];}).forEach(function(n){
-    var cnt=data.filter(function(r){return r.negocio===n;}).length;
-    var pct=total>0?Math.round(byNeg[n]/total*100):0;
-    html+='<tr><td><b>'+n+'</b></td><td>'+byNeg[n].toFixed(1)+' hrs</td><td>'+cnt+'</td><td><span class="bar"><span class="bar-fill" style="width:'+pct+'px;background:#F73164"></span></span> '+pct+'%</td></tr>';
+    +'<table><thead><tr><th>Negocio</th><th>Horas</th><th>%</th></tr></thead><tbody>';
+  var GC_PDF={'Tarter Izard':'#7366FF','Pas de la Casa':'#F73164','Otros':'#51BB25','Servicios':'#00CFE8'};
+  var knownNP=[];
+  Object.keys(GRUPOS_BASE).forEach(function(grupo){
+    var ps=GRUPOS_BASE[grupo]; var gc=GC_PDF[grupo]||'#888';
+    var gt=ps.reduce(function(s,p){return s+(byNeg[p]||0);},0); if(!gt) return;
+    html+='<tr style="background:'+gc+'22"><td colspan="3" style="font-size:9px;font-weight:700;text-transform:uppercase;color:'+gc+'">'+grupo+'</td></tr>';
+    ps.forEach(function(n){
+      if(!(byNeg[n]>0)) return; knownNP.push(n);
+      var pct=total>0?Math.round(byNeg[n]/total*100):0;
+      html+='<tr><td style="padding-left:14px"><b>'+n+'</b></td><td>'+byNeg[n].toFixed(1)+' hrs</td><td><span class="bar"><span class="bar-fill" style="width:'+pct*0.8+'px;background:'+gc+'"></span></span> '+pct+'%</td></tr>';
+    });
+    var gt2=ps.reduce(function(s,p){return s+(byNeg[p]||0);},0);
+    var gp=total>0?Math.round(gt2/total*100):0;
+    html+='<tr style="background:'+gc+'18;border-top:1px solid '+gc+'"><td style="font-size:9px;font-weight:700;color:'+gc+'">Subtotal</td><td style="font-weight:700;color:'+gc+'">'+gt2.toFixed(1)+' hrs</td><td style="font-size:9px;font-weight:700;color:'+gc+'">'+gp+'%</td></tr>';
   });
-  html+='</tbody></table></body></html>';
+  var unclP=Object.keys(byNeg).filter(function(n){return knownNP.indexOf(n)<0&&byNeg[n]>0;});
+  if(unclP.length>0){
+    html+='<tr style="background:#EEE"><td colspan="3" style="font-size:9px;font-weight:700;color:#666">Sin clasificar</td></tr>';
+    unclP.forEach(function(n){var pct=total>0?Math.round(byNeg[n]/total*100):0;html+='<tr><td style="padding-left:14px"><b>'+n+'</b></td><td>'+byNeg[n].toFixed(1)+' hrs</td><td>'+pct+'%</td></tr>';});
+  }
+  html+='</tbody></table></div></div>';
 
+  // CONTROL CIRCUITO
+  if(circData.length>0||eventoData.length>0){
+    html+='<div class="section">Control Contractual — Circuito</div>';
+    html+='<div class="circ-card">';
+    html+='<div class="circ-title">Horas contractuales (Circuito) &nbsp;·&nbsp; Meta: 6 hrs/semana</div>';
+    if(circData.length>0){
+      html+='<table><thead><tr><th>Semana</th><th>Lun</th><th>Mar</th><th>Mie</th><th>Jue</th><th>Vie</th><th>Sab</th><th>Dom</th><th>Total</th><th>Estado</th><th>Trabajadores</th></tr></thead><tbody>';
+      var totalC=0;
+      Object.keys(weekMap2).sort().forEach(function(mon){
+        var wk=weekMap2[mon];var semT=0;var days=[];
+        var monD=new Date(mon+'T00:00:00');
+        for(var d=0;d<7;d++){var dd=new Date(monD);dd.setDate(monD.getDate()+d);var ds=dd.toISOString().split('T')[0];var dh=wk.days[ds]||0;days.push(dh>0?'<b>'+dh.toFixed(1)+'</b>':'—');semT+=dh;}
+        totalC+=semT;
+        var endD=new Date(monD);endD.setDate(monD.getDate()+6);
+        var semLabel=fmtDate(mon)+' – '+fmtDate(endD.toISOString().split('T')[0]);
+        var sc=semT>=6?'ok':semT>=3?'warn':'bad';
+        var estado=semT>=6?'<span class="ok">✓ Completa</span>':semT>0?'<span class="warn">'+semT.toFixed(1)+'/6h</span>':'<span class="bad">Sin horas</span>';
+        var workers=Object.keys(wk.workers).map(function(w){return w+'('+wk.workers[w].toFixed(1)+'h)';}).join(', ');
+        html+='<tr><td style="font-size:9px">'+semLabel+'</td>';
+        days.forEach(function(dv){html+='<td style="text-align:center">'+dv+'</td>';});
+        html+='<td style="text-align:center"><b>'+semT.toFixed(1)+'</b></td><td>'+estado+'</td><td style="font-size:9px">'+workers+'</td></tr>';
+      });
+      html+='</tbody></table>';
+      html+='<div style="font-size:10px;font-weight:600;color:#7366FF">Total contractual: '+totalC.toFixed(1)+' hrs</div>';
+    }
+    if(eventoData.length>0){
+      var totEv=eventoData.reduce(function(s,r){return s+(r.hrs||0);},0);
+      html+='<div style="margin-top:10px;font-size:11px;font-weight:700;color:#F73164">Circuito Evento (fuera contrato): '+totEv.toFixed(1)+' hrs</div>';
+      html+='<table style="margin-top:6px"><thead><tr><th>Fecha</th><th>Trabajador</th><th>Horas</th><th>Obs</th></tr></thead><tbody>';
+      eventoData.sort(function(a,b){return a.date.localeCompare(b.date);}).forEach(function(r){
+        html+='<tr><td>'+fmtDate(r.date)+'</td><td>'+r.user+'</td><td>'+fmtHrs(r.hrs||0)+'</td><td style="font-size:9px">'+( r.obs||'')+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }
+    html+='</div>';
+  }
+
+  html+='</body></html>';
   var w2=window.open('','_blank');
   w2.document.write(html);
   w2.document.close();
   w2.focus();
-  setTimeout(function(){w2.print();},500);
+  setTimeout(function(){w2.print();},600);
 }
 
 function exportExcel(){
@@ -1747,9 +2161,9 @@ function showCalTooltip(el, text){
   var el=document.getElementById('header-date');
   if(el) el.textContent=now.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
   var today=now.toISOString().split('T')[0];
-  ['w-date','a-date','cal-date'].forEach(function(id){var e=document.getElementById(id);if(e)e.value=today;});
-  ['w-start','a-start'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='09:00';});
-  ['w-end','a-end'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='13:00';});
+  ['w-date','a-date','cal-date','disp-date'].forEach(function(id){var e=document.getElementById(id);if(e)e.value=today;});
+  ['w-start','a-start','disp-start'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='09:00';});
+  ['w-end','a-end','disp-end'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='18:00';});
   if(apiKey){
     var ki=document.getElementById('api-key-input');if(ki)ki.value=apiKey;
     var ks=document.getElementById('apikey-section');if(ks)ks.style.display='none';
