@@ -857,8 +857,8 @@ function sheet(rec,accion){
   fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({fecha:fmtDate(rec.date),trabajador:rec.user,negocio:rec.negocio,
     inicio:rec.start,termino:rec.end,horas:rec.hrs,observaciones:rec.obs||'',
-    admin:rec.admin||'',estado:rec.status,registrado:new Date().toLocaleString('es-ES'),
-    accion:accion||'',id:rec.id||''})
+    admin:rec.admin||'',estado:'',registrado:new Date().toLocaleString('es-ES'),
+    accion:accion||'',id:rec.id?String(rec.id):''})
   }).catch(function(){});
 }
 
@@ -964,7 +964,7 @@ function submitAdmin(){
   if(p){
     p.adminHrs=hrs; p.admin=admin; p.status=Math.abs(p.hrs-hrs)<0.09?'ok':'mismatch';
     addMsg((p.status==='ok'?'Cuadra':'Conflicto')+' - '+admin+'<br>'+user+' - '+neg+' - '+fmtDate(date)+'<br>'+fmtHrs(hrs),admin,'in',true);
-    sheet(p); toast(p.status==='ok'?'Cuadra - confirmado':'Conflicto detectado');
+    toast(p.status==='ok'?'Cuadra - confirmado':'Conflicto detectado');
   } else {
     var rec={id:getNextId(),date:date,negocio:neg,start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:hrs,admin:admin,status:'admin-only'};
     records.push(rec); sheet(rec);
@@ -1053,7 +1053,7 @@ function confPrev(){
     var h=calcHrs(e.start,e.end); if(h<=0) return;
     if(isAdm){
       var p=null;for(var i=0;i<records.length;i++){if(records[i].date===e.date&&records[i].negocio===e.negocio&&records[i].user===e.user&&records[i].status==='pending'){p=records[i];break;}}
-      if(p){p.adminHrs=h;p.admin=sender;p.status=Math.abs(p.hrs-h)<0.09?'ok':'mismatch';sheet(p);}
+      if(p){p.adminHrs=h;p.admin=sender;p.status=Math.abs(p.hrs-h)<0.09?'ok':'mismatch';}
       else{var rec={id:getNextId(),date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:h,admin:sender,status:'admin-only'};records.push(rec);sheet(rec);}
     }else{
       var rec={id:getNextId(),date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:null,admin:null,status:'pending'};
@@ -1070,11 +1070,11 @@ function cancelPrev(){pendingPreview=null;addMsg('Cancelado.','Sistema','system'
 function confRec(idx){
   records[idx].status='ok';records[idx].adminHrs=records[idx].hrs;
   if(!records[idx].admin)records[idx].admin='Admin';
-  saveRec();setPendBadge();sheet(records[idx]);renderAudit();toast('Confirmado');
+  saveRec();setPendBadge();renderAudit();toast('Confirmado');
 }
 function rejRec(idx){
   records[idx].status='mismatch';
-  saveRec();setPendBadge();sheet(records[idx]);renderAudit();toast('Conflicto marcado');
+  saveRec();setPendBadge();renderAudit();toast('Conflicto marcado');
 }
 function delRec(idx){
   if(!confirm('Eliminar este registro? Esta accion no se puede deshacer.')) return;
