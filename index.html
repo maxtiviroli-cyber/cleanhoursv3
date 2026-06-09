@@ -1089,7 +1089,7 @@ function renderAudit(){
   var fs=document.getElementById('filter-status').value;
   var fn=document.getElementById('filter-neg-audit').value;
   var data=records.filter(function(r){return(!fm||r.date.indexOf(fm)===0)&&(!fw||r.user===fw)&&(!fs||r.status===fs)&&(!fn||r.negocio===fn);});
-  data.sort(function(a,b){return isoToDate(a.date)-isoToDate(b.date);});
+  data.sort(function(a,b){return isoToDate(b.date)-isoToDate(a.date);});
   var tb=document.getElementById('audit-tbody');
   if(!data.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#999">Sin registros para los filtros seleccionados</td></tr>';return;}
   var h='';
@@ -1491,7 +1491,7 @@ function renderCal(){
       grid+='<div style="display:flex;gap:2px;margin-top:2px;flex-wrap:wrap" onclick="event.stopPropagation();showCalTooltip(this,\'' +safeDT+ '\')">';
       dayDisp.forEach(function(x){
         var dc=DISP_COLORS[x.worker]||DISP_COLORS.default;
-        var initials=x.worker.split(' ').map(function(p){return p[0];}).join('').substring(0,2).toUpperCase();
+        var wparts=x.worker.trim().split(/\s+/); var initials=(wparts.length>=2?wparts[0][0]+wparts[wparts.length-1][0]:x.worker.substring(0,2)).toUpperCase();
         grid+='<div style="background:'+dc+';color:white;border-radius:3px;font-size:7px;font-weight:700;padding:1px 3px;line-height:1.4;flex-shrink:0">'+initials+'</div>';
       });
       grid+='</div>';
@@ -1779,14 +1779,17 @@ function renderInforme(){
 
   var h='';
 
-  // Summary card
-  h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128202; Resumen</div></div></div><div class="card-body">';
-  h+='<div class="kpi-grid">';
+  // Summary card — same style as dashboard
+  var infDisabledW=getCfg().disabled||[];
+  var infActiveW=getCfg().workers.filter(function(w){return infDisabledW.indexOf(w)<0;});
+  var infUniqW=infActiveW.filter(function(w){return data.some(function(r){return r.user===w;});}).length;
+  var infUniqD=Object.keys(data.reduce(function(m,r){m[r.date]=1;return m;},{})).length;
+  h+='<div class="kpi-grid" style="margin-bottom:20px">';
   h+='<div class="kpi primary"><div class="kpi-icon">&#9201;</div><div class="kpi-value">'+total.toFixed(1)+'</div><div class="kpi-label">Total horas</div></div>';
-  h+='<div class="kpi success"><div class="kpi-icon">&#10003;</div><div class="kpi-value">'+ok+'</div><div class="kpi-label">Confirmados</div></div>';
+  h+='<div class="kpi success"><div class="kpi-icon">&#128101;</div><div class="kpi-value">'+infUniqW+'</div><div class="kpi-label">Trabajadores</div></div>';
   h+='<div class="kpi warning"><div class="kpi-icon">&#8987;</div><div class="kpi-value">'+pend+'</div><div class="kpi-label">Pendientes</div></div>';
-  h+='<div class="kpi secondary"><div class="kpi-icon">&#128203;</div><div class="kpi-value">'+data.length+'</div><div class="kpi-label">Registros</div></div>';
-  h+='</div></div></div>';
+  h+='<div class="kpi secondary"><div class="kpi-icon">&#128197;</div><div class="kpi-value">'+infUniqD+'</div><div class="kpi-label">Dias del mes</div></div>';
+  h+='</div>';
 
   // By worker table
   h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128101; Por trabajador</div></div></div>';
@@ -2072,7 +2075,9 @@ function exportPDF(){
     if(circData.length>0){
       html+='<table><thead><tr><th>Semana</th><th>Lun</th><th>Mar</th><th>Mie</th><th>Jue</th><th>Vie</th><th>Sab</th><th>Dom</th><th>Total</th><th>Estado</th><th>Trabajadores</th></tr></thead><tbody>';
       var totalC=0;
-      Object.keys(weekMap2).sort().forEach(function(mon){
+      var allWeeks=Object.keys(weekMap2).sort();
+      var last4=allWeeks.slice(-4);
+      last4.forEach(function(mon){
         var wk=weekMap2[mon];var semT=0;var days=[];
         var monD=new Date(mon+'T00:00:00');
         for(var d=0;d<7;d++){var dd=new Date(monD);dd.setDate(monD.getDate()+d);var ds=dd.toISOString().split('T')[0];var dh=wk.days[ds]||0;days.push(dh>0?'<b>'+dh.toFixed(1)+'</b>':'—');semT+=dh;}
