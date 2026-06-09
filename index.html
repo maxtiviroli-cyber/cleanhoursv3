@@ -809,9 +809,12 @@ var apiKey = localStorage.getItem('horas_apikey')||'';
 
 // ID consecutivo (6 digitos desde 111111)
 function getNextId(){
-  var n=0; try{n=parseInt(localStorage.getItem('rec_next_id')||'0');}catch(e){}
-  if(n<111111) n=111111;
-  localStorage.setItem('rec_next_id', n+1);
+  var n=111111;
+  try{
+    var stored=localStorage.getItem('rec_next_id');
+    if(stored) n=Math.max(parseInt(stored)||111111, 111111);
+  }catch(e){}
+  try{ localStorage.setItem('rec_next_id', String(n+1)); }catch(e){}
   return n;
 }
 records = records.map(function(r,i){ if(!r.id) r.id=111111+i; return r; });
@@ -1051,9 +1054,9 @@ function confPrev(){
     if(isAdm){
       var p=null;for(var i=0;i<records.length;i++){if(records[i].date===e.date&&records[i].negocio===e.negocio&&records[i].user===e.user&&records[i].status==='pending'){p=records[i];break;}}
       if(p){p.adminHrs=h;p.admin=sender;p.status=Math.abs(p.hrs-h)<0.09?'ok':'mismatch';sheet(p);}
-      else{var rec={date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:h,admin:sender,status:'admin-only'};records.push(rec);sheet(rec);}
+      else{var rec={id:getNextId(),date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:h,admin:sender,status:'admin-only'};records.push(rec);sheet(rec);}
     }else{
-      var rec={date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:null,admin:null,status:'pending'};
+      var rec={id:getNextId(),date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:null,admin:null,status:'pending'};
       records.push(rec);sheet(rec);
     }
   });
