@@ -1913,11 +1913,13 @@ function renderInforme(){
 
       // Helper: get Monday of a date
       function getMon(dateStr){
-        var d=new Date(dateStr+'T00:00:00');
-        var day=d.getDay(); // 0=Sun
+        var p=dateStr.split('-');
+        var d=new Date(+p[0],+p[1]-1,+p[2]);
+        var day=d.getDay();
         var diff=day===0?-6:1-day;
         d.setDate(d.getDate()+diff);
-        return d.toISOString().split('T')[0];
+        var mm=d.getMonth()+1; var dd=d.getDate();
+        return d.getFullYear()+'-'+(mm<10?'0':'')+mm+'-'+(dd<10?'0':'')+dd;
       }
 
       if(circData.length>0){
@@ -1942,11 +1944,11 @@ function renderInforme(){
           var wk=weekMap[mon];
           var days=['','','','','','',''];
           var dayLabels=['Lun','Mar','Mie','Jue','Vie','Sab','Dom'];
-          var monDate=new Date(mon+'T00:00:00');
-          var semTotal=0;
+          var monS=mon.split('-'); var semTotal=0;
           for(var d=0;d<7;d++){
-            var dd=new Date(monDate); dd.setDate(monDate.getDate()+d);
-            var ds=dd.toISOString().split('T')[0];
+            var dd=new Date(+monS[0],+monS[1]-1,+monS[2]+d);
+            var ddm=dd.getMonth()+1; var ddd=dd.getDate();
+            var ds=dd.getFullYear()+'-'+(ddm<10?'0':'')+ddm+'-'+(ddd<10?'0':'')+ddd;
             var dayHrs=wk.days[ds]||0;
             days[d]=dayHrs>0?'<b>'+dayHrs.toFixed(1)+'</b>':'<span style="color:#CCC">—</span>';
             semTotal+=dayHrs;
@@ -1954,7 +1956,11 @@ function renderInforme(){
           totalCircuito+=semTotal;
           var pct=Math.min(semTotal/META_SEMANA*100,100);
           var color=semTotal>=META_SEMANA?'#51BB25':semTotal>=META_SEMANA/2?'#F8D62B':'#DC3545';
-          var semLabel=fmtDate(mon)+' – '+fmtDate(new Date(new Date(mon+'T00:00:00').setDate(new Date(mon+'T00:00:00').getDate()+6)).toISOString().split('T')[0]);
+          var monP=mon.split('-'); var monD2=new Date(+monP[0],+monP[1]-1,+monP[2]);
+          var sunD=new Date(+monP[0],+monP[1]-1,+monP[2]+6);
+          var sunMM=sunD.getMonth()+1; var sunDD=sunD.getDate();
+          var sunStr=sunD.getFullYear()+'-'+(sunMM<10?'0':'')+sunMM+'-'+(sunDD<10?'0':'')+sunDD;
+          var semLabel=fmtDate(mon)+' – '+fmtDate(sunStr);
           var workers=Object.keys(wk.workers).map(function(w){return w+' ('+wk.workers[w].toFixed(1)+'h)';}).join(', ');
           var estado=semTotal>=META_SEMANA
             ?'<span style="color:#51BB25;font-weight:700">&#10003; Completa</span>'
@@ -2030,7 +2036,14 @@ function exportPDF(){
   var allData=records.filter(function(r){return(mf2==='all'||r.date.indexOf(mf2)===0)&&(sf2==='all'||r.status===sf2);});
   var circData=allData.filter(function(r){return r.negocio==='Circuito';});
   var eventoData=allData.filter(function(r){return r.negocio==='Circuito Evento';});
-  function getMon2(ds){var d=new Date(ds+'T00:00:00');var day=d.getDay();var diff=day===0?-6:1-day;d.setDate(d.getDate()+diff);return d.toISOString().split('T')[0];}
+  function getMon2(ds){
+    var p=ds.split('-');
+    var d=new Date(+p[0],+p[1]-1,+p[2]);
+    var day=d.getDay(); var diff=day===0?-6:1-day;
+    d.setDate(d.getDate()+diff);
+    var mm=d.getMonth()+1; var dd=d.getDate();
+    return d.getFullYear()+'-'+(mm<10?'0':'')+mm+'-'+(dd<10?'0':'')+dd;
+  }
   var weekMap2={};
   circData.forEach(function(r){
     var mon=getMon2(r.date);
@@ -2123,11 +2136,14 @@ function exportPDF(){
       var last4=allWeeks.slice(-4);
       last4.forEach(function(mon){
         var wk=weekMap2[mon];var semT=0;var days=[];
-        var monD=new Date(mon+'T00:00:00');
-        for(var d=0;d<7;d++){var dd=new Date(monD);dd.setDate(monD.getDate()+d);var ds=dd.toISOString().split('T')[0];var dh=wk.days[ds]||0;days.push(dh>0?'<b>'+dh.toFixed(1)+'</b>':'—');semT+=dh;}
+        var monPDF=mon.split('-'); var monD=new Date(+monPDF[0],+monPDF[1]-1,+monPDF[2]);
+        for(var d=0;d<7;d++){var dd2=new Date(+monPDF[0],+monPDF[1]-1,+monPDF[2]+d);var ddm=dd2.getMonth()+1;var ddd=dd2.getDate();var ds=dd2.getFullYear()+'-'+(ddm<10?'0':'')+ddm+'-'+(ddd<10?'0':'')+ddd;var dh=wk.days[ds]||0;days.push(dh>0?'<b>'+dh.toFixed(1)+'</b>':'—');semT+=dh;}
         totalC+=semT;
-        var endD=new Date(monD);endD.setDate(monD.getDate()+6);
-        var semLabel=fmtDate(mon)+' – '+fmtDate(endD.toISOString().split('T')[0]);
+        var monParts=mon.split('-'); var monD=new Date(+monParts[0],+monParts[1]-1,+monParts[2]);
+        var sunD2=new Date(+monParts[0],+monParts[1]-1,+monParts[2]+6);
+        var smm=sunD2.getMonth()+1; var sdd=sunD2.getDate();
+        var sunStr2=sunD2.getFullYear()+'-'+(smm<10?'0':'')+smm+'-'+(sdd<10?'0':'')+sdd;
+        var semLabel=fmtDate(mon)+' – '+fmtDate(sunStr2);
         var sc=semT>=6?'ok':semT>=3?'warn':'bad';
         var estado=semT>=6?'<span class="ok">✓ Completa</span>':semT>0?'<span class="warn">'+semT.toFixed(1)+'/6h</span>':'<span class="bad">Sin horas</span>';
         var workers=Object.keys(wk.workers).map(function(w){return w+'('+wk.workers[w].toFixed(1)+'h)';}).join(', ');
