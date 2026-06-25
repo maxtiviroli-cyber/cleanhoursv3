@@ -3,229 +3,197 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>CleanHours</title>
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Servap Turistics — Gestión</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root {
-  --primary: #7366FF;
-  --primary-dark: #5B4FE8;
-  --primary-light: #EEEDFF;
-  --secondary: #F73164;
-  --secondary-light: #FEE7EE;
-  --success: #51BB25;
-  --success-light: #E8F8DD;
-  --info: #A927F9;
-  --info-light: #F4E5FE;
-  --warning: #F8D62B;
-  --warning-light: #FFF8D0;
-  --danger: #DC3545;
-  --danger-light: #FBE0E2;
-
-  --bg: #F8F8F8;
+/* ── TOKENS ─────────────────────────────────────────── */
+:root{
+  --navy:    #0F1117;
+  --navy2:   #1A1D27;
+  --navy3:   #252836;
+  --border:  #2E3244;
+  --text:    #E8EAF0;
+  --text2:   #9CA3B8;
+  --text3:   #5C637A;
   --surface: #FFFFFF;
-  --border: #EFEFEF;
-  --text: #2F2F3B;
-  --text2: #59667A;
-  --text3: #999;
-  --radius: 8px;
-  --radius-lg: 14px;
-  --shadow: 0 0 20px rgba(8,21,66,0.05);
-  --shadow-lg: 0 4px 24px rgba(8,21,66,0.1);
+  --bg:      #F4F5F8;
+  --primary: #4F7FFF;
+  --primary-light: #EEF3FF;
+  --success: #22C55E;
+  --success-light: #F0FDF4;
+  --warning: #F59E0B;
+  --warning-light: #FFFBEB;
+  --danger:  #EF4444;
+  --danger-light: #FEF2F2;
+  --gold:    #D4A853;
+  --radius:  8px;
+  --radius-lg: 12px;
+  --shadow:  0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Rubik', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; display: flex; min-height: 100vh; }
 
-/* SIDEBAR */
-.sidebar { width: 270px; background: var(--surface); flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 0 21px rgba(89,102,122,0.1); }
-.sidebar-header { padding: 18px 22px; background: linear-gradient(89deg, var(--primary) 0%, var(--secondary) 100%); color: white; display: flex; align-items: center; gap: 12px; }
-.sidebar-logo { width: 40px; height: 40px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-.sidebar-brand { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-.sidebar-brand-sub { font-size: 11px; opacity: 0.9; margin-top: 2px; font-weight: 500; }
-.sidebar-menu { padding: 18px 14px; flex: 1; }
-.sidebar-section { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text3); padding: 18px 14px 10px; letter-spacing: 0.06em; }
-.sidebar-item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: var(--radius); color: var(--text2); cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; margin-bottom: 4px; border: none; background: transparent; width: 100%; text-align: left; font-family: inherit; position: relative; }
-.sidebar-item::before { content:''; position:absolute; left:0; top:50%; transform: translateY(-50%); width: 3px; height: 0; background: var(--primary); border-radius: 0 3px 3px 0; transition: height 0.2s; }
-.sidebar-item:hover { color: var(--primary); background: var(--primary-light); }
-.sidebar-item:hover::before { height: 24px; }
-.sidebar-item.active { color: white; background: linear-gradient(89deg, var(--primary), var(--primary-dark)); }
-.sidebar-item.active::before { display: none; }
-.sidebar-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-.badge-num { margin-left: auto; background: var(--warning); color: var(--text); padding: 2px 9px; border-radius: 50px; font-size: 11px; font-weight: 700; }
-.sidebar-item.active .badge-num { background: white; color: var(--primary); }
-.sidebar-footer { padding: 16px 22px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text3); }
+/* ── RESET ──────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:#1A1D27;font-size:14px;line-height:1.5;min-height:100vh}
+input,select,textarea,button{font-family:inherit;font-size:14px}
+input,select,textarea{width:100%;padding:9px 12px;border:1px solid #E2E5ED;border-radius:var(--radius);background:white;color:#1A1D27;outline:none;transition:border 0.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,127,255,0.1)}
+label{display:block;font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+a{color:var(--primary);text-decoration:none}
 
-/* MAIN */
-.wrap { flex: 1; min-width: 0; }
-.topbar { background: var(--surface); padding: 16px 30px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; box-shadow: 0 0 21px rgba(89,102,122,0.1); border-bottom: 1px solid var(--border); }
-.topbar-title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
-.topbar-breadcrumb { font-size: 12px; color: var(--text3); margin-top: 2px; }
-.topbar-breadcrumb span { color: var(--primary); font-weight: 500; }
-.user-chip { background: var(--primary-light); color: var(--primary); padding: 8px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; }
+/* ── LAYOUT ─────────────────────────────────────────── */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:left 0.25s}
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:white;border-bottom:1px solid #E8EAF0;padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.content{padding:28px;flex:1}
 
-.content { padding: 30px; max-width: 1280px; }
-.panel { display: none; }
-.panel.active { display: block; }
+/* ── SIDEBAR ────────────────────────────────────────── */
+.sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.sb-logo-icon{width:36px;height:36px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sb-brand{font-size:13px;font-weight:700;color:white;letter-spacing:.01em;line-height:1.2}
+.sb-brand-sub{font-size:10px;color:var(--text3);font-weight:400;letter-spacing:.06em;text-transform:uppercase}
 
-/* CARDS */
-.card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); margin-bottom: 24px; overflow: hidden; }
-.card-header { padding: 22px 26px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: relative; }
-.card-header.colored::before { content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background: var(--primary); }
-.card-header.success::before { background: var(--success); }
-.card-title { font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.2px; display: flex; align-items: center; gap: 10px; }
-.card-title-icon { width: 32px; height: 32px; background: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-.card-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
-.card-body { padding: 26px; }
+.sb-section{padding:16px 16px 6px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 16px;margin:1px 8px;border-radius:var(--radius);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;border:none;background:none;width:calc(100% - 16px);text-align:left;transition:all 0.12s;position:relative}
+.sb-item:hover{background:var(--navy3);color:var(--text)}
+.sb-item.active{background:var(--primary);color:white}
+.sb-item.active .sb-icon{opacity:1}
+.sb-icon{font-size:15px;opacity:0.7;flex-shrink:0;width:18px;text-align:center}
+.sb-badge{margin-left:auto;background:var(--danger);color:white;border-radius:20px;font-size:10px;font-weight:700;padding:1px 7px;min-width:20px;text-align:center}
+.sb-badge.gold{background:var(--gold)}
 
-/* KPI cards Cuba style: colored backgrounds */
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 28px; }
-.kpi { padding: 24px 22px; border-radius: var(--radius-lg); position: relative; overflow: hidden; color: white; box-shadow: var(--shadow); }
-.kpi.primary { background: linear-gradient(89deg, var(--primary), var(--primary-dark)); }
-.kpi.secondary { background: linear-gradient(89deg, var(--secondary), #C61C49); }
-.kpi.success { background: linear-gradient(89deg, var(--success), #3E9E1B); }
-.kpi.warning { background: linear-gradient(89deg, #FFB821, #F8A523); color: var(--text); }
-.kpi.danger { background: linear-gradient(89deg, var(--danger), #B71B27); }
-.kpi.info { background: linear-gradient(89deg, var(--info), #7E1FC7); }
-.kpi::before { content:''; position:absolute; right:-30px; bottom:-40px; width:130px; height:130px; background: rgba(255,255,255,0.1); border-radius: 50%; }
-.kpi::after { content:''; position:absolute; right:50px; top:-20px; width:60px; height:60px; background: rgba(255,255,255,0.08); border-radius: 50%; }
-.kpi-icon { font-size: 28px; opacity: 0.9; margin-bottom: 14px; position: relative; z-index: 1; }
-.kpi-value { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; position: relative; z-index: 1; }
-.kpi-label { font-size: 12px; font-weight: 500; opacity: 0.95; margin-top: 6px; position: relative; z-index: 1; text-transform: uppercase; letter-spacing: 0.04em; }
+.sb-module{padding:6px 8px;margin:8px 8px 0}
+.sb-module-header{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;transition:all 0.12s}
+.sb-module-header:hover{background:var(--navy3)}
+.sb-module-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sb-module-name{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;flex:1}
+.sb-module-arrow{font-size:10px;color:var(--text3);transition:transform 0.2s}
+.sb-module.open .sb-module-arrow{transform:rotate(90deg)}
+.sb-module-items{overflow:hidden;max-height:0;transition:max-height 0.2s}
+.sb-module.open .sb-module-items{max-height:300px}
 
-/* FORM */
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
-.form-full { margin-bottom: 18px; }
-label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 7px; }
-input, select, textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: all 0.2s; appearance: none; }
-input:focus, select:focus, textarea:focus { border-color: var(--primary); background: var(--surface); box-shadow: 0 0 0 3px var(--primary-light); }
-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+.sb-footer{margin-top:auto;padding:14px 12px;border-top:1px solid var(--border)}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius)}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0}
+.sb-user-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.2}
+.sb-user-role{font-size:10px;color:var(--text3)}
+.sb-logout{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--radius);cursor:pointer;color:var(--danger);font-size:12px;font-weight:500;border:none;background:rgba(239,68,68,0.08);width:100%;text-align:left;margin-top:6px;transition:all 0.12s}
+.sb-logout:hover{background:rgba(239,68,68,0.15)}
 
-.btn { padding: 10px 22px; border-radius: var(--radius); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 7px; }
-.btn:active { transform: translateY(1px); }
-.btn-primary { background: linear-gradient(89deg, var(--primary), var(--primary-dark)); color: white; }
-.btn-primary:hover { box-shadow: 0 4px 12px rgba(115,102,255,0.4); }
-.btn-success { background: linear-gradient(89deg, var(--success), #3E9E1B); color: white; }
-.btn-success:hover { box-shadow: 0 4px 12px rgba(81,187,37,0.4); }
-.btn-danger { background: var(--danger); color: white; }
-.btn-secondary { background: linear-gradient(89deg, var(--secondary), #C61C49); color: white; }
-.btn-light { background: var(--bg); color: var(--text2); border: 1px solid var(--border); }
-.btn-sm { padding: 6px 12px; font-size: 12px; }
-.btn-full { width: 100%; justify-content: center; }
+/* ── TOPBAR ─────────────────────────────────────────── */
+.topbar-left{display:flex;align-items:center;gap:12px}
+.hamburger{display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--navy);border:none;border-radius:var(--radius);cursor:pointer;flex-direction:column;gap:4px;padding:0;flex-shrink:0}
+.hamburger span{display:block;width:16px;height:2px;background:white;border-radius:2px}
+.page-title{font-size:15px;font-weight:600;color:#1A1D27}
+.page-sub{font-size:12px;color:var(--text2)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-date{font-size:12px;color:var(--text2);font-family:'DM Mono',monospace}
 
-.role-bar { display: inline-flex; background: var(--surface); border-radius: var(--radius); padding: 5px; margin-bottom: 22px; box-shadow: var(--shadow); }
-.role-btn { padding: 9px 22px; border-radius: var(--radius); border: none; background: transparent; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); transition: all 0.2s; }
-.role-btn.active { background: linear-gradient(89deg, var(--primary), var(--primary-dark)); color: white; }
+/* ── PANELS ─────────────────────────────────────────── */
+.panel{display:none}
+.panel.active{display:block}
 
-.hours-pill { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(89deg, var(--success-light), #F0FBE5); color: var(--success); padding: 9px 18px; border-radius: 50px; font-size: 15px; font-weight: 600; margin: 4px 0 16px; border: 1px solid #C8E89F; }
+/* ── CARDS ──────────────────────────────────────────── */
+.card{background:white;border-radius:var(--radius-lg);border:1px solid #E8EAF0;box-shadow:var(--shadow);margin-bottom:20px}
+.card-header{padding:16px 20px;border-bottom:1px solid #F0F2F7;display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:600;color:#1A1D27;display:flex;align-items:center;gap:8px}
+.card-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.card-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.card-body{padding:20px}
 
-/* WHATSAPP */
-.wa-wrap { background: var(--bg); border-radius: var(--radius-lg); overflow: hidden; }
-.wa-header { background: linear-gradient(89deg, var(--primary), var(--secondary)); color: white; padding: 16px 22px; display: flex; align-items: center; gap: 14px; }
-.wa-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-.wa-info-name { font-size: 15px; font-weight: 600; }
-.wa-info-sub { font-size: 12px; color: rgba(255,255,255,0.85); margin-top: 2px; }
-.wa-body { padding: 18px; min-height: 240px; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #FAFAFC; }
-.wa-msg { max-width: 80%; }
-.wa-msg.out { align-self: flex-end; }
-.wa-msg.in { align-self: flex-start; }
-.wa-msg.system { align-self: center; max-width: 90%; }
-.wa-bubble { padding: 11px 15px; border-radius: var(--radius-lg); font-size: 13px; line-height: 1.5; box-shadow: 0 2px 8px rgba(8,21,66,0.06); }
-.wa-msg.out .wa-bubble { background: linear-gradient(89deg, var(--primary), var(--primary-dark)); color: white; border-radius: 14px 4px 14px 14px; }
-.wa-msg.in .wa-bubble { background: var(--surface); border-radius: 4px 14px 14px 14px; }
-.wa-msg.system .wa-bubble { background: var(--warning-light); color: #8A6500; border-radius: 50px; text-align: center; font-size: 12px; font-weight: 500; padding: 8px 18px; }
-.wa-name { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
-.wa-msg.out .wa-name { color: rgba(255,255,255,0.8); }
-.wa-msg.in .wa-name { color: var(--primary); }
-.wa-ts { font-size: 10px; opacity: 0.6; text-align: right; margin-top: 4px; }
+/* ── KPI GRID ───────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.kpi{background:white;border:1px solid #E8EAF0;border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.kpi-value{font-size:32px;font-weight:700;color:#1A1D27;line-height:1;font-family:'DM Mono',monospace}
+.kpi-sub{font-size:12px;color:var(--text2);margin-top:6px}
+.kpi-accent{position:absolute;top:0;right:0;width:4px;height:100%;border-radius:0 var(--radius-lg) var(--radius-lg) 0}
 
-.wa-input-area { background: var(--surface); padding: 14px 18px; display: flex; gap: 10px; align-items: flex-end; border-top: 1px solid var(--border); }
-.wa-input-wrap { flex: 1; background: var(--bg); border-radius: 50px; padding: 4px 4px 4px 16px; display: flex; align-items: flex-end; }
-.wa-textarea { flex: 1; border: none; background: transparent; padding: 10px 0; font-size: 14px; font-family: inherit; outline: none; resize: none; max-height: 90px; line-height: 1.4; }
-.wa-sender-sel { border: none; background: transparent; font-size: 12px; color: var(--text2); padding: 10px 8px; font-family: inherit; outline: none; cursor: pointer; min-width: 75px; font-weight: 500; }
-.wa-send { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(89deg, var(--primary), var(--secondary)); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(115,102,255,0.4); transition: transform 0.15s; }
-.wa-send:hover { transform: scale(1.05); }
-.wa-send:disabled { opacity: 0.4; }
-.wa-send svg { width: 18px; height: 18px; fill: white; }
+/* ── BUTTONS ────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;white-space:nowrap}
+.btn-primary{background:var(--primary);color:white}
+.btn-primary:hover{background:#3a6ee8}
+.btn-success{background:var(--success);color:white}
+.btn-light{background:#F4F5F8;color:#1A1D27;border:1px solid #E2E5ED}
+.btn-light:hover{background:#E8EAF0}
+.btn-danger{background:var(--danger);color:white}
+.btn-full{width:100%;justify-content:center}
+.btn-sm{padding:6px 12px;font-size:12px}
 
-.typing-dots { display: flex; gap: 3px; padding: 2px; }
-.typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); animation: bounce 1.2s infinite; }
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes bounce { 0%,60%,100% { transform: scale(1); } 30% { transform: scale(1.5); } }
+/* ── FORM ───────────────────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.form-full{margin-bottom:16px}
 
-.wa-btn-ok, .wa-btn-no { padding: 7px 16px; border-radius: 50px; border: none; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
-.wa-btn-ok { background: linear-gradient(89deg, var(--success), #3E9E1B); color: white; }
-.wa-btn-no { background: var(--bg); color: var(--text2); border: 1px solid var(--border); }
+/* ── TABLE ──────────────────────────────────────────── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;background:#F8F9FC;border-bottom:1px solid #E8EAF0;white-space:nowrap}
+tbody td{padding:12px 14px;border-bottom:1px solid #F0F2F7;color:#1A1D27}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#F8F9FC}
 
-/* TABLE */
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead th { text-align: left; padding: 14px 18px; background: linear-gradient(89deg, var(--primary-light), #F5F4FF); font-size: 12px; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
-tbody td { padding: 14px 18px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
-tbody tr:hover td { background: var(--primary-light); }
-tbody tr.row-pending td { background: var(--warning-light); }
-tbody tr.row-mismatch td { background: var(--danger-light); }
+/* ── BADGES ─────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-ok{background:#DCFCE7;color:#15803D}
+.badge-pending{background:#FEF9C3;color:#854D0E}
+.badge-mismatch{background:#FEE2E2;color:#991B1B}
+.badge-info{background:#EEF3FF;color:#3B5BDB}
+.badge-worker{background:#F3F4F6;color:#374151}
 
-.badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 13px; border-radius: 50px; font-size: 11px; font-weight: 600; }
-.badge-ok { background: var(--success-light); color: var(--success); }
-.badge-pending { background: var(--warning-light); color: #B0950A; }
-.badge-mismatch { background: var(--danger-light); color: var(--danger); }
-.badge-info { background: var(--info-light); color: var(--info); }
-.badge-worker { background: var(--primary-light); color: var(--primary); }
-.badge-secondary { background: var(--secondary-light); color: var(--secondary); }
+/* ── FILTERS ────────────────────────────────────────── */
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.filter-bar select{width:auto;min-width:160px;font-size:13px}
 
-.filter-bar { display: flex; gap: 12px; flex-wrap: wrap; }
-.filter-bar select { width: auto; min-width: 160px; font-size: 13px; }
+/* ── TOAST ──────────────────────────────────────────── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1A1D27;color:white;padding:11px 22px;border-radius:50px;font-size:13px;font-weight:500;opacity:0;transition:all 0.25s;z-index:9999;white-space:nowrap;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.2)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-.section-title { font-size: 24px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; margin-bottom: 4px; background: linear-gradient(89deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block; }
-.section-sub { font-size: 14px; color: var(--text3); margin-bottom: 22px; }
+/* ── OVERLAY ────────────────────────────────────────── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
+.overlay.show{display:block}
 
-.legend-wrap { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
-.legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text); font-weight: 500; }
-.legend-sq { width: 11px; height: 11px; border-radius: 3px; }
+/* ── CAL TOOLTIP ────────────────────────────────────── */
+.cal-tooltip{position:fixed;background:#1A1D27;color:white;padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.7;z-index:500;max-width:240px;box-shadow:0 8px 24px rgba(0,0,0,0.3);pointer-events:none}
 
-.apikey-box { background: linear-gradient(135deg, var(--warning-light), #FFF3A8); border: 1px solid #FFE066; border-radius: var(--radius-lg); padding: 20px 22px; margin-bottom: 22px; }
-.apikey-box .ak-title { font-size: 14px; font-weight: 600; color: #8A6500; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-.apikey-box .ak-input-row { display: flex; gap: 10px; }
-.apikey-box input { font-family: monospace; }
-.apikey-help { font-size: 12px; color: #8A6500; margin-top: 10px; }
-.apikey-help a { color: var(--primary); font-weight: 600; }
+/* ── DASH GRID ──────────────────────────────────────── */
+.dash-bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 
-#toast { position: fixed; bottom: 26px; right: 26px; background: linear-gradient(89deg, var(--primary), var(--secondary)); color: white; padding: 14px 24px; border-radius: 50px; font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(115,102,255,0.4); z-index: 999; opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; }
-#toast.show { opacity: 1; transform: translateY(0); }
+/* ── HOURS PILL ─────────────────────────────────────── */
+.hours-pill{background:var(--primary-light);color:var(--primary);border-radius:50px;padding:8px 18px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
 
+/* ── ROLE BAR ───────────────────────────────────────── */
+.role-bar{display:flex;gap:8px;margin-bottom:20px;background:white;padding:6px;border-radius:var(--radius-lg);border:1px solid #E8EAF0;width:fit-content}
+.role-btn{padding:8px 18px;border-radius:var(--radius);border:none;cursor:pointer;font-size:13px;font-weight:600;background:transparent;color:var(--text2);transition:all 0.15s}
+.role-btn.active{background:var(--primary);color:white}
 
-/* ── HAMBURGER ── */
-.hamburger{display:none;align-items:center;justify-content:center;width:44px;height:44px;background:var(--primary);border:none;border-radius:8px;cursor:pointer;flex-direction:column;gap:5px;padding:0;flex-shrink:0;-webkit-tap-highlight-color:transparent}
-.hamburger span{display:block;width:20px;height:2px;background:white;border-radius:2px;transition:all 0.2s}
+/* ── DISP COLORS ────────────────────────────────────── */
+.disp-card{border:1px dashed #E2E5ED;border-radius:var(--radius-lg)}
 
-/* ── TOOLTIPS ── */
-.cal-tooltip{position:fixed;background:#1E1E2D;color:white;padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.7;z-index:500;max-width:240px;box-shadow:0 8px 24px rgba(0,0,0,0.3);pointer-events:none}
+/* ── MODULE WELCOME ─────────────────────────────────── */
+.module-welcome{text-align:center;padding:80px 20px}
+.module-welcome-icon{font-size:56px;margin-bottom:20px}
+.module-welcome-title{font-size:24px;font-weight:700;color:#1A1D27;margin-bottom:8px}
+.module-welcome-sub{font-size:15px;color:var(--text2);max-width:400px;margin:0 auto 28px}
 
-/* ── RESPONSIVE ── */
+/* ── RESPONSIVE ─────────────────────────────────────── */
 @media(max-width:900px){
-  .sidebar{position:fixed;left:-270px;z-index:200;transition:left 0.25s}
+  .sidebar{left:-240px}
   .sidebar.open{left:0;box-shadow:4px 0 24px rgba(0,0,0,0.4)}
-  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:199}
-  .overlay.show{display:block}
+  .main{margin-left:0}
   .hamburger{display:flex!important}
-  .form-row{grid-template-columns:1fr}
   .form-grid{grid-template-columns:1fr}
-  .content{padding:16px 12px}
-  .topbar{padding:12px 14px}
-  .topbar-breadcrumb{display:none}
-  .dash-bottom-grid{grid-template-columns:1fr!important}
-  input,select,textarea{font-size:16px!important}
-  table{font-size:12px}
-  thead th{padding:8px 8px;font-size:10px}
-  tbody td{padding:8px 8px}
+  .content{padding:16px}
+  .topbar{padding:0 16px}
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .kpi-value,.metric-val{font-size:22px}
+  .dash-bottom-grid{grid-template-columns:1fr}
+  input,select,textarea{font-size:16px!important}
 }
 @media(max-width:480px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .card-body{padding:14px}
-  .section-title{font-size:18px}
+  .kpi-value{font-size:26px}
 }
 </style>
 </head>
@@ -233,93 +201,188 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
 
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
+<!-- ═══ SIDEBAR ═══════════════════════════════════════════ -->
 <aside class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <div class="sidebar-logo">&#9203;</div>
+  <div class="sb-logo">
+    <div class="sb-logo-icon">&#9968;</div>
     <div>
-      <div class="sidebar-brand">CleanHours</div>
-      <div class="sidebar-brand-sub">Control de horas</div>
+      <div class="sb-brand">Servap Turistics</div>
+      <div class="sb-brand-sub">Panel de Gestión</div>
     </div>
   </div>
-  <nav class="sidebar-menu">
-    <div class="sidebar-section">Aplicaciones</div>
-    <button class="sidebar-item active" id="tab-registro"   onclick="showTab('registro')"><span class="sidebar-icon">&#128203;</span> Registro</button>
-    <button class="sidebar-item"        id="tab-auditoria"  onclick="showTab('auditoria')"><span class="sidebar-icon">&#128269;</span> Auditoria <span class="badge-num" id="pending-count" style="display:none">0</span></button>
-    <button class="sidebar-item"        id="tab-dashboard"  onclick="showTab('dashboard')"><span class="sidebar-icon">&#128202;</span> Dashboard</button>
-    <div class="sidebar-section">Sistema</div>
-    <button class="sidebar-item"        id="tab-config"     onclick="showTab('config')"><span class="sidebar-icon">&#9881;</span> Configuracion</button>
-    <button class="sidebar-item"        id="tab-calendario" onclick="showTab('calendario')"><span class="sidebar-icon">&#128197;</span> Calendario</button>
-    <button class="sidebar-item"        id="tab-informe"    onclick="showTab('informe')"><span class="sidebar-icon">&#128196;</span> Informes</button>
-    <div style="padding:12px 14px;border-top:1px solid rgba(255,255,255,0.08);margin-top:auto">
-      <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-bottom:8px;font-weight:500" id="sidebar-username"></div>
-      <button onclick="doLogout()" style="width:100%;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;cursor:pointer;color:#FCA5A5;font-size:13px;font-family:inherit;padding:9px 14px;display:flex;align-items:center;gap:8px;font-weight:600;transition:all 0.15s" onmouseover="this.style.background='rgba(239,68,68,0.28)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">&#128682; Cerrar sesion</button>
+
+  <!-- MÓDULO 1: RESERVAS -->
+  <div class="sb-module open" id="mod-reservas">
+    <div class="sb-module-header" onclick="toggleModule('reservas')">
+      <div class="sb-module-dot" style="background:#4F7FFF"></div>
+      <div class="sb-module-name">Reservas</div>
+      <div class="sb-module-arrow">&#9654;</div>
     </div>
-  </nav>
-  <div class="sidebar-footer">
-    <div id="header-date"></div>
-    <div style="margin-top:4px;opacity:0.6">CleanHours v2</div>
+    <div class="sb-module-items">
+      <button class="sb-item" id="tab-planning" onclick="showTab('planning')"><span class="sb-icon">&#128197;</span> Planning</button>
+      <button class="sb-item" id="tab-reservas-lista" onclick="showTab('reservas-lista')"><span class="sb-icon">&#128203;</span> Reservas</button>
+      <button class="sb-item" id="tab-reservas-inf" onclick="showTab('reservas-inf')"><span class="sb-icon">&#128196;</span> Informes</button>
+    </div>
+  </div>
+
+  <!-- MÓDULO 2: LIMPIEZA -->
+  <div class="sb-module" id="mod-limpieza">
+    <div class="sb-module-header" onclick="toggleModule('limpieza')">
+      <div class="sb-module-dot" style="background:#22C55E"></div>
+      <div class="sb-module-name">Limpieza</div>
+      <div class="sb-module-arrow">&#9654;</div>
+    </div>
+    <div class="sb-module-items">
+      <button class="sb-item" id="tab-registro" onclick="showTab('registro')"><span class="sb-icon">&#9997;</span> Registro</button>
+      <button class="sb-item" id="tab-auditoria" onclick="showTab('auditoria')"><span class="sb-icon">&#128269;</span> Auditoria <span class="sb-badge" id="pending-count" style="display:none">0</span></button>
+      <button class="sb-item" id="tab-dashboard" onclick="showTab('dashboard')"><span class="sb-icon">&#128202;</span> Dashboard</button>
+      <button class="sb-item" id="tab-calendario" onclick="showTab('calendario')"><span class="sb-icon">&#128336;</span> Calendario</button>
+      <button class="sb-item" id="tab-informe" onclick="showTab('informe')"><span class="sb-icon">&#128196;</span> Informes</button>
+    </div>
+  </div>
+
+  <!-- MÓDULO 3: FACTURACIÓN -->
+  <div class="sb-module" id="mod-facturacion">
+    <div class="sb-module-header" onclick="toggleModule('facturacion')">
+      <div class="sb-module-dot" style="background:#D4A853"></div>
+      <div class="sb-module-name">Facturación</div>
+      <div class="sb-module-arrow">&#9654;</div>
+    </div>
+    <div class="sb-module-items">
+      <button class="sb-item" id="tab-facturas-emit" onclick="showTab('facturas-emit')"><span class="sb-icon">&#128196;</span> Facturas emitidas</button>
+      <button class="sb-item" id="tab-facturas-rec" onclick="showTab('facturas-rec')"><span class="sb-icon">&#128230;</span> Facturas recibidas</button>
+      <button class="sb-item" id="tab-nueva-factura" onclick="showTab('nueva-factura')"><span class="sb-icon">&#43;</span> Nueva factura</button>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div style="padding:6px 8px">
+    <button class="sb-item" id="tab-config" onclick="showTab('config')"><span class="sb-icon">&#9881;</span> Configuracion</button>
+  </div>
+
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sb-avatar">A</div>
+      <div>
+        <div class="sb-user-name" id="sb-username">Usuario</div>
+        <div class="sb-user-role" id="sb-role">-</div>
+      </div>
+    </div>
+    <button class="sb-logout" onclick="doLogout()">&#128682; Cerrar sesion</button>
   </div>
 </aside>
 
-<div class="wrap">
+<!-- ═══ MAIN ═══════════════════════════════════════════════ -->
+<div class="main">
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:12px">
+    <div class="topbar-left">
       <button class="hamburger" onclick="openSidebar()"><span></span><span></span><span></span></button>
       <div>
-        <div class="topbar-title" id="page-title">Registro de horas</div>
-        <div class="topbar-breadcrumb">CleanHours &middot; <span id="page-crumb">Registro</span></div>
+        <div class="page-title" id="page-title">Panel de Gestión</div>
+        <div class="page-sub" id="page-sub">Servap Turistics</div>
       </div>
     </div>
-    <span class="user-chip">&#129529; Limpieza Pisos</span>
+    <div class="topbar-right">
+      <div class="topbar-date" id="topbar-date"></div>
+    </div>
   </div>
 
   <div class="content">
 
-  <!-- REGISTRO -->
-  <div class="panel active" id="panel-registro">
+  <!-- ══ PANEL: PLANNING (próximamente) ══════════════════ -->
+  <div class="panel" id="panel-planning">
+    <div class="module-welcome">
+      <div class="module-welcome-icon">&#128197;</div>
+      <div class="module-welcome-title">Planning de Reservas</div>
+      <div class="module-welcome-sub">Calendario de ocupación con sincronización iCal de Airbnb y Booking. Próximamente.</div>
+      <button class="btn btn-primary" onclick="showTab('reservas-lista')">Ver lista de reservas</button>
+    </div>
+  </div>
 
-    <!-- 1. TEXTO NATURAL (primero) -->
+  <!-- ══ PANEL: RESERVAS LISTA (próximamente) ════════════ -->
+  <div class="panel" id="panel-reservas-lista">
+    <div class="module-welcome">
+      <div class="module-welcome-icon">&#127968;</div>
+      <div class="module-welcome-title">Gestión de Reservas</div>
+      <div class="module-welcome-sub">Lista de reservas, checklist de llegada/salida y control de documentos ROAT. En construcción.</div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: RESERVAS INFORMES (próximamente) ═════════ -->
+  <div class="panel" id="panel-reservas-inf">
+    <div class="module-welcome">
+      <div class="module-welcome-icon">&#128196;</div>
+      <div class="module-welcome-title">Informes de Reservas</div>
+      <div class="module-welcome-sub">Resúmenes trimestrales para propietarios y emisión de facturas de comisión. En construcción.</div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: FACTURAS EMITIDAS (próximamente) ═════════ -->
+  <div class="panel" id="panel-facturas-emit">
+    <div class="module-welcome">
+      <div class="module-welcome-icon">&#128196;</div>
+      <div class="module-welcome-title">Facturas Emitidas</div>
+      <div class="module-welcome-sub">Control y seguimiento de facturas emitidas a clientes. En construcción.</div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: FACTURAS RECIBIDAS (próximamente) ════════ -->
+  <div class="panel" id="panel-facturas-rec">
+    <div class="module-welcome">
+      <div class="module-welcome-icon">&#128230;</div>
+      <div class="module-welcome-title">Facturas Recibidas</div>
+      <div class="module-welcome-sub">Control de facturas recibidas de proveedores. En construcción.</div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: NUEVA FACTURA (próximamente) ═════════════ -->
+  <div class="panel" id="panel-nueva-factura">
+    <div class="module-welcome">
+      <div class="module-welcome-icon">&#43;</div>
+      <div class="module-welcome-title">Nueva Factura</div>
+      <div class="module-welcome-sub">Emisión de facturas según formato Servap Turistics con IGI 4.5%. En construcción.</div>
+    </div>
+  </div>
+
+
+  <!-- ══ PANEL: REGISTRO ════════════════════════════════ -->
+  <div class="panel" id="panel-registro">
     <div class="card" style="margin-bottom:20px">
-      <div class="card-header colored">
+      <div class="card-header">
         <div>
-          <div class="card-title"><div class="card-title-icon" style="color:var(--primary)">&#10024;</div>Registro rapido</div>
+          <div class="card-title"><span class="card-icon" style="background:#EEF3FF;color:var(--primary)">&#10024;</span>Registro rapido</div>
           <div class="card-sub">Escribe en lenguaje natural</div>
         </div>
       </div>
       <div class="card-body">
-        <div id="apikey-section" style="background:#FFF8DD;border:1px solid #FFE066;border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
-          <div style="font-size:13px;font-weight:600;color:#8A6500;margin-bottom:10px">&#128273; API Key de Claude</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." style="font-family:monospace;font-size:13px;flex:1;min-width:200px">
-            <button class="btn btn-primary" onclick="saveApiKey()" style="white-space:nowrap">Guardar</button>
+        <div id="apikey-section" style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--radius);padding:14px;margin-bottom:16px">
+          <div style="font-size:12px;font-weight:600;color:#92400E;margin-bottom:8px">&#128273; API Key de Claude</div>
+          <div style="display:flex;gap:8px">
+            <input type="password" id="api-key-input" placeholder="sk-ant-api03-...">
+            <button class="btn btn-primary btn-sm" onclick="saveApiKey()">Guardar</button>
           </div>
-          <div style="font-size:12px;color:#8A6500;margin-top:8px">Necesaria para reconocimiento de texto. <a href="https://console.anthropic.com" target="_blank" style="color:var(--primary)">Obtener key</a></div>
+          <div style="font-size:11px;color:#92400E;margin-top:6px">Necesaria para reconocimiento de texto. <a href="https://console.anthropic.com" target="_blank">Obtener key</a></div>
         </div>
-        <div style="background:var(--bg);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:2">
-          <div style="font-weight:700;color:var(--primary);margin-bottom:4px">Ejemplos (toca para usar):</div>
-          <div style="cursor:pointer;padding:2px 0;border-bottom:1px dashed #ddd" onclick="useEx(this)">14 a 18 en Sapporo 20 por Manuel hoy</div>
-          <div style="cursor:pointer;padding:2px 0;border-bottom:1px dashed #ddd" onclick="useEx(this)">Ana trabajo Circuito de 9:30 a 13:00 ayer</div>
+        <div style="background:#F8F9FC;border-radius:var(--radius);padding:12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:2">
+          <div style="font-weight:600;color:var(--primary);margin-bottom:4px">Ejemplos (toca para usar):</div>
+          <div style="cursor:pointer;padding:2px 0;border-bottom:1px dashed #E2E5ED" onclick="useEx(this)">14 a 18 en Sapporo 20 por Manuel hoy</div>
+          <div style="cursor:pointer;padding:2px 0;border-bottom:1px dashed #E2E5ED" onclick="useEx(this)">Ana trabajo Circuito de 9:30 a 13:00 ayer</div>
           <div style="cursor:pointer;padding:2px 0" onclick="useEx(this)">Claudia y Manuel limpiaron D43 de 10 a 14 hoy</div>
         </div>
-        <div style="margin-bottom:12px">
-          <label>Enviado por</label>
-          <select id="wa-sender"></select>
-        </div>
+        <div style="margin-bottom:12px"><label>Enviado por</label><select id="wa-sender"></select></div>
         <div style="margin-bottom:14px">
           <label>Mensaje</label>
-          <textarea id="wa-input" rows="3"
-            placeholder="Ej: 14 a 18 en Sapporo 20 por Manuel hoy"
-            style="width:100%;padding:13px;font-size:15px;border:2px solid var(--primary);border-radius:var(--radius);font-family:inherit;resize:vertical;background:var(--surface);color:var(--text);outline:none;line-height:1.5"
+          <textarea id="wa-input" rows="3" placeholder="Ej: 14 a 18 en Sapporo 20 por Manuel hoy"
+            style="font-size:15px"
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
         </div>
-        <button id="wa-send-btn" onclick="sendMsg()" class="btn btn-primary btn-full" style="font-size:15px;padding:13px">
+        <button id="wa-send-btn" onclick="sendMsg()" class="btn btn-primary btn-full" style="font-size:14px;padding:12px">
           &#10024; Interpretar y registrar
         </button>
         <div id="wa-body" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
       </div>
     </div>
 
-    <!-- 2. FORMULARIO MANUAL (despues) -->
     <div class="role-bar">
       <button class="role-btn active" id="role-worker-btn" onclick="setRole('worker')">&#128100; Trabajador</button>
       <button class="role-btn" id="role-admin-btn" onclick="setRole('admin')">&#128737; Administrador</button>
@@ -327,17 +390,15 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
 
     <div id="form-worker">
       <div class="card">
-        <div class="card-header colored">
-          <div><div class="card-title"><div class="card-title-icon">&#128203;</div>Formulario manual</div><div class="card-sub">Teclado numerico en movil</div></div>
-        </div>
+        <div class="card-header"><div><div class="card-title">&#128203; Formulario manual</div><div class="card-sub">Teclado numerico en movil</div></div></div>
         <div class="card-body">
-          <div class="form-row">
+          <div class="form-grid">
             <div><label>Trabajador</label><select id="w-user"></select></div>
             <div><label>Fecha</label><input type="date" id="w-date"></div>
           </div>
-          <div class="form-row">
-            <div><label>Inicio</label><input type="time" id="w-start" onchange="calcPill('w')" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
-            <div><label>Termino</label><input type="time" id="w-end" onchange="calcPill('w')" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
+          <div class="form-grid">
+            <div><label>Inicio</label><input type="time" id="w-start" onchange="calcPill('w')" style="font-size:17px;font-weight:600;text-align:center"></div>
+            <div><label>Termino</label><input type="time" id="w-end" onchange="calcPill('w')" style="font-size:17px;font-weight:600;text-align:center"></div>
           </div>
           <div id="w-hours-pill" style="display:none;margin-bottom:14px"><div class="hours-pill">&#9201; <span id="w-hours-text"></span></div></div>
           <div class="form-full"><label>Negocio / Piso</label><select id="w-negocio"></select></div>
@@ -349,21 +410,19 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
 
     <div id="form-admin" style="display:none">
       <div class="card">
-        <div class="card-header colored success">
-          <div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">&#128737;</div>Modo administrador</div><div class="card-sub">Registra y confirma horas</div></div>
-        </div>
+        <div class="card-header"><div><div class="card-title" style="color:var(--success)">&#128737; Modo administrador</div><div class="card-sub">Registra y confirma horas</div></div></div>
         <div class="card-body">
-          <div class="form-row">
+          <div class="form-grid">
             <div><label>Admin</label><select id="a-admin"></select></div>
             <div><label>Trabajador</label><select id="a-user"></select></div>
           </div>
-          <div class="form-row">
+          <div class="form-grid">
             <div><label>Fecha</label><input type="date" id="a-date"></div>
             <div><label>Negocio</label><select id="a-negocio"></select></div>
           </div>
-          <div class="form-row">
-            <div><label>Inicio</label><input type="time" id="a-start" onchange="calcPill('a')" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
-            <div><label>Termino</label><input type="time" id="a-end" onchange="calcPill('a')" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
+          <div class="form-grid">
+            <div><label>Inicio</label><input type="time" id="a-start" onchange="calcPill('a')" style="font-size:17px;font-weight:600;text-align:center"></div>
+            <div><label>Termino</label><input type="time" id="a-end" onchange="calcPill('a')" style="font-size:17px;font-weight:600;text-align:center"></div>
           </div>
           <div id="a-hours-pill" style="display:none;margin-bottom:14px"><div class="hours-pill">&#9201; <span id="a-hours-text"></span></div></div>
           <div class="form-full"><label>Observaciones</label><input type="text" id="a-obs"></div>
@@ -371,23 +430,23 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
         </div>
       </div>
     </div>
+  </div>
 
-  </div><!-- /panel-registro -->
-
-  <!-- AUDITORIA -->
+  <!-- ══ PANEL: AUDITORIA ═══════════════════════════════ -->
   <div class="panel" id="panel-auditoria">
-    <div class="section-title">Auditoria</div>
-    <div class="section-sub">Contraste registros trabajadores vs admin</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div><h2 style="font-size:20px;font-weight:700">Auditoria</h2><div style="font-size:13px;color:var(--text2)">Contraste registros trabajadores vs admin</div></div>
+    </div>
     <div class="card"><div class="card-body">
       <div class="filter-bar">
-        <select id="filter-month-audit" onchange="renderAudit()" style="min-width:140px">
+        <select id="filter-month-audit" onchange="renderAudit()">
           <option value="">Todos los meses</option>
           <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
           <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
           <option value="2026-05">Mayo 2026</option><option value="2026-06">Junio 2026</option>
           <option value="2026-07">Julio 2026</option><option value="2026-08">Agosto 2026</option>
-          <option value="2026-09">Septiembre 2026</option><option value="2026-10">Octubre 2026</option>
-          <option value="2026-11">Noviembre 2026</option><option value="2026-12">Diciembre 2026</option>
+          <option value="2026-09">Sept 2026</option><option value="2026-10">Oct 2026</option>
+          <option value="2026-11">Nov 2026</option><option value="2026-12">Dic 2026</option>
         </select>
         <select id="filter-worker" onchange="renderAudit()"><option value="">Todos los trabajadores</option></select>
         <select id="filter-status" onchange="renderAudit()">
@@ -399,64 +458,155 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
         <select id="filter-neg-audit" onchange="renderAudit()"><option value="">Todos los negocios</option></select>
       </div>
     </div></div>
-    <div class="card">
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Trabajador</th><th>Admin</th><th>Estado</th><th></th></tr></thead>
-          <tbody id="audit-tbody"></tbody>
-        </table>
-      </div>
-    </div>
+    <div class="card"><div class="table-wrap">
+      <table><thead><tr><th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Trabajador</th><th>Admin</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="audit-tbody"></tbody></table>
+    </div></div>
   </div>
 
-  <!-- DASHBOARD -->
+  <!-- ══ PANEL: DASHBOARD ═══════════════════════════════ -->
   <div class="panel" id="panel-dashboard">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">
-      <div><div class="section-title" style="margin-bottom:2px">Dashboard</div><div class="section-sub" style="margin-bottom:0">Resumen de horas registradas</div></div>
-      <select id="dash-month-sel" onchange="renderDashboard()" style="width:auto;font-size:13px;padding:8px 12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div><h2 style="font-size:20px;font-weight:700">Dashboard</h2><div style="font-size:13px;color:var(--text2)">Resumen de horas registradas</div></div>
+      <select id="dash-month-sel" onchange="renderDashboard()" style="width:auto;font-size:13px">
         <option value="all">Todos los meses</option>
         <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
         <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
         <option value="2026-05" selected>Mayo 2026</option><option value="2026-06">Junio 2026</option>
         <option value="2026-07">Julio 2026</option><option value="2026-08">Agosto 2026</option>
-        <option value="2026-09">Septiembre 2026</option><option value="2026-10">Octubre 2026</option>
-        <option value="2026-11">Noviembre 2026</option><option value="2026-12">Diciembre 2026</option>
+        <option value="2026-09">Sept 2026</option><option value="2026-10">Oct 2026</option>
+        <option value="2026-11">Nov 2026</option><option value="2026-12">Dic 2026</option>
       </select>
     </div>
     <div class="kpi-grid" id="dash-kpis"></div>
-    <div class="card">
-      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon">&#128101;</div>Horas por trabajador</div></div></div>
-      <div class="card-body"><div class="kpi-grid" id="dash-workers" style="margin-bottom:0"></div></div>
-    </div>
-    <div class="card">
-      <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--info-light);color:var(--info)">&#127968;</div>Horas por negocio</div></div></div>
-      <div class="card-body"><div id="dash-pisos"></div></div>
-    </div>
-    <!-- Estado + Proximos: lado a lado en desktop -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="dash-bottom-grid">
+    <div class="card"><div class="card-header"><div class="card-title"><span class="card-icon" style="background:#F0FDF4;color:var(--success)">&#128101;</span>Horas por trabajador</div></div><div class="card-body"><div class="kpi-grid" id="dash-workers" style="margin-bottom:0"></div></div></div>
+    <div class="card"><div class="card-header"><div class="card-title"><span class="card-icon" style="background:#EEF3FF;color:var(--primary)">&#127968;</span>Horas por negocio</div></div><div class="card-body"><div id="dash-pisos"></div></div></div>
+    <div class="dash-bottom-grid">
       <div class="card" style="margin-bottom:0">
-        <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--success-light);color:var(--success)">&#10003;</div>Estado auditoria</div></div></div>
+        <div class="card-header"><div class="card-title"><span class="card-icon" style="background:#F0FDF4;color:var(--success)">&#10003;</span>Estado auditoria</div></div>
         <div class="card-body" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
           <div style="position:relative;width:160px;height:160px;flex-shrink:0"><canvas id="chart-status"></canvas></div>
           <div id="dash-donut-legend"></div>
         </div>
       </div>
       <div class="card" style="margin-bottom:0">
-        <div class="card-header colored"><div><div class="card-title"><div class="card-title-icon" style="background:var(--warning-light);color:var(--amber)">&#128197;</div>Proximos trabajos</div></div></div>
+        <div class="card-header"><div class="card-title"><span class="card-icon" style="background:#FFFBEB;color:var(--warning)">&#128197;</span>Proximos trabajos</div></div>
         <div class="card-body" style="padding:0;max-height:260px;overflow-y:auto"><div id="dash-pending-jobs"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- CONFIG -->
-  <div class="panel" id="panel-config">
-    <div class="section-title">Configuracion</div>
-    <div class="section-sub">Gestiona trabajadores, pisos y admins</div>
+  <!-- ══ PANEL: CALENDARIO ══════════════════════════════ -->
+  <div class="panel" id="panel-calendario">
+    <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Calendario</h2><div style="font-size:13px;color:var(--text2)">Trabajos programados y disponibilidad</div></div>
 
     <div class="card">
-      <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">&#128101;</div>Trabajadores</div><div class="card-sub">Agrega o elimina del equipo</div></div>
+      <div class="card-header" style="padding:14px 20px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button onclick="calPrevMonth()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--primary);padding:0 4px">&#8249;</button>
+          <div class="card-title" id="cal-month-title" style="min-width:180px;text-align:center"></div>
+          <button onclick="calNextMonth()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--primary);padding:0 4px">&#8250;</button>
+        </div>
+        <button onclick="calGoToday()" class="btn btn-light btn-sm">Hoy</button>
       </div>
+      <div class="card-body" style="padding:12px">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">
+          <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px">LUN</div>
+          <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px">MAR</div>
+          <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px">MIE</div>
+          <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px">JUE</div>
+          <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px">VIE</div>
+          <div style="text-align:center;font-size:10px;font-weight:600;color:var(--text2);padding:4px">SAB</div>
+          <div style="text-align:center;font-size:10px;font-weight:600;color:var(--danger);padding:4px">DOM</div>
+        </div>
+        <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+      </div>
+    </div>
+
+    <div class="card" id="cal-form-card">
+      <div class="card-header"><div><div class="card-title">&#43; Registro de trabajo</div><div class="card-sub">Asigna fecha, hora y trabajador</div></div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div><label>Trabajadores <span style="font-size:10px;font-weight:400;color:var(--text3)">(Ctrl/Cmd para varios)</span></label><select id="cal-worker" multiple size="3"></select></div>
+          <div><label>Negocios / Pisos <span style="font-size:10px;font-weight:400;color:var(--text3)">(Ctrl/Cmd para varios)</span></label><select id="cal-negocio" multiple size="3"></select></div>
+        </div>
+        <div class="form-grid">
+          <div><label>Fecha</label><input type="date" id="cal-date"></div>
+          <div><label>Hora aprox.</label><input type="time" id="cal-time" style="font-size:17px;font-weight:600;text-align:center"></div>
+        </div>
+        <div class="form-full"><label>Notas</label><input type="text" id="cal-notes" placeholder="Ej: llevar aspiradora, entrada por garaje..."></div>
+        <button class="btn btn-primary btn-full" onclick="calAdd()">&#128197; Agregar al calendario</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">&#128203; Trabajos programados</div><div class="card-sub" id="cal-list-title"></div></div></div>
+      <div class="card-body" style="padding:0"><div id="cal-list"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" style="cursor:pointer" onclick="toggleDispForm()">
+        <div><div class="card-title">&#128100; Mi disponibilidad</div><div class="card-sub">Registra tu disponibilidad para trabajar</div></div>
+        <span id="disp-toggle-icon" style="font-size:18px;color:var(--text2)">&#43;</span>
+      </div>
+      <div id="disp-form-body" style="display:none">
+        <div class="card-body">
+          <div class="form-grid">
+            <div><label>Trabajador</label><select id="disp-worker"></select></div>
+            <div><label>Fecha</label><input type="date" id="disp-date"></div>
+          </div>
+          <div class="form-grid">
+            <div><label>Disponibilidad</label><select id="disp-tipo" onchange="toggleDispHoras()"><option value="dia">Todo el dia</option><option value="horario">Horario especifico</option><option value="no">No disponible</option></select></div>
+            <div id="disp-horas-wrap"><label>Horario</label><div style="display:flex;gap:8px;align-items:center"><input type="time" id="disp-start" style="flex:1;text-align:center"><span style="color:var(--text2)">a</span><input type="time" id="disp-end" style="flex:1;text-align:center"></div></div>
+          </div>
+          <div class="form-full"><label>Nota</label><input type="text" id="disp-nota" placeholder="Ej: solo manana, sin transporte..."></div>
+          <button class="btn btn-full" onclick="dispAdd()" style="background:#FFFBEB;color:#92400E;border:1px solid #FDE68A;font-weight:600">&#128100; Registrar disponibilidad</button>
+        </div>
+        <div id="disp-list" style="border-top:1px solid #F0F2F7"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: INFORMES ════════════════════════════════ -->
+  <div class="panel" id="panel-informe">
+    <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Informes</h2><div style="font-size:13px;color:var(--text2)">Exporta horas trabajadas por mes, negocio o trabajador</div></div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-header"><div class="card-title">&#127787; Filtros del informe</div></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div><label>Mes</label>
+            <select id="inf-month">
+              <option value="all">Todos los meses</option>
+              <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
+              <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
+              <option value="2026-05">Mayo 2026</option><option value="2026-06">Junio 2026</option>
+              <option value="2026-07">Julio 2026</option><option value="2026-08">Agosto 2026</option>
+              <option value="2026-09">Sept 2026</option><option value="2026-10">Oct 2026</option>
+              <option value="2026-11">Nov 2026</option><option value="2026-12">Dic 2026</option>
+            </select>
+          </div>
+          <div><label>Trabajador</label><select id="inf-worker"><option value="all">Todos</option></select></div>
+        </div>
+        <div class="form-grid">
+          <div><label>Negocio</label><select id="inf-negocio"><option value="all">Todos</option></select></div>
+          <div><label>Estado</label><select id="inf-status"><option value="all">Todos</option><option value="ok">Confirmados</option><option value="pending">Pendientes</option></select></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="renderInforme()">&#128202; Generar</button>
+          <button class="btn btn-light" onclick="exportPDF()">&#128196; PDF</button>
+          <button class="btn btn-light" onclick="exportExcel()">&#128190; Excel</button>
+        </div>
+      </div>
+    </div>
+    <div id="informe-output"></div>
+  </div>
+
+  <!-- ══ PANEL: CONFIG ══════════════════════════════════ -->
+  <div class="panel" id="panel-config">
+    <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Configuracion</h2><div style="font-size:13px;color:var(--text2)">Gestiona trabajadores, pisos, admins y usuarios</div></div>
+
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">&#128101; Trabajadores</div><div class="card-sub">Agrega o deshabilita del equipo</div></div></div>
       <div class="card-body">
         <div id="cfg-workers" style="display:flex;flex-wrap:wrap;gap:8px;min-height:42px;margin-bottom:16px;align-items:flex-start"></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -467,18 +617,14 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
     </div>
 
     <div class="card">
-      <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">&#127968;</div>Pisos por grupo</div><div class="card-sub">Agrega pisos a cada grupo</div></div>
-      </div>
+      <div class="card-header"><div><div class="card-title">&#127968; Pisos por grupo</div><div class="card-sub">Agrega pisos a cada grupo</div></div></div>
       <div class="card-body">
         <div id="cfg-grupos" style="min-height:42px;margin-bottom:20px"></div>
-        <div style="padding-top:16px;border-top:1px solid var(--border)">
-          <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">Nuevo piso</div>
+        <div style="padding-top:16px;border-top:1px solid #F0F2F7">
+          <div style="font-size:12px;font-weight:600;margin-bottom:10px;color:#1A1D27">Nuevo piso</div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <input type="text" id="inp-piso" placeholder="Nombre del piso" style="max-width:200px">
-            <select id="inp-grupo" style="max-width:180px">
-              <option>Tarter Izard</option><option>Pas de la Casa</option><option>Otros</option><option>Servicios</option>
-            </select>
+            <select id="inp-grupo" style="max-width:180px"><option>Tarter Izard</option><option>Pas de la Casa</option><option>Otros</option><option>Servicios</option></select>
             <button class="btn btn-primary" onclick="cfgAddPiso()">+ Agregar</button>
           </div>
         </div>
@@ -486,9 +632,7 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
     </div>
 
     <div class="card">
-      <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">&#128737;</div>Administradores</div><div class="card-sub">Usuarios con permiso admin</div></div>
-      </div>
+      <div class="card-header"><div><div class="card-title">&#128737; Administradores</div><div class="card-sub">Usuarios con permiso admin</div></div></div>
       <div class="card-body">
         <div id="cfg-admins" style="display:flex;flex-wrap:wrap;gap:8px;min-height:42px;margin-bottom:16px;align-items:flex-start"></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -499,238 +643,64 @@ tbody tr.row-mismatch td { background: var(--danger-light); }
     </div>
 
     <div class="card">
-      <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">&#128272;</div>Usuarios y accesos</div><div class="card-sub">Quien puede acceder y con que rol</div></div>
-      </div>
+      <div class="card-header"><div><div class="card-title">&#128272; Usuarios y accesos</div><div class="card-sub">Quien puede acceder y con que rol</div></div></div>
       <div class="card-body">
         <div id="cfg-appusers" style="margin-bottom:18px"></div>
-        <div style="padding-top:16px;border-top:1px solid var(--border)">
-          <div style="font-size:13px;font-weight:600;margin-bottom:12px">Nuevo usuario</div>
-          <div class="form-row">
-            <div><label>Usuario</label><input type="text" id="inp-uname" placeholder="ej: ana01" style="font-family:monospace"></div>
+        <div style="padding-top:16px;border-top:1px solid #F0F2F7">
+          <div style="font-size:12px;font-weight:600;margin-bottom:12px">Nuevo usuario</div>
+          <div class="form-grid">
+            <div><label>Usuario</label><input type="text" id="inp-uname" placeholder="ej: ana01" style="font-family:'DM Mono',monospace"></div>
             <div><label>Nombre</label><input type="text" id="inp-udisp" placeholder="ej: Ana Garcia"></div>
           </div>
-          <div class="form-row">
+          <div class="form-grid">
             <div><label>Contrasena</label><input type="password" id="inp-upass" placeholder="minimo 4 caracteres"></div>
-            <div><label>Rol</label>
-              <select id="inp-urole">
-                <option value="normal">Normal - solo calendario</option>
-                <option value="supervisor">Supervisor - ve todo, edita calendario</option>
-                <option value="admin">Admin - acceso completo</option>
-              </select>
-            </div>
+            <div><label>Rol</label><select id="inp-urole"><option value="normal">Normal - solo calendario</option><option value="supervisor">Supervisor - ve todo, edita calendario</option><option value="admin">Admin - acceso completo</option></select></div>
           </div>
           <button class="btn btn-primary" onclick="cfgAddUser()">+ Crear usuario</button>
         </div>
       </div>
     </div>
+
     <div class="card">
-      <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">&#128196;</div>Historial de cambios</div>
-        <div class="card-sub">Ultimas 50 acciones registradas</div></div>
-        <button class="btn btn-light" style="font-size:12px;padding:5px 12px" onclick="exportBackup()">&#128190; Exportar backup</button>
+      <div class="card-header">
+        <div><div class="card-title">&#128196; Historial de cambios</div><div class="card-sub">Ultimas 50 acciones</div></div>
+        <button class="btn btn-light btn-sm" onclick="exportBackup()">&#128190; Exportar backup</button>
       </div>
-      <div class="card-body" style="padding:0">
-        <div id="cfg-historial" style="max-height:300px;overflow-y:auto"></div>
-      </div>
+      <div class="card-body" style="padding:0"><div id="cfg-historial" style="max-height:300px;overflow-y:auto"></div></div>
     </div>
-  </div>
-
-
-  <div class="panel" id="panel-calendario">
-    <div class="section-title">Calendario</div>
-    <div class="section-sub">Planifica trabajos de limpieza</div>
-
-    <!-- NAVEGACION MES (primero) -->
-    <div class="card">
-      <div class="card-header" style="padding:14px 20px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <button onclick="calPrevMonth()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--primary);padding:0 4px;line-height:1">&#8249;</button>
-          <div class="card-title" id="cal-month-title" style="min-width:180px;text-align:center"></div>
-          <button onclick="calNextMonth()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--primary);padding:0 4px;line-height:1">&#8250;</button>
-        </div>
-        <button onclick="calGoToday()" class="btn btn-light" style="font-size:12px;padding:5px 12px">Hoy</button>
-      </div>
-      <div class="card-body" style="padding:12px">
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px">
-          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">LUN</div>
-          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">MAR</div>
-          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">MIE</div>
-          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">JUE</div>
-          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">VIE</div>
-          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--text3);padding:4px">SAB</div>
-          <div style="text-align:center;font-size:11px;font-weight:700;color:var(--danger);padding:4px">DOM</div>
-        </div>
-        <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
-      </div>
-    </div>
-
-    <!-- FORM REGISTRO (segundo) -->
-    <div class="card" id="cal-form-card" style="margin-bottom:20px">
-      <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">&#43;</div>Registro de trabajo</div>
-        <div class="card-sub">Asigna fecha, hora y trabajador</div></div>
-      </div>
-      <div class="card-body">
-        <div class="form-row">
-          <div>
-            <label>Trabajadores <span style="font-size:11px;font-weight:400;color:var(--text3)">(puedes seleccionar varios)</span></label>
-            <select id="cal-worker" multiple size="3" style="height:auto;padding:6px"></select>
-          </div>
-          <div>
-            <label>Negocios / Pisos <span style="font-size:11px;font-weight:400;color:var(--text3)">(puedes seleccionar varios)</span></label>
-            <select id="cal-negocio" multiple size="3" style="height:auto;padding:6px"></select>
-          </div>
-        </div>
-        <div style="font-size:11px;color:var(--text3);margin:-8px 0 12px;padding:0 2px">
-          Mantén <b>Ctrl</b> (Windows) o <b>Cmd</b> (Mac) para seleccionar varios. En movil toca cada uno.
-        </div>
-        <div class="form-row">
-          <div><label>Fecha</label><input type="date" id="cal-date"></div>
-          <div><label>Hora aprox.</label><input type="time" id="cal-time" style="font-size:17px;font-weight:600;padding:11px;text-align:center"></div>
-        </div>
-        <div class="form-full"><label>Notas</label><input type="text" id="cal-notes" placeholder="Ej: llevar aspiradora, entrada por garaje..."></div>
-        <button class="btn btn-primary btn-full" onclick="calAdd()">&#128197; Agregar al calendario</button>
-      </div>
-    </div>
-
-    <!-- LISTA TRABAJOS (tercero) -->
-    <div class="card">
-      <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">&#128203;</div>Trabajos programados</div>
-        <div class="card-sub" id="cal-list-title"></div></div>
-      </div>
-      <div class="card-body" style="padding:0">
-        <div id="cal-list"></div>
-      </div>
-    </div>
-
-    <!-- DISPONIBILIDAD -->
-    <div class="card" id="disp-form-card">
-      <div class="card-header" style="cursor:pointer;padding:14px 20px" onclick="toggleDispForm()">
-        <div><div class="card-title" style="font-size:14px">
-          <div class="card-title-icon" style="background:#FEF3C7;color:#B45309">&#128100;</div>
-          Mi disponibilidad
-        </div><div class="card-sub">Registra tu disponibilidad para trabajar</div></div>
-        <span id="disp-toggle-icon" style="font-size:18px;color:var(--text3)">&#43;</span>
-      </div>
-      <div id="disp-form-body" style="display:none">
-        <div class="card-body">
-          <div class="form-row">
-            <div><label>Trabajador</label><select id="disp-worker"></select></div>
-            <div><label>Fecha</label><input type="date" id="disp-date"></div>
-          </div>
-          <div class="form-row">
-            <div>
-              <label>Disponibilidad</label>
-              <select id="disp-tipo" onchange="toggleDispHoras()">
-                <option value="dia">Todo el dia</option>
-                <option value="horario">Horario especifico</option>
-                <option value="no">No disponible</option>
-              </select>
-            </div>
-            <div id="disp-horas-wrap">
-              <label>Horario</label>
-              <div style="display:flex;gap:8px;align-items:center">
-                <input type="time" id="disp-start" style="flex:1;font-size:15px;font-weight:600;text-align:center;padding:9px">
-                <span style="color:var(--text3);font-size:13px">a</span>
-                <input type="time" id="disp-end" style="flex:1;font-size:15px;font-weight:600;text-align:center;padding:9px">
-              </div>
-            </div>
-          </div>
-          <div class="form-full"><label>Nota</label><input type="text" id="disp-nota" placeholder="Ej: solo manana, sin transporte..."></div>
-          <button class="btn btn-full" onclick="dispAdd()" style="background:#FEF3C7;color:#B45309;border:1px solid #FDE68A;font-weight:600">
-            &#128100; Registrar disponibilidad
-          </button>
-        </div>
-        <div id="disp-list" style="border-top:1px solid var(--border)"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- INFORME -->
-  <div class="panel" id="panel-informe">
-    <div class="section-title">Informes</div>
-    <div class="section-sub">Exporta horas trabajadas por mes, negocio o trabajador</div>
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-header colored">
-        <div><div class="card-title"><div class="card-title-icon">&#128196;</div>Filtros del informe</div></div>
-      </div>
-      <div class="card-body">
-        <div class="form-row">
-          <div>
-            <label>Mes</label>
-            <select id="inf-month">
-              <option value="all">Todos los meses</option>
-              <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
-              <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
-              <option value="2026-05">Mayo 2026</option><option value="2026-06">Junio 2026</option>
-              <option value="2026-07">Julio 2026</option><option value="2026-08">Agosto 2026</option>
-              <option value="2026-09">Septiembre 2026</option><option value="2026-10">Octubre 2026</option>
-              <option value="2026-11">Noviembre 2026</option><option value="2026-12">Diciembre 2026</option>
-            </select>
-          </div>
-          <div>
-            <label>Trabajador</label>
-            <select id="inf-worker"><option value="all">Todos</option></select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div>
-            <label>Negocio / Piso</label>
-            <select id="inf-negocio"><option value="all">Todos</option></select>
-          </div>
-          <div>
-            <label>Estado</label>
-            <select id="inf-status">
-              <option value="all">Todos</option>
-              <option value="ok">Confirmados</option>
-              <option value="pending">Pendientes</option>
-            </select>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-primary" onclick="renderInforme()">&#128202; Generar informe</button>
-          <button class="btn btn-light" onclick="exportPDF()">&#128196; Exportar PDF</button>
-          <button class="btn btn-light" onclick="exportExcel()">&#128190; Exportar Excel</button>
-        </div>
-      </div>
-    </div>
-    <div id="informe-output"></div>
   </div>
 
   </div><!-- /content -->
-</div><!-- /wrap -->
+</div><!-- /main -->
 
 <!-- LOGIN OVERLAY -->
-<div id="login-overlay" style="display:flex;position:fixed;inset:0;background:linear-gradient(135deg,#1E1E2D,#2D1E3D);z-index:9999;align-items:center;justify-content:center;padding:20px">
-  <div style="background:white;border-radius:20px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">
+<div id="login-overlay" style="display:flex;position:fixed;inset:0;background:var(--navy);z-index:9999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:16px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">
     <div style="text-align:center;margin-bottom:28px">
-      <div style="width:56px;height:56px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px">&#129529;</div>
-      <div style="font-size:22px;font-weight:700;color:#1C1A17;letter-spacing:-0.3px">CleanHours</div>
-      <div style="font-size:13px;color:#9E9890;margin-top:4px">Control de horas de limpieza</div>
+      <div style="width:52px;height:52px;background:var(--navy);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px">&#9968;</div>
+      <div style="font-size:20px;font-weight:700;color:#1A1D27;letter-spacing:-0.3px">Servap Turistics</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.08em">Panel de Gestión</div>
     </div>
     <div style="margin-bottom:14px">
-      <label style="font-size:12px;font-weight:600;color:#5E6278;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;display:block">Usuario</label>
+      <label>Usuario</label>
       <input type="text" id="login-user" placeholder="nombre de usuario" autocomplete="username"
-        style="width:100%;padding:11px 14px;border:1px solid #E0E0E0;border-radius:10px;font-size:14px;font-family:inherit;outline:none"
         onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
     </div>
     <div style="margin-bottom:20px">
-      <label style="font-size:12px;font-weight:600;color:#5E6278;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;display:block">Contraseña</label>
+      <label>Contraseña</label>
       <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
-        style="width:100%;padding:11px 14px;border:1px solid #E0E0E0;border-radius:10px;font-size:14px;font-family:inherit;outline:none"
         onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <div id="login-error" style="display:none;background:#FEE2E2;color:#B91C1C;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;text-align:center"></div>
-    <button onclick="doLogin()" style="width:100%;padding:13px;background:linear-gradient(89deg,var(--primary),var(--secondary));color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">
+    <div id="login-error" style="display:none;background:#FEE2E2;color:#991B1B;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;text-align:center"></div>
+    <button onclick="doLogin()" style="width:100%;padding:13px;background:var(--navy);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.01em">
       Iniciar sesion
     </button>
   </div>
 </div>
-<div id="toast"></div>
 
+<div id="toast"></div>
 <script>
+
 //=== CONSTANTES =============================================================
 var GRUPOS_BASE = {
   'Tarter Izard':   ['A01','B21','B24','C21','C22','D11 (Kristine)','D12','D13','D43 (Atico)'],
@@ -748,6 +718,38 @@ var NOMBRE_MAP   = {
 };
 var GC = {'Tarter Izard':'#7366FF','Pas de la Casa':'#F73164','Otros':'#51BB25','Servicios':'#00CFE8'};
 var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwpL7AS-3uSe9YvT2TvqF9SkrduwjGWfIqOUZTTRHTEtcpLPr7Fm8tUVFWEIjoqLlQP/exec';
+var SUPA_URL = 'https://kellhcuvbvgofgiwbeka.supabase.co';
+var SUPA_KEY = 'sb_publishable_XybZM-ibMJr_rE2fxWKhnA_6XgnZnH9';
+var supa = window.supabase ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
+
+// Supabase helper functions
+async function sbGet(table, filters){
+  if(!supa) return [];
+  var q = supa.from(table).select('*');
+  if(filters) Object.keys(filters).forEach(function(k){ q = q.eq(k, filters[k]); });
+  var res = await q;
+  return res.data || [];
+}
+async function sbUpsert(table, data){
+  if(!supa) return null;
+  var res = await supa.from(table).upsert(data);
+  return res;
+}
+async function sbInsert(table, data){
+  if(!supa) return null;
+  var res = await supa.from(table).insert(data);
+  return res;
+}
+async function sbDelete(table, id){
+  if(!supa) return null;
+  var res = await supa.from(table).delete().eq('id', id);
+  return res;
+}
+async function sbUpdate(table, id, data){
+  if(!supa) return null;
+  var res = await supa.from(table).update(data).eq('id', id);
+  return res;
+}
 
 const MAY_RECORDS = [
   {date:'2026-05-01',negocio:'Circuito',start:'11:30',end:'15:00',hrs:3.5,user:'Ana',obs:'',adminHrs:3.5,admin:'Manuel (Admin)',status:'ok'},
@@ -817,6 +819,68 @@ var records = (function(){
 })();
 var apiKey = localStorage.getItem('horas_apikey')||'';
 
+// Load data from Supabase on startup
+async function loadFromSupabase(){
+  if(!supa) return;
+  try {
+    // Load records
+    var recs = await sbGet('registros');
+    if(recs.length > 0){
+      records = recs.map(function(r){
+        return {
+          id:r.id, date:r.fecha, user:r.user_name, negocio:r.negocio,
+          start:r.start_time, end:r.end_time, hrs:parseFloat(r.hrs)||0,
+          obs:r.obs||'', admin:r.admin_name||'', adminHrs:parseFloat(r.admin_hrs)||null,
+          status:r.status||'pending', accion:r.accion||''
+        };
+      });
+      try{localStorage.setItem('horas_records',JSON.stringify(records));}catch(e){}
+    }
+    // Load config
+    var cfgRows = await sbGet('config');
+    if(cfgRows.length > 0){
+      var cfg = {};
+      cfgRows.forEach(function(r){ cfg[r.key] = r.value; });
+      var fullCfg = {
+        workers: cfg.workers || WORKERS_BASE.slice(),
+        grupos: cfg.grupos || JSON.parse(JSON.stringify(GRUPOS_BASE)),
+        admins: cfg.admins || ADMINS_BASE.slice(),
+        disabled: cfg.disabled || []
+      };
+      try{localStorage.setItem('horas_config',JSON.stringify(fullCfg));}catch(e){}
+    }
+    // Load app users
+    var users = await sbGet('app_users');
+    if(users.length > 0){
+      var appUsers = users.map(function(u){
+        return {username:u.username,password:u.password,name:u.name,role:u.role};
+      });
+      try{localStorage.setItem('app_users',JSON.stringify(appUsers));}catch(e){}
+    }
+    // Load cal_jobs
+    var jobs = await sbGet('cal_jobs');
+    if(jobs.length > 0){
+      calJobs = jobs.map(function(j){
+        return {id:j.id,worker:j.worker,negocio:j.negocio,date:j.fecha,time:j.hora,notes:j.notes||''};
+      });
+      try{localStorage.setItem('cal_jobs',JSON.stringify(calJobs));}catch(e){}
+    }
+    // Load cal_disp
+    var disp = await sbGet('cal_disp');
+    if(disp.length > 0){
+      calDisp = disp.map(function(d){
+        return {id:d.id,worker:d.worker,date:d.fecha,tipo:d.tipo,start:d.start_time,end:d.end_time,nota:d.nota||''};
+      });
+      try{localStorage.setItem('cal_disp',JSON.stringify(calDisp));}catch(e){}
+    }
+    console.log('Supabase: datos cargados correctamente');
+    setPendBadge();
+    buildSelects();
+  } catch(err){
+    console.warn('Supabase load error:', err);
+  }
+}
+
 // ID consecutivo (6 digitos desde 111111)
 function getNextId(){
   var n=111111;
@@ -833,7 +897,27 @@ var chartS = null;
 var waMessages = [];
 
 //=== PERSISTENCIA ===========================================================
-function saveRec(){ try{localStorage.setItem('horas_records',JSON.stringify(records));}catch(e){} }
+function saveRec(){
+  try{localStorage.setItem('horas_records',JSON.stringify(records));}catch(e){}
+}
+async function saveRecToSupa(rec){
+  if(!supa) return;
+  try {
+    await sbUpsert('registros', {
+      id: rec.id, fecha: rec.date, user_name: rec.user, negocio: rec.negocio,
+      start_time: rec.start, end_time: rec.end, hrs: rec.hrs,
+      obs: rec.obs||'', admin_name: rec.admin||'', admin_hrs: rec.adminHrs||null,
+      status: rec.status, accion: rec.accion||''
+    });
+  } catch(err){ console.warn('Supabase saveRec error:', err); }
+}
+async function deleteRecFromSupa(rec){
+  if(!supa) return;
+  try {
+    // Mark as deleted with accion='null'
+    await sbUpdate('registros', rec.id, {accion:'null'});
+  } catch(err){ console.warn('Supabase deleteRec error:', err); }
+}
 function getCfg(){
   var stored=null; try{stored=JSON.parse(localStorage.getItem('horas_config'));}catch(e){}
   if(stored&&stored.workers&&stored.grupos&&stored.admins){
@@ -842,7 +926,17 @@ function getCfg(){
   }
   return {workers:WORKERS_BASE.slice(),grupos:JSON.parse(JSON.stringify(GRUPOS_BASE)),admins:ADMINS_BASE.slice(),disabled:[]};
 }
-function saveCfg(c){ try{localStorage.setItem('horas_config',JSON.stringify(c));}catch(e){} }
+function saveCfg(c){
+  try{localStorage.setItem('horas_config',JSON.stringify(c));}catch(e){}
+  if(supa){
+    ['workers','admins','grupos','disabled'].forEach(function(key){
+      if(c[key]!==undefined){
+        sbUpsert('config',{key:key,value:c[key],updated_at:new Date().toISOString()})
+          .catch(function(e){console.warn('saveCfg supa error:',e);});
+      }
+    });
+  }
+}
 
 //=== HELPERS ================================================================
 function t2m(t){var p=(t||'00:00').split(':');return (+p[0])*60+(+p[1]);}
@@ -897,6 +991,12 @@ function auditLog(entry){
 }
 
 //=== SIDEBAR MOBILE =========================================================
+function toggleModule(name){
+  var mod=document.getElementById('mod-'+name);
+  if(!mod) return;
+  mod.classList.toggle('open');
+}
+
 function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 
@@ -909,11 +1009,11 @@ function showTab(name){
   if(name==='registro'&&role==='normal') return toast('Sin permiso para registrar horas');
   if(name==='auditoria'&&role==='normal') return toast('Sin permiso para acceder a auditoria');
 
-  ['registro','auditoria','dashboard','config','calendario','informe'].forEach(function(t){
+  ['registro','auditoria','dashboard','config','calendario','informe','planning','reservas-lista','reservas-inf','facturas-emit','facturas-rec','nueva-factura'].forEach(function(t){
     var p=document.getElementById('panel-'+t); if(p) p.className='panel'+(t===name?' active':'');
     var b=document.getElementById('tab-'+t);   if(b) b.className='sidebar-item'+(t===name?' active':'');
   });
-  var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion',calendario:'Calendario',informe:'Informes'};
+  var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion',calendario:'Calendario',informe:'Informes',planning:'Planning','reservas-lista':'Reservas','reservas-inf':'Informes Reservas','facturas-emit':'Facturas Emitidas','facturas-rec':'Facturas Recibidas','nueva-factura':'Nueva Factura'};
   document.getElementById('page-title').textContent=titles[name]||name;
   document.getElementById('page-crumb').textContent=titles[name]||name;
   if(name==='auditoria') renderAudit();
@@ -981,7 +1081,7 @@ function submitWorker(){
   if(!date) return toast('Selecciona una fecha');
   var hrs=calcHrs(s,e); if(hrs<=0) return toast('Termino debe ser posterior al inicio');
   var rec={id:getNextId(),date:date,negocio:neg,start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:null,admin:null,status:'pending'};
-  records.push(rec); saveRec(); sheet(rec);
+  records.push(rec); saveRec(); sheet(rec); saveRecToSupa(rec);
   addMsg('<b>'+user+'</b> - '+neg+' - '+fmtDate(date)+'<br>'+s+' a '+e+' = <b>'+fmtHrs(hrs)+'</b>'+(obs?'<br>'+obs:''),user,'out',false);
   document.getElementById('w-obs').value=''; setPendBadge();
   toast('Enviado - pendiente confirmacion del admin');
@@ -1001,7 +1101,7 @@ function submitAdmin(){
     toast(p.status==='ok'?'Cuadra - confirmado':'Conflicto detectado');
   } else {
     var rec={id:getNextId(),date:date,negocio:neg,start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:hrs,admin:admin,status:'admin-only'};
-    records.push(rec); sheet(rec);
+    records.push(rec); sheet(rec); saveRecToSupa(rec);
     addMsg('Registro admin - '+admin+'<br>'+user+' - '+neg+'<br>'+fmtHrs(hrs),admin,'in',true);
     toast('Registro admin guardado');
   }
@@ -1091,7 +1191,7 @@ function confPrev(){
       else{var rec={id:getNextId(),date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:h,admin:sender,status:'admin-only'};records.push(rec);sheet(rec);}
     }else{
       var rec={id:getNextId(),date:e.date,negocio:e.negocio,start:e.start,end:e.end,hrs:h,user:e.user,obs:e.obs||'',adminHrs:null,admin:null,status:'pending'};
-      records.push(rec);sheet(rec);
+      records.push(rec);sheet(rec);saveRecToSupa(rec);
     }
   });
   saveRec();setPendBadge();
@@ -1105,18 +1205,19 @@ function confRec(idx){
   records[idx].status='ok';records[idx].adminHrs=records[idx].hrs;
   if(!records[idx].admin)records[idx].admin='Admin';
   logAudit('confirmar',records[idx].id,records[idx].user+' - '+records[idx].negocio+' - '+fmtDate(records[idx].date));
-  saveRec();setPendBadge();renderAudit();toast('Confirmado');
+  saveRec(); saveRecToSupa(records[idx]); setPendBadge();renderAudit();toast('Confirmado');
 }
 function rejRec(idx){
   records[idx].status='mismatch';
   logAudit('conflicto',records[idx].id,records[idx].user+' - '+records[idx].negocio+' - '+fmtDate(records[idx].date));
-  saveRec();setPendBadge();renderAudit();toast('Conflicto marcado');
+  saveRec(); saveRecToSupa(records[idx]); setPendBadge();renderAudit();toast('Conflicto marcado');
 }
 function delRec(idx){
   if(!confirm('Eliminar este registro? Esta accion no se puede deshacer.')) return;
   var deleted=records[idx];
   logAudit('eliminar',deleted.id,deleted.user+' - '+deleted.negocio+' - '+fmtDate(deleted.date));
   sheet(deleted,'null');
+  deleteRecFromSupa(deleted);
   records.splice(idx,1);
   saveRec();setPendBadge();renderAudit();toast('Registro eliminado');
 }
@@ -1422,7 +1523,22 @@ var DISP_COLORS = {'Ana':'#F97316','Claudia':'#8B5CF6','Diego':'#06B6D4','Manuel
 var calYear  = new Date().getFullYear();
 var calMonth = new Date().getMonth(); // 0-based
 
-function saveCalJobs(){ try{localStorage.setItem('cal_jobs',JSON.stringify(calJobs));}catch(e){} }
+function saveCalJobs(){
+  try{localStorage.setItem('cal_jobs',JSON.stringify(calJobs));}catch(e){}
+}
+async function saveCalJobToSupa(job){
+  if(!supa) return;
+  try {
+    await sbUpsert('cal_jobs',{
+      id:job.id, worker:job.worker, negocio:job.negocio,
+      fecha:job.date, hora:job.time, notes:job.notes||''
+    });
+  } catch(err){console.warn('saveCalJob supa error:',err);}
+}
+async function deleteCalJobFromSupa(id){
+  if(!supa) return;
+  try { await sbDelete('cal_jobs', id); } catch(err){console.warn('deleteCalJob supa error:',err);}
+}
 
 function calBuildSelects(){
   var cfg=getCfg();
@@ -1457,6 +1573,8 @@ function calAdd(){
     });
   });
   saveCalJobs();
+  // Save new jobs to Supabase
+  calJobs.slice(-count).forEach(function(j){ saveCalJobToSupa(j); });
   document.getElementById('cal-notes').value='';
   // Deselect all
   Array.from(wSel.options).forEach(function(o){o.selected=false;});
@@ -1468,7 +1586,7 @@ function calAdd(){
 function calDel(id){
   if(!confirm('Eliminar este trabajo programado?')) return;
   calJobs=calJobs.filter(function(j){return j.id!==id;});
-  saveCalJobs(); renderCal(); toast('Trabajo eliminado');
+  saveCalJobs(); deleteCalJobFromSupa(id); renderCal(); toast('Trabajo eliminado');
 }
 
 function calPrevMonth(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
@@ -1569,7 +1687,22 @@ function calClickDay(ds){
 }
 
 //=== DISPONIBILIDAD =========================================================
-function saveDisp(){ try{localStorage.setItem('cal_disp',JSON.stringify(calDisp));}catch(e){} }
+function saveDisp(){
+  try{localStorage.setItem('cal_disp',JSON.stringify(calDisp));}catch(e){}
+}
+async function saveDispToSupa(d){
+  if(!supa) return;
+  try {
+    await sbUpsert('cal_disp',{
+      id:d.id, worker:d.worker, fecha:d.date, tipo:d.tipo,
+      start_time:d.start||'', end_time:d.end||'', nota:d.nota||''
+    });
+  } catch(err){console.warn('saveDisp supa error:',err);}
+}
+async function deleteDispFromSupa(id){
+  if(!supa) return;
+  try { await sbDelete('cal_disp', id); } catch(err){console.warn('deleteDisp supa error:',err);}
+}
 
 function toggleDispForm(){
   var body=document.getElementById('disp-form-body');
@@ -1598,6 +1731,7 @@ function dispAdd(){
   calDisp=calDisp.filter(function(d){return !(d.worker===worker&&d.date===date);});
   calDisp.push({id:Date.now(),worker:worker,date:date,tipo:tipo,start:start,end:end,nota:nota});
   saveDisp();
+  var lastDisp=calDisp[calDisp.length-1]; if(lastDisp) saveDispToSupa(lastDisp);
   document.getElementById('disp-nota').value='';
   renderDispList();
   renderCal();
@@ -1606,7 +1740,7 @@ function dispAdd(){
 
 function dispDel(id){
   calDisp=calDisp.filter(function(d){return d.id!==id;});
-  saveDisp(); renderDispList(); renderCal(); toast('Disponibilidad eliminada');
+  saveDisp(); deleteDispFromSupa(id); renderDispList(); renderCal(); toast('Disponibilidad eliminada');
 }
 
 function renderDispList(){
@@ -1650,13 +1784,21 @@ function getAppUsers(){
     {username:'viewer', password:'view123',  role:'normal',     name:'Visualizador'}
   ];
 }
-function saveAppUsers(users){ try{localStorage.setItem('app_users',JSON.stringify(users));}catch(e){} }
+function saveAppUsers(users){
+  try{localStorage.setItem('app_users',JSON.stringify(users));}catch(e){}
+  if(supa){
+    // Full sync: delete all and reinsert
+    supa.from('app_users').delete().neq('id',0)
+      .then(function(){ return sbInsert('app_users', users); })
+      .catch(function(e){console.warn('saveAppUsers supa error:',e);});
+  }
+}
 
 function doLogin(){
   var u=document.getElementById('login-user').value.trim().toLowerCase();
   var p=document.getElementById('login-pass').value;
   var err=document.getElementById('login-error');
-  var users=getAppUsers();
+  var users=getAppUsers(); // users loaded from Supabase via loadFromSupabase()
   var found=null;
   for(var i=0;i<users.length;i++){
     if(users[i].username.toLowerCase()===u&&users[i].password===p){found=users[i];break;}
@@ -1671,13 +1813,15 @@ function doLogin(){
   err.style.display='none';
   document.getElementById('login-overlay').style.display='none';
   // Set sidebar username
-  var su=document.getElementById('sidebar-username');
-  if(su) su.textContent=found.name+' ('+found.role+')';
+  var su=document.getElementById('sb-username');
+  if(su) su.textContent=found.name;
+  var roleEl=document.getElementById('sb-role');if(roleEl)roleEl.textContent=found.role;
+  var avEl=document.getElementById('sb-avatar');if(avEl)avEl.textContent=(found.name||'U')[0].toUpperCase();
   // Apply role restrictions to sidebar
   applyRoleUI();
   // Navigate to correct default tab
   if(found.role==='normal') showTab('calendario');
-  else showTab('registro');
+  else { toggleModule('limpieza'); showTab('registro'); }
 }
 
 function doLogout(){
@@ -1690,12 +1834,18 @@ function doLogout(){
 function applyRoleUI(){
   var role=currentUser?currentUser.role:'';
   var tabRules={
-    'tab-registro':  ['admin','supervisor'],
-    'tab-auditoria': ['admin','supervisor'],
-    'tab-dashboard': ['admin','supervisor'],
-    'tab-config':    ['admin'],
-    'tab-informe':   ['admin'],
-    'tab-calendario':['admin','supervisor','normal']
+    'tab-registro':      ['admin','supervisor'],
+    'tab-auditoria':     ['admin','supervisor'],
+    'tab-dashboard':     ['admin','supervisor'],
+    'tab-config':        ['admin'],
+    'tab-informe':       ['admin'],
+    'tab-calendario':    ['admin','supervisor','normal'],
+    'tab-planning':      ['admin','supervisor'],
+    'tab-reservas-lista':['admin','supervisor'],
+    'tab-reservas-inf':  ['admin'],
+    'tab-facturas-emit': ['admin'],
+    'tab-facturas-rec':  ['admin'],
+    'tab-nueva-factura': ['admin']
   };
   Object.keys(tabRules).forEach(function(id){
     var el=document.getElementById(id);
@@ -2299,11 +2449,20 @@ function exportBackup(){
     var ki=document.getElementById('api-key-input');if(ki)ki.value=apiKey;
     var ks=document.getElementById('apikey-section');if(ks)ks.style.display='none';
   }
+  // Show login first
+  document.getElementById('login-overlay').style.display='flex';
+  // Load from Supabase in background
+  loadFromSupabase().then(function(){
+    console.log('Datos sincronizados con Supabase');
+  }).catch(function(e){
+    console.warn('Error sincronizando con Supabase, usando datos locales:', e);
+    buildSelects();
+    setPendBadge();
+  });
   buildSelects();
   setPendBadge();
-  // Show login — do not render app until authenticated
-  document.getElementById('login-overlay').style.display='flex';
 })();
+
 </script>
 </body>
 </html>
