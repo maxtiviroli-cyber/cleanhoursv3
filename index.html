@@ -57,8 +57,7 @@ a{color:var(--primary);text-decoration:none}
 .sb-brand-sub{font-size:10px;color:var(--text3);font-weight:400;letter-spacing:.06em;text-transform:uppercase}
 
 .sb-section{padding:16px 16px 6px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
-.sb-item{display:flex;align-items:center;gap:10px;padding:9px 16px;margin:1px 8px;border-radius:var(--radius);cursor:pointer;color:#9CA3B8 !important;font-size:13px;font-weight:500;border:none !important !important;background:transparent !important;width:calc(100% - 16px);text-align:left;transition:all 0.12s;position:relative}
-.sidebar button{padding:8px 16px;background:transparent !important;border:none !important;color:#9CA3B8 !important;text-align:left !important;display:block !important;width:100% !important}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 16px;margin:1px 8px;border-radius:var(--radius);cursor:pointer;color:var(--text2) !important;font-size:13px;font-weight:500;border:none !important;background:transparent !important;width:calc(100% - 16px);text-align:left;transition:all 0.12s;position:relative;-webkit-appearance:none;appearance:none;box-shadow:none;outline:none}
 .sb-item:hover{background:var(--navy3);color:var(--text)}
 .sb-item.active{background:var(--primary);color:white}
 .sb-item.active .sb-icon{opacity:1}
@@ -74,7 +73,7 @@ a{color:var(--primary);text-decoration:none}
 .sb-module-arrow{font-size:10px;color:var(--text3);transition:transform 0.2s}
 .sb-module.open .sb-module-arrow{transform:rotate(90deg)}
 .sb-module-items{overflow:hidden;max-height:0;transition:max-height 0.2s;display:flex;flex-direction:column}
-.sb-module.open .sb-module-items{max-height:300px;padding-bottom:8px;border-bottom:1px solid #2E3244;margin-bottom:8px}max-height:300px}
+.sb-module.open .sb-module-items{max-height:300px}
 
 .sb-footer{margin-top:auto;padding:14px 12px;border-top:1px solid var(--border)}
 .sb-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius)}
@@ -89,9 +88,9 @@ a{color:var(--primary);text-decoration:none}
 .hamburger{display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--navy);border:none;border-radius:var(--radius);cursor:pointer;flex-direction:column;gap:4px;padding:0;flex-shrink:0}
 .hamburger span{display:block;width:16px;height:2px;background:white;border-radius:2px}
 .page-title{font-size:15px;font-weight:600;color:#1A1D27}
-.page-sub{font-size:12px;color:#9CA3B8 !important}
+.page-sub{font-size:12px;color:var(--text2)}
 .topbar-right{display:flex;align-items:center;gap:12px}
-.topbar-date{font-size:12px;color:#9CA3B8 !important;font-family:'DM Mono',monospace}
+.topbar-date{font-size:12px;color:var(--text2);font-family:'DM Mono',monospace}
 
 /* ── PANELS ─────────────────────────────────────────── */
 .panel{display:none}
@@ -220,9 +219,9 @@ tbody tr:hover{background:#F8F9FC}
       <div class="sb-module-arrow">&#9654;</div>
     </div>
     <div class="sb-module-items">
-      <button class="sb-item" id="tab-planning" onclick="showTab('planning')">Planning</button>
-      <button class="sb-item" id="tab-reservas-lista" onclick="showTab('reservas-lista')">Reservas</button>
-      <button class="sb-item" id="tab-reservas-inf" onclick="showTab('reservas-inf')">Informes</button>
+      <button class="sb-item" id="tab-planning" onclick="showTab('planning')"><span class="sb-icon">&#128197;</span> Planning</button>
+      <button class="sb-item" id="tab-reservas-lista" onclick="showTab('reservas-lista')"><span class="sb-icon">&#128203;</span> Reservas</button>
+      <button class="sb-item" id="tab-reservas-inf" onclick="showTab('reservas-inf')"><span class="sb-icon">&#128196;</span> Informes</button>
     </div>
   </div>
 
@@ -234,11 +233,11 @@ tbody tr:hover{background:#F8F9FC}
       <div class="sb-module-arrow">&#9654;</div>
     </div>
     <div class="sb-module-items">
-      <button class="sb-item" id="tab-registro" onclick="showTab('registro')">Registro</button>
-      <button class="sb-item" id="tab-auditoria" onclick="showTab('auditoria')">Auditoria <span class="sb-badge" id="pending-count" style="display:none">0</span></button>
-      <button class="sb-item" id="tab-dashboard" onclick="showTab('dashboard')">Dashboard</button>
-      <button class="sb-item" id="tab-calendario" onclick="showTab('calendario')">Calendario</button>
-      <button class="sb-item" id="tab-informe" onclick="showTab('informe')">Informes</button>
+      <button class="sb-item" id="tab-registro" onclick="showTab('registro')"><span class="sb-icon">&#9997;</span> Registro</button>
+      <button class="sb-item" id="tab-auditoria" onclick="showTab('auditoria')"><span class="sb-icon">&#128269;</span> Auditoria <span class="sb-badge" id="pending-count" style="display:none">0</span></button>
+      <button class="sb-item" id="tab-dashboard" onclick="showTab('dashboard')"><span class="sb-icon">&#128202;</span> Dashboard</button>
+      <button class="sb-item" id="tab-calendario" onclick="showTab('calendario')"><span class="sb-icon">&#128336;</span> Calendario</button>
+      <button class="sb-item" id="tab-informe" onclick="showTab('informe')"><span class="sb-icon">&#128196;</span> Informes</button>
     </div>
   </div>
 
@@ -250,15 +249,15 @@ tbody tr:hover{background:#F8F9FC}
       <div class="sb-module-arrow">&#9654;</div>
     </div>
     <div class="sb-module-items">
-      <button class="sb-item" id="tab-facturas-emit" onclick="showTab('facturas-emit')">Facturas emitidas</button>
-      <button class="sb-item" id="tab-facturas-rec" onclick="showTab('facturas-rec')">Facturas recibidas</button>
-      <button class="sb-item" id="tab-nueva-factura" onclick="showTab('nueva-factura')">Nueva factura</button>
+      <button class="sb-item" id="tab-facturas-emit" onclick="showTab('facturas-emit')"><span class="sb-icon">&#128196;</span> Facturas emitidas</button>
+      <button class="sb-item" id="tab-facturas-rec" onclick="showTab('facturas-rec')"><span class="sb-icon">&#128230;</span> Facturas recibidas</button>
+      <button class="sb-item" id="tab-nueva-factura" onclick="showTab('nueva-factura')"><span class="sb-icon">&#43;</span> Nueva factura</button>
     </div>
   </div>
 
   <!-- CONFIG -->
   <div style="padding:6px 8px">
-    <button class="sb-item" id="tab-config" onclick="showTab('config')">Configuracion</button>
+    <button class="sb-item" id="tab-config" onclick="showTab('config')"><span class="sb-icon">&#9881;</span> Configuracion</button>
   </div>
 
   <div class="sb-footer">
@@ -290,27 +289,138 @@ tbody tr:hover{background:#F8F9FC}
 
   <div class="content">
 
-  <!-- ══ PANEL: PLANNING (próximamente) ══════════════════ -->
+  <!-- ══ PANEL: PLANNING ════════════════════════════════ -->
   <div class="panel" id="panel-planning">
-    <div class="module-welcome">
-      <div class="module-welcome-icon">&#128197;</div>
-      <div class="module-welcome-title">Planning de Reservas</div>
-      <div class="module-welcome-sub">Calendario de ocupación con sincronización iCal de Airbnb y Booking. Próximamente.</div>
-      <button class="btn btn-primary" onclick="showTab('reservas-lista')">Ver lista de reservas</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div><h2 style="font-size:20px;font-weight:700">Planning</h2><div style="font-size:13px;color:var(--text2)">Ocupacion de pisos — Pas de la Casa</div></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button onclick="planPrevMonth()" style="background:none;border:1px solid #E2E5ED;border-radius:var(--radius);cursor:pointer;font-size:18px;padding:4px 12px;color:var(--primary)">&#8249;</button>
+        <div id="plan-month-title" style="font-size:14px;font-weight:600;min-width:140px;text-align:center"></div>
+        <button onclick="planNextMonth()" style="background:none;border:1px solid #E2E5ED;border-radius:var(--radius);cursor:pointer;font-size:18px;padding:4px 12px;color:var(--primary)">&#8250;</button>
+        <button onclick="planGoToday()" class="btn btn-light btn-sm">Hoy</button>
+      </div>
+    </div>
+
+    <!-- Leyenda plataformas -->
+    <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px"><div style="width:12px;height:12px;border-radius:3px;background:#FF5A5F"></div> Airbnb</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px"><div style="width:12px;height:12px;border-radius:3px;background:#003580"></div> Booking</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px"><div style="width:12px;height:12px;border-radius:3px;background:#22C55E"></div> Directo</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px"><div style="width:12px;height:12px;border-radius:3px;background:#9CA3AF"></div> Propietario</div>
+    </div>
+
+    <div class="card">
+      <div class="card-body" style="padding:0;overflow-x:auto">
+        <div id="plan-grid"></div>
+      </div>
     </div>
   </div>
 
-  <!-- ══ PANEL: RESERVAS LISTA (próximamente) ════════════ -->
+  <!-- ══ PANEL: RESERVAS LISTA ══════════════════════════ -->
   <div class="panel" id="panel-reservas-lista">
-    <div class="module-welcome">
-      <div class="module-welcome-icon">&#127968;</div>
-      <div class="module-welcome-title">Gestión de Reservas</div>
-      <div class="module-welcome-sub">Lista de reservas, checklist de llegada/salida y control de documentos ROAT. En construcción.</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div><h2 style="font-size:20px;font-weight:700">Reservas</h2><div style="font-size:13px;color:var(--text2)">Gestion y seguimiento de reservas</div></div>
+      <button class="btn btn-primary" onclick="openNuevaReserva()">+ Nueva reserva</button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card"><div class="card-body">
+      <div class="filter-bar">
+        <select id="res-filter-piso" onchange="renderReservas()"><option value="">Todos los pisos</option>
+          <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
+          <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
+          <option>Dolsa 3</option><option>Madriu 45</option>
+        </select>
+        <select id="res-filter-mes" onchange="renderReservas()">
+          <option value="">Todos los meses</option>
+          <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
+          <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
+          <option value="2026-05">Mayo 2026</option><option value="2026-06">Junio 2026</option>
+          <option value="2026-07">Julio 2026</option><option value="2026-08">Agosto 2026</option>
+          <option value="2026-09">Sept 2026</option><option value="2026-10">Oct 2026</option>
+          <option value="2026-11">Nov 2026</option><option value="2026-12">Dic 2026</option>
+        </select>
+        <select id="res-filter-plat" onchange="renderReservas()">
+          <option value="">Todas las plataformas</option>
+          <option>Airbnb</option><option>Booking</option><option>Directo</option><option>Propietario</option>
+        </select>
+      </div>
+    </div></div>
+
+    <!-- Tabla reservas -->
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Piso</th><th>Huesped</th><th>Entrada</th><th>Salida</th>
+            <th>Noches</th><th>Personas</th><th>Plataforma</th><th>Precio</th>
+            <th>Checklist</th><th></th>
+          </tr></thead>
+          <tbody id="res-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <!-- ══ PANEL: RESERVAS INFORMES (próximamente) ═════════ -->
-  <div class="panel" id="panel-reservas-inf">
+  <!-- MODAL: Nueva/Editar Reserva -->
+  <div id="modal-reserva" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
+    <div style="background:white;border-radius:16px;padding:28px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h3 style="font-size:16px;font-weight:700" id="modal-res-title">Nueva Reserva</h3>
+        <button onclick="closeModalReserva()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text2)">&#215;</button>
+      </div>
+      <div class="form-grid">
+        <div><label>Piso</label>
+          <select id="res-piso">
+            <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
+            <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
+            <option>Dolsa 3</option><option>Madriu 45</option>
+          </select>
+        </div>
+        <div><label>Plataforma</label>
+          <select id="res-plataforma"><option>Airbnb</option><option>Booking</option><option>Directo</option><option>Propietario</option></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><label>Nombre huesped</label><input type="text" id="res-nombre" placeholder="Nombre completo"></div>
+        <div><label>Pais</label><input type="text" id="res-pais" placeholder="Francia, España..."></div>
+      </div>
+      <div class="form-grid">
+        <div><label>Fecha entrada</label><input type="date" id="res-entrada"></div>
+        <div><label>Fecha salida</label><input type="date" id="res-salida"></div>
+      </div>
+      <div class="form-grid">
+        <div><label>Personas</label><input type="number" id="res-personas" min="1" value="2"></div>
+        <div><label>Hora llegada aprox.</label><input type="time" id="res-hora"></div>
+      </div>
+      <div class="form-grid">
+        <div><label>Precio total (€)</label><input type="number" id="res-precio" step="0.01" placeholder="0.00"></div>
+        <div><label>Taxa turistica (€)</label><input type="number" id="res-taxa" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div class="form-full"><label>Observaciones</label><textarea id="res-obs" rows="2" placeholder="Notas, parking, mascotas..."></textarea></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button class="btn btn-light" onclick="closeModalReserva()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveReserva()">Guardar reserva</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Detalle/Checklist Reserva -->
+  <div id="modal-checklist" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
+    <div style="background:white;border-radius:16px;padding:28px;width:100%;max-width:500px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h3 style="font-size:16px;font-weight:700">Detalle de reserva</h3>
+        <button onclick="closeChecklist()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text2)">&#215;</button>
+      </div>
+      <div id="checklist-info" style="background:#F8F9FC;border-radius:var(--radius);padding:14px;margin-bottom:20px;font-size:13px;line-height:1.8"></div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:#1A1D27">Checklist de seguimiento</div>
+      <div id="checklist-items" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-light" onclick="closeChecklist()">Cerrar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteReserva()">Eliminar reserva</button>
+      </div>
+    </div>
+  </div>
     <div class="module-welcome">
       <div class="module-welcome-icon">&#128196;</div>
       <div class="module-welcome-title">Informes de Reservas</div>
@@ -1022,6 +1132,8 @@ function showTab(name){
   if(name==='config'){renderConfig();renderHistorial();}
   if(name==='calendario'){calBuildSelects();renderCal();}
   if(name==='informe')   initInforme();
+  if(name==='planning'){loadReservas().then(renderPlanning);}
+  if(name==='reservas-lista'){loadReservas().then(renderReservas);}
   closeSidebar();
 }
 
@@ -2435,6 +2547,293 @@ function exportBackup(){
   a.click();
   auditLog({tipo:'backup',accion:'exportar_backup',detalle:'Backup exportado por '+u});
   toast('Backup exportado y enviado a Sheets');
+}
+
+//=== RESERVAS ===============================================================
+var reservas = [];
+var currentReservaId = null;
+var planYear = new Date().getFullYear();
+var planMonth = new Date().getMonth();
+
+var PISOS_PAS = ['Chamois 47','Nuria 3A','Morera 5C','Sapporo 20','Nevada 32','Nevada 33','Dolsa 3','Madriu 45'];
+var PLAT_COLORS = {'Airbnb':'#FF5A5F','Booking':'#003580','Directo':'#22C55E','Propietario':'#9CA3AF','default':'#6B7280'};
+
+async function loadReservas(){
+  if(!supa) return;
+  try {
+    var res = await sbGet('reservas');
+    reservas = res || [];
+  } catch(e){ console.warn('loadReservas error:',e); }
+}
+
+function openNuevaReserva(){
+  currentReservaId = null;
+  document.getElementById('modal-res-title').textContent = 'Nueva Reserva';
+  ['res-nombre','res-pais','res-obs'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  ['res-precio','res-taxa'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('res-personas').value='2';
+  document.getElementById('res-entrada').value='';
+  document.getElementById('res-salida').value='';
+  document.getElementById('modal-reserva').style.display='flex';
+}
+
+function closeModalReserva(){
+  document.getElementById('modal-reserva').style.display='none';
+}
+
+async function saveReserva(){
+  var piso    = document.getElementById('res-piso').value;
+  var plat    = document.getElementById('res-plataforma').value;
+  var nombre  = document.getElementById('res-nombre').value.trim();
+  var pais    = document.getElementById('res-pais').value.trim();
+  var entrada = document.getElementById('res-entrada').value;
+  var salida  = document.getElementById('res-salida').value;
+  var pers    = parseInt(document.getElementById('res-personas').value)||1;
+  var hora    = document.getElementById('res-hora').value;
+  var precio  = parseFloat(document.getElementById('res-precio').value)||0;
+  var taxa    = parseFloat(document.getElementById('res-taxa').value)||0;
+  var obs     = document.getElementById('res-obs').value.trim();
+
+  if(!nombre) return toast('Escribe el nombre del huesped');
+  if(!entrada||!salida) return toast('Selecciona fechas de entrada y salida');
+  if(entrada>=salida) return toast('La salida debe ser posterior a la entrada');
+
+  var p1=entrada.split('-').map(Number); var p2=salida.split('-').map(Number);
+  var noches=Math.round((new Date(p2[0],p2[1]-1,p2[2])-new Date(p1[0],p1[1]-1,p1[2]))/(86400000));
+
+  var data = {
+    piso:piso, plataforma:plat, nombre_huesped:nombre, pais:pais,
+    fecha_entrada:entrada, fecha_salida:salida, noches:noches,
+    personas:pers, hora_llegada:hora, precio:precio, taxa:taxa,
+    observaciones:obs, doc_recibido:false, roat_registrado:false,
+    instrucciones_enviadas:false, taxa_cobrada:false
+  };
+
+  try {
+    if(currentReservaId){
+      await sbUpdate('reservas', currentReservaId, data);
+      toast('Reserva actualizada');
+    } else {
+      var res = await sbInsert('reservas', data);
+      toast('Reserva creada: '+nombre+' - '+piso);
+    }
+    await loadReservas();
+    closeModalReserva();
+    renderReservas();
+    renderPlanning();
+  } catch(e){ toast('Error guardando reserva'); console.error(e); }
+}
+
+function renderReservas(){
+  var fp = document.getElementById('res-filter-piso').value;
+  var fm = document.getElementById('res-filter-mes').value;
+  var fpl = document.getElementById('res-filter-plat').value;
+
+  var data = reservas.filter(function(r){
+    return (!fp||r.piso===fp)
+      && (!fm||r.fecha_entrada.indexOf(fm)===0||r.fecha_salida.indexOf(fm)===0)
+      && (!fpl||r.plataforma===fpl);
+  }).sort(function(a,b){return a.fecha_entrada.localeCompare(b.fecha_entrada);});
+
+  var tb = document.getElementById('res-tbody');
+  if(!data.length){
+    tb.innerHTML='<tr><td colspan="10" style="text-align:center;padding:40px;color:#999">Sin reservas. Crea la primera con el botón + Nueva reserva</td></tr>';
+    return;
+  }
+
+  var h='';
+  data.forEach(function(r){
+    var col = PLAT_COLORS[r.plataforma]||PLAT_COLORS.default;
+    var checks = [r.doc_recibido,r.roat_registrado,r.instrucciones_enviadas,r.taxa_cobrada];
+    var done = checks.filter(Boolean).length;
+    var checkColor = done===4?'#22C55E':done>0?'#F59E0B':'#E5E7EB';
+    h+='<tr>';
+    h+='<td style="font-weight:600">'+r.piso+'</td>';
+    h+='<td>'+r.nombre_huesped+'<br><span style="font-size:11px;color:#999">'+r.pais+'</span></td>';
+    h+='<td style="white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
+    h+='<td style="white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
+    h+='<td style="text-align:center">'+r.noches+'</td>';
+    h+='<td style="text-align:center">'+r.personas+'</td>';
+    h+='<td><span style="background:'+col+'22;color:'+col+';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">'+r.plataforma+'</span></td>';
+    h+='<td style="font-family:\'DM Mono\',monospace">'+r.precio.toFixed(2)+' €</td>';
+    h+='<td><div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="openChecklist('+r.id+')">';
+    h+='<div style="width:28px;height:28px;border-radius:50%;background:'+checkColor+'22;border:2px solid '+checkColor+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:'+checkColor+'">'+done+'/4</div>';
+    h+='</div></td>';
+    h+='<td><button onclick="editReserva('+r.id+')" class="btn btn-light btn-sm">Editar</button></td>';
+    h+='</tr>';
+  });
+  tb.innerHTML=h;
+}
+
+function openChecklist(id){
+  var r=reservas.find(function(x){return x.id===id;});
+  if(!r) return;
+  currentReservaId=id;
+  var col=PLAT_COLORS[r.plataforma]||PLAT_COLORS.default;
+  document.getElementById('checklist-info').innerHTML=
+    '<b>'+r.piso+'</b> &nbsp;·&nbsp; <span style="color:'+col+'">'+r.plataforma+'</span><br>'+
+    '<b>'+r.nombre_huesped+'</b> ('+r.pais+')<br>'+
+    'Entrada: <b>'+fmtDate(r.fecha_entrada)+'</b>'+(r.hora_llegada?' a las '+r.hora_llegada:'')+'<br>'+
+    'Salida: <b>'+fmtDate(r.fecha_salida)+'</b> &nbsp;·&nbsp; '+r.noches+' noches &nbsp;·&nbsp; '+r.personas+' personas<br>'+
+    'Precio: <b>'+r.precio.toFixed(2)+' €</b> &nbsp;·&nbsp; Taxa: <b>'+r.taxa.toFixed(2)+' €</b>'+
+    (r.observaciones?'<br>Obs: '+r.observaciones:'');
+
+  var items=[
+    {key:'doc_recibido',    label:'Documentos de identidad recibidos',desc:'Email a roatservap@gmail.com',val:r.doc_recibido},
+    {key:'roat_registrado', label:'Registrado en plataforma ROAT',   desc:'Portal gobierno andorrano',   val:r.roat_registrado},
+    {key:'instrucciones_enviadas',label:'Instrucciones de acceso enviadas',desc:'Enviado al huesped', val:r.instrucciones_enviadas},
+    {key:'taxa_cobrada',    label:'Taxa turistica cobrada al checkout',desc:'Confirmar con limpieza',      val:r.taxa_cobrada}
+  ];
+  var h='';
+  items.forEach(function(item){
+    var done=item.val;
+    h+='<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius);background:'+(done?'#F0FDF4':'#F8F9FC')+';cursor:pointer" onclick="toggleCheck('+id+',\''+item.key+'\')">';
+    h+='<div style="width:22px;height:22px;border-radius:50%;border:2px solid '+(done?'#22C55E':'#D1D5DB')+';background:'+(done?'#22C55E':'white')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">';
+    if(done) h+='<span style="color:white;font-size:12px;font-weight:700">&#10003;</span>';
+    h+='</div>';
+    h+='<div><div style="font-size:13px;font-weight:600;color:'+(done?'#15803D':'#1A1D27')+'">'+item.label+'</div>';
+    h+='<div style="font-size:11px;color:#9CA3AF">'+item.desc+'</div></div></div>';
+  });
+  document.getElementById('checklist-items').innerHTML=h;
+  document.getElementById('modal-checklist').style.display='flex';
+}
+
+async function toggleCheck(id, key){
+  var r=reservas.find(function(x){return x.id===id;});
+  if(!r) return;
+  var update={};
+  update[key]=!r[key];
+  try {
+    await sbUpdate('reservas',id,update);
+    r[key]=!r[key];
+    openChecklist(id);
+    renderReservas();
+  } catch(e){ toast('Error actualizando checklist'); }
+}
+
+function closeChecklist(){
+  document.getElementById('modal-checklist').style.display='none';
+  currentReservaId=null;
+}
+
+async function deleteReserva(){
+  if(!currentReservaId) return;
+  if(!confirm('Eliminar esta reserva? Esta accion no se puede deshacer.')) return;
+  try {
+    await sbDelete('reservas',currentReservaId);
+    reservas=reservas.filter(function(r){return r.id!==currentReservaId;});
+    closeChecklist();
+    renderReservas();
+    renderPlanning();
+    toast('Reserva eliminada');
+  } catch(e){ toast('Error eliminando reserva'); }
+}
+
+function editReserva(id){
+  var r=reservas.find(function(x){return x.id===id;});
+  if(!r) return;
+  currentReservaId=id;
+  document.getElementById('modal-res-title').textContent='Editar Reserva';
+  document.getElementById('res-piso').value=r.piso;
+  document.getElementById('res-plataforma').value=r.plataforma;
+  document.getElementById('res-nombre').value=r.nombre_huesped;
+  document.getElementById('res-pais').value=r.pais||'';
+  document.getElementById('res-entrada').value=r.fecha_entrada;
+  document.getElementById('res-salida').value=r.fecha_salida;
+  document.getElementById('res-personas').value=r.personas;
+  document.getElementById('res-hora').value=r.hora_llegada||'';
+  document.getElementById('res-precio').value=r.precio;
+  document.getElementById('res-taxa').value=r.taxa;
+  document.getElementById('res-obs').value=r.observaciones||'';
+  document.getElementById('modal-reserva').style.display='flex';
+}
+
+//=== PLANNING ===============================================================
+function planPrevMonth(){ planMonth--; if(planMonth<0){planMonth=11;planYear--;} renderPlanning(); }
+function planNextMonth(){ planMonth++; if(planMonth>11){planMonth=0;planYear++;} renderPlanning(); }
+function planGoToday(){ planYear=new Date().getFullYear(); planMonth=new Date().getMonth(); renderPlanning(); }
+
+function renderPlanning(){
+  var months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var el=document.getElementById('plan-month-title');
+  if(el) el.textContent=months[planMonth]+' '+planYear;
+
+  var daysInMonth=new Date(planYear,planMonth+1,0).getDate();
+  var today=new Date();
+  var todayStr=today.getFullYear()+'-'+(today.getMonth()<9?'0':'')+(today.getMonth()+1)+'-'+(today.getDate()<10?'0':'')+today.getDate();
+  var monthPfx=planYear+'-'+(planMonth<9?'0':'')+(planMonth+1);
+
+  // Filter reservas for this month
+  var monthRes=reservas.filter(function(r){
+    return r.fecha_entrada<=monthPfx+'-31' && r.fecha_salida>=monthPfx+'-01';
+  });
+
+  // Build grid
+  var cellW=32; // px per day
+  var rowH=40;
+  var labelW=110;
+  var totalW=labelW+(daysInMonth*cellW);
+
+  var h='<div style="min-width:'+totalW+'px">';
+
+  // Header — days
+  h+='<div style="display:flex;border-bottom:1px solid #E8EAF0;background:#F8F9FC">';
+  h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:8px 12px;font-size:11px;font-weight:600;color:var(--text2)">PISO</div>';
+  for(var d=1;d<=daysInMonth;d++){
+    var ds=planYear+'-'+(planMonth<9?'0':'')+(planMonth+1)+'-'+(d<10?'0':'')+d;
+    var isToday=ds===todayStr;
+    var dow=new Date(planYear,planMonth,d).getDay();
+    var isSun=dow===0; var isSat=dow===6;
+    h+='<div style="width:'+cellW+'px;flex-shrink:0;text-align:center;padding:6px 0;font-size:10px;font-weight:'+(isToday?'700':'500')+';color:'+(isToday?'var(--primary)':isSun?'var(--danger)':'var(--text2)')+';background:'+(isToday?'#EEF3FF':'transparent')+';border-left:1px solid #F0F2F7">'+d+'</div>';
+  }
+  h+='</div>';
+
+  // Rows — one per piso
+  PISOS_PAS.forEach(function(piso){
+    h+='<div style="display:flex;border-bottom:1px solid #F0F2F7;position:relative;height:'+rowH+'px;align-items:center">';
+    h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:0 12px;font-size:12px;font-weight:600;color:#1A1D27;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+piso+'</div>';
+
+    // Day cells background
+    var cellsH='<div style="display:flex;flex:1;height:100%">';
+    for(var d=1;d<=daysInMonth;d++){
+      var ds=planYear+'-'+(planMonth<9?'0':'')+(planMonth+1)+'-'+(d<10?'0':'')+d;
+      var isToday=ds===todayStr;
+      var dow=new Date(planYear,planMonth,d).getDay();
+      var isSat=dow===6; var isSun=dow===0;
+      var bg=isToday?'#EEF3FF':(isSat||isSun?'#FAFAFA':'white');
+      cellsH+='<div style="width:'+cellW+'px;flex-shrink:0;height:100%;background:'+bg+';border-left:1px solid #F0F2F7"></div>';
+    }
+    cellsH+='</div>';
+    h+=cellsH;
+
+    // Reserva bars
+    var pisoRes=monthRes.filter(function(r){return r.piso===piso;});
+    pisoRes.forEach(function(r){
+      var col=PLAT_COLORS[r.plataforma]||PLAT_COLORS.default;
+      // Calculate position
+      var p1=r.fecha_entrada.split('-').map(Number);
+      var p2=r.fecha_salida.split('-').map(Number);
+      var startDate=new Date(p1[0],p1[1]-1,p1[2]);
+      var endDate=new Date(p2[0],p2[1]-1,p2[2]);
+      var monthStart=new Date(planYear,planMonth,1);
+      var monthEnd=new Date(planYear,planMonth,daysInMonth);
+      var barStart=Math.max(startDate,monthStart);
+      var barEnd=Math.min(endDate,monthEnd);
+      var startDay=Math.round((barStart-monthStart)/86400000);
+      var width=Math.round((barEnd-barStart)/86400000);
+      if(width<=0) return;
+      var left=labelW+(startDay*cellW);
+      h+='<div title="'+r.nombre_huesped+' ('+r.plataforma+')" onclick="openChecklist('+r.id+')" style="position:absolute;left:'+left+'px;top:6px;width:'+(width*cellW-2)+'px;height:'+(rowH-12)+'px;background:'+col+';border-radius:4px;cursor:pointer;display:flex;align-items:center;padding:0 8px;overflow:hidden">';
+      h+='<span style="font-size:10px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+r.nombre_huesped+'</span>';
+      h+='</div>';
+    });
+
+    h+='</div>';
+  });
+  h+='</div>';
+
+  var grid=document.getElementById('plan-grid');
+  if(grid) grid.innerHTML=h;
 }
 
 //=== INIT ===================================================================
