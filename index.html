@@ -835,7 +835,18 @@ var GC = {'Tarter Izard':'#7366FF','Pas de la Casa':'#F73164','Otros':'#51BB25',
 var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwpL7AS-3uSe9YvT2TvqF9SkrduwjGWfIqOUZTTRHTEtcpLPr7Fm8tUVFWEIjoqLlQP/exec';
 var SUPA_URL = 'https://kellhcuvbvgofgiwbeka.supabase.co';
 var SUPA_KEY = 'sb_publishable_XybZM-ibMJr_rE2fxWKhnA_6XgnZnH9';
-var supa = window.supabase ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
+var supa = null;
+function initSupa(){
+  try {
+    if(window.supabase && window.supabase.createClient) {
+      supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    } else if(typeof createClient !== 'undefined') {
+      supa = createClient(SUPA_URL, SUPA_KEY);
+    }
+    if(supa) console.log('Supabase inicializado OK');
+    else console.warn('Supabase no disponible');
+  } catch(e){ console.error('Supabase init error:', e); }
+}
 
 // Supabase helper functions
 async function sbGet(table, filters){
@@ -2842,6 +2853,7 @@ function renderPlanning(){
 
 //=== INIT ===================================================================
 (function(){
+  initSupa();
   var now=new Date();
   var el=document.getElementById('header-date');
   if(el) el.textContent=now.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
