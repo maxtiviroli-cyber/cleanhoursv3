@@ -1935,10 +1935,34 @@ function doLogin(){
   var u=document.getElementById('login-user').value.trim().toLowerCase();
   var p=document.getElementById('login-pass').value;
   var err=document.getElementById('login-error');
-  var users=getAppUsers(); // users loaded from Supabase via loadFromSupabase()
+  var users=getAppUsers();
   var found=null;
   for(var i=0;i<users.length;i++){
     if(users[i].username.toLowerCase()===u&&users[i].password===p){found=users[i];break;}
+  }
+  if(!found&&supa){
+    // Try loading from Supabase directly
+    err.textContent='Verificando...';
+    err.style.display='block';
+    sbGet('app_users').then(function(supaUsers){
+      if(supaUsers&&supaUsers.length){
+        try{localStorage.setItem('app_users',JSON.stringify(supaUsers));}catch(e){}
+        for(var i=0;i<supaUsers.length;i++){
+          if(supaUsers[i].username.toLowerCase()===u&&supaUsers[i].password===p){found=supaUsers[i];break;}
+        }
+      }
+      if(found){ doLoginSuccess(found); }
+      else {
+        err.textContent='Usuario o contraseña incorrectos';
+        err.style.display='block';
+        document.getElementById('login-pass').value='';
+      }
+    }).catch(function(){
+      err.textContent='Usuario o contraseña incorrectos';
+      err.style.display='block';
+      document.getElementById('login-pass').value='';
+    });
+    return;
   }
   if(!found){
     err.textContent='Usuario o contraseña incorrectos';
@@ -1946,17 +1970,19 @@ function doLogin(){
     document.getElementById('login-pass').value='';
     return;
   }
+  doLoginSuccess(found);
+}
+
+function doLoginSuccess(found){
+  var err=document.getElementById('login-error');
   currentUser=found;
   err.style.display='none';
   document.getElementById('login-overlay').style.display='none';
-  // Set sidebar username
   var su=document.getElementById('sb-username');
   if(su) su.textContent=found.name;
   var roleEl=document.getElementById('sb-role');if(roleEl)roleEl.textContent=found.role;
   var avEl=document.getElementById('sb-avatar');if(avEl)avEl.textContent=(found.name||'U')[0].toUpperCase();
-  // Apply role restrictions to sidebar
   applyRoleUI();
-  // Navigate to correct default tab
   if(found.role==='normal') showTab('calendario');
   else { toggleModule('limpieza'); showTab('registro'); }
 }
