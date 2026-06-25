@@ -1141,7 +1141,7 @@ function showTab(name){
   });
   var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion',calendario:'Calendario',informe:'Informes',planning:'Planning','reservas-lista':'Reservas','reservas-inf':'Informes Reservas','facturas-emit':'Facturas Emitidas','facturas-rec':'Facturas Recibidas','nueva-factura':'Nueva Factura'};
   document.getElementById('page-title').textContent=titles[name]||name;
-  document.getElementById('page-crumb').textContent=titles[name]||name;
+  var crumb=document.getElementById('page-crumb'); if(crumb) crumb.textContent=titles[name]||name;
   if(name==='auditoria') renderAudit();
   if(name==='dashboard') renderDashboard();
   if(name==='config'){renderConfig();renderHistorial();}
