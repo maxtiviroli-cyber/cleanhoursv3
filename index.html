@@ -196,6 +196,14 @@ tbody tr:hover{background:#F8F9FC}
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
   .kpi-value{font-size:26px}
 }
+
+/* ── TERMINAL TABLE (Reservas) ──────────────────────── */
+.terminal-table{background:#1E1E2E;border-radius:var(--radius-lg);border:1px solid #313244;overflow:hidden}
+.terminal-table thead th{background:#181825;color:#6C7086;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #313244;white-space:nowrap}
+.terminal-table tbody td{padding:11px 14px;border-bottom:1px solid #1E1E2E;color:#CDD6F4;font-size:12px;font-family:'DM Mono',monospace}
+.terminal-table tbody tr:hover{background:#313244}
+.terminal-table tbody tr:last-child td{border-bottom:none}
+.terminal-empty{background:#1E1E2E;border-radius:var(--radius-lg);border:1px solid #313244;padding:40px;text-align:center;color:#6C7086;font-size:13px}
 </style>
 </head>
 <body>
@@ -325,7 +333,7 @@ tbody tr:hover{background:#F8F9FC}
     </div>
 
     <!-- Filtros -->
-    <div class="card"><div class="card-body">
+    <div class="card" style="position:sticky;top:60px;z-index:40;margin-bottom:12px"><div class="card-body">
       <div class="filter-bar">
         <select id="res-filter-piso" onchange="renderReservas()"><option value="">Todos los pisos</option>
           <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
@@ -349,12 +357,12 @@ tbody tr:hover{background:#F8F9FC}
     </div></div>
 
     <!-- Tabla reservas -->
-    <div class="card">
+    <div class="terminal-table">
       <div class="table-wrap">
-        <table>
+        <table class="terminal-table">
           <thead><tr>
             <th>Piso</th><th>Huesped</th><th>Entrada</th><th>Salida</th>
-            <th>Noches</th><th>Personas</th><th>Plataforma</th><th>Precio</th>
+            <th>Noches</th><th>Plataforma</th><th>Taxa</th>
             <th>Checklist</th><th></th>
           </tr></thead>
           <tbody id="res-tbody"></tbody>
@@ -2579,7 +2587,7 @@ async function loadReservas(){
   try {
     var res = await sbGet('reservas');
     reservas = res || [];
-    console.log('loadReservas: cargadas', reservas.length, 'reservas');
+
   } catch(e){ console.warn('loadReservas error:',e); }
 }
 
@@ -2650,11 +2658,11 @@ function renderReservas(){
     return (!fp||r.piso===fp)
       && (!fm||r.fecha_entrada.indexOf(fm)===0||r.fecha_salida.indexOf(fm)===0)
       && (!fpl||r.plataforma===fpl);
-  }).sort(function(a,b){return a.fecha_entrada.localeCompare(b.fecha_entrada);});
+  }).sort(function(a,b){return b.fecha_entrada.localeCompare(a.fecha_entrada);});
 
   var tb = document.getElementById('res-tbody');
   if(!data.length){
-    tb.innerHTML='<tr><td colspan="10" style="text-align:center;padding:40px;color:#999">Sin reservas. Crea la primera con el botón + Nueva reserva</td></tr>';
+    tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:40px;color:#6C7086;font-family:DM Mono,monospace;background:#1E1E2E">~ sin reservas ~ usa + Nueva reserva</td></tr>';
     return;
   }
 
@@ -2665,14 +2673,13 @@ function renderReservas(){
     var done = checks.filter(Boolean).length;
     var checkColor = done===4?'#22C55E':done>0?'#F59E0B':'#E5E7EB';
     h+='<tr>';
-    h+='<td style="font-weight:600">'+r.piso+'</td>';
-    h+='<td>'+r.nombre_huesped+'<br><span style="font-size:11px;color:#999">'+r.pais+'</span></td>';
-    h+='<td style="white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
-    h+='<td style="white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
-    h+='<td style="text-align:center">'+r.noches+'</td>';
-    h+='<td style="text-align:center">'+r.personas+'</td>';
-    h+='<td><span style="background:'+col+'22;color:'+col+';padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600">'+r.plataforma+'</span></td>';
-    h+='<td style="font-family:\'DM Mono\',monospace">'+r.precio.toFixed(2)+' €</td>';
+    h+='<td style="color:#CBA6F7;font-weight:600;white-space:nowrap">'+r.piso+'</td>';
+    h+='<td style="color:#CDD6F4">'+r.nombre_huesped+'<br><span style="font-size:10px;color:#6C7086">'+r.pais+'</span></td>';
+    h+='<td style="color:#A6E3A1;white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
+    h+='<td style="color:#F38BA8;white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
+    h+='<td style="color:#FAB387;text-align:center">'+r.noches+'n</td>';
+    h+='<td><span style="background:'+col+'33;color:'+col+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em">'+r.plataforma.toUpperCase()+'</span></td>';
+    h+='<td style="color:#F9E2AF">'+r.taxa.toFixed(2)+' €</td>';<td style="font-family:\'DM Mono\',monospace">'+r.precio.toFixed(2)+' €</td>';
     h+='<td><div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="openChecklist('+r.id+')">';
     h+='<div style="width:28px;height:28px;border-radius:50%;background:'+checkColor+'22;border:2px solid '+checkColor+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:'+checkColor+'">'+done+'/4</div>';
     h+='</div></td>';
