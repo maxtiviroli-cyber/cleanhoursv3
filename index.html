@@ -199,8 +199,8 @@ tbody tr:hover{background:#F8F9FC}
 
 /* ── TERMINAL TABLE (Reservas) ──────────────────────── */
 .terminal-table{background:#1E1E2E;border-radius:var(--radius-lg);border:1px solid #313244;overflow:hidden}
-.terminal-table thead th{position:sticky;top:113px;z-index:30;background:#181825;color:#6C7086;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #313244;white-space:nowrap}
-.terminal-table tbody td{padding:11px 14px;border-bottom:1px solid #1E1E2E;color:#CDD6F4;font-size:12px;font-family:'DM Mono',monospace}
+.terminal-table thead th{position:sticky;top:152px;z-index:30;background:#181825;color:#6C7086;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #313244;white-space:nowrap}
+.terminal-table tbody td{padding:7px 14px;border-bottom:1px solid #1E1E2E;color:#CDD6F4;font-size:12px;font-family:'DM Mono',monospace}
 .terminal-table tbody tr:hover{background:#313244}
 .terminal-table tbody tr:last-child td{border-bottom:none}
 .terminal-empty{background:#1E1E2E;border-radius:var(--radius-lg);border:1px solid #313244;padding:40px;text-align:center;color:#6C7086;font-size:13px}
@@ -327,23 +327,23 @@ tbody tr:hover{background:#F8F9FC}
 
   <!-- ══ PANEL: RESERVAS LISTA ══════════════════════════ -->
   <div class="panel" id="panel-reservas-lista">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-      <div><h2 style="font-size:20px;font-weight:700">Reservas</h2><div style="font-size:13px;color:var(--text2)">Gestion y seguimiento de reservas</div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:16px;font-weight:700">Reservas</div><div style="font-size:11px;color:var(--text2)">Gestion y seguimiento de reservas</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-light" onclick="exportReservasExcel()">&#128190; Exportar Excel</button>
-        <button class="btn btn-primary" onclick="openNuevaReserva()">+ Nueva reserva</button>
+        <button class="btn btn-light btn-sm" onclick="exportReservasExcel()">&#128190; Exportar Excel</button>
+        <button class="btn btn-primary btn-sm" onclick="openNuevaReserva()">+ Nueva reserva</button>
       </div>
     </div>
 
     <!-- Filtros -->
-    <div class="card" style="position:sticky;top:60px;z-index:40;margin-bottom:12px"><div class="card-body">
-      <div class="filter-bar">
-        <select id="res-filter-piso" onchange="renderReservas()"><option value="">Todos los pisos</option>
+    <div style="position:sticky;top:60px;z-index:40;margin-bottom:8px;background:var(--bg);padding:6px 0">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="res-filter-piso" onchange="renderReservas()" style="font-size:12px;padding:6px 10px"><option value="">Todos los pisos</option>
           <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
           <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
           <option>Dolsa 3</option><option>Madriu 45</option>
         </select>
-        <select id="res-filter-mes" onchange="renderReservas()">
+        <select id="res-filter-mes" onchange="renderReservas()" style="font-size:12px;padding:6px 10px">
           <option value="">Todos los meses</option>
           <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
           <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
@@ -352,17 +352,17 @@ tbody tr:hover{background:#F8F9FC}
           <option value="2026-09">Sept 2026</option><option value="2026-10">Oct 2026</option>
           <option value="2026-11">Nov 2026</option><option value="2026-12">Dic 2026</option>
         </select>
-        <select id="res-filter-plat" onchange="renderReservas()">
+        <select id="res-filter-plat" onchange="renderReservas()" style="font-size:12px;padding:6px 10px">
           <option value="">Todas las plataformas</option>
           <option>Airbnb</option><option>Booking</option><option>Directo</option><option>Propietario</option>
         </select>
-        <select id="res-filter-roat" onchange="renderReservas()">
+        <select id="res-filter-roat" onchange="renderReservas()" style="font-size:12px;padding:6px 10px">
           <option value="">Todos los ROAT</option>
           <option value="pendiente">Pendientes ROAT</option>
           <option value="ok">ROAT registrado</option>
         </select>
       </div>
-    </div></div>
+    </div>
 
     <!-- Tabla reservas -->
     <div class="terminal-table">
@@ -414,6 +414,11 @@ tbody tr:hover{background:#F8F9FC}
         <div><label>Precio total (€)</label><input type="number" id="res-precio" step="0.01" placeholder="0.00"></div>
         <div><label>Taxa turistica (€)</label><input type="number" id="res-taxa" step="0.01" placeholder="0.00"></div>
       </div>
+      <div class="form-grid">
+        <div><label>Precio reserva (€)</label><input type="number" id="res-precio" step="0.01" placeholder="0.00"></div>
+        <div><label>Taxa turistica (€)</label><input type="number" id="res-taxa" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div class="form-full"><label>Periodo</label><input type="text" id="res-periodo" placeholder="Ej: Temporada alta, Navidad..."></div>
       <div class="form-full"><label>Observaciones</label><textarea id="res-obs" rows="2" placeholder="Notas, parking, mascotas..."></textarea></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
         <button class="btn btn-light" onclick="closeModalReserva()">Cancelar</button>
@@ -2557,7 +2562,7 @@ function exportReservasExcel(){
       && (!froat||(froat==='pendiente'&&!r.roat_registrado)||(froat==='ok'&&r.roat_registrado));
   }).sort(function(a,b){return b.fecha_entrada.localeCompare(a.fecha_entrada);});
 
-  var header = ['Piso','Huesped','Pais','Entrada','Salida','Noches','Plataforma','Precio','Taxa','ROAT','Doc Recibido','Instrucciones','Taxa Cobrada','Observaciones'];
+  var header = ['Piso','Huesped','Pais','Entrada','Salida','Noches','Plataforma','Precio','Taxa','Periodo','ROAT','Doc Recibido','Instrucciones','Taxa Cobrada','Observaciones'];
   var rows = [header];
   data.forEach(function(r){
     rows.push([
@@ -2760,8 +2765,10 @@ function renderReservas(){
     h+='<td style="color:#CDD6F4;white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
     h+='<td style="color:#CDD6F4;white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
     h+='<td style="color:#CDD6F4;text-align:center">'+r.noches+'n</td>';
+    h+='<td style="color:#CDD6F4">'+r.precio.toFixed(2)+' €</td>';
     h+='<td><span style="background:'+col+'33;color:'+col+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em">'+r.plataforma.toUpperCase()+'</span></td>';
     h+='<td style="color:#CDD6F4">'+r.taxa.toFixed(2)+' €</td>';
+    h+='<td style="color:#CDD6F4">'+(r.periodo||'')+'</td>';
     var roatColor=r.roat_registrado?'#A6E3A1':'#F38BA8';
     var roatText=r.roat_registrado?'OK':'PENDIENTE';
     h+='<td><span style="background:'+roatColor+'22;color:'+roatColor+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">'+roatText+'</span></td>';
@@ -2853,6 +2860,7 @@ function editReserva(id){
   document.getElementById('res-hora').value=r.hora_llegada||'';
   document.getElementById('res-precio').value=r.precio;
   document.getElementById('res-taxa').value=r.taxa;
+  document.getElementById('res-periodo').value=r.periodo||'';
   document.getElementById('res-obs').value=r.observaciones||'';
   document.getElementById('modal-reserva').style.display='flex';
 }
