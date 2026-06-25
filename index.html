@@ -851,9 +851,10 @@ function initSupa(){
 // Supabase helper functions
 async function sbGet(table, filters){
   if(!supa) return [];
-  var q = supa.from(table).select('*');
+  var q = supa.from(table).select('*').limit(1000);
   if(filters) Object.keys(filters).forEach(function(k){ q = q.eq(k, filters[k]); });
   var res = await q;
+  if(res.error){ console.warn('sbGet error:', res.error); return []; }
   return res.data || [];
 }
 async function sbUpsert(table, data){
@@ -1147,8 +1148,8 @@ function showTab(name){
   if(name==='config'){renderConfig();renderHistorial();}
   if(name==='calendario'){calBuildSelects();renderCal();}
   if(name==='informe')   initInforme();
-  if(name==='planning'){loadReservas().then(renderPlanning);}
-  if(name==='reservas-lista'){loadReservas().then(renderReservas);}
+  if(name==='planning'){loadReservas().then(function(){ setTimeout(renderPlanning, 100); });}
+  if(name==='reservas-lista'){loadReservas().then(function(){ setTimeout(renderReservas, 100); });}
   closeSidebar();
 }
 
