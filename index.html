@@ -370,8 +370,8 @@ tbody tr:hover{background:#F8F9FC}
         <table style="width:100%;border-collapse:collapse;font-size:11px">
           <thead><tr>
             <th>Piso</th><th>Huesped</th><th>Pais</th><th>Entrada</th><th>Salida</th>
-            <th>Noches</th><th>Plataforma</th><th>Taxa</th><th>ROAT</th>
-            <th>Checklist</th><th></th>
+            <th>N</th><th>Plataforma</th><th>Precio</th><th>Taxa</th><th>Periodo</th><th>ROAT</th>
+            <th>&#10003;</th><th></th>
           </tr></thead>
           <tbody id="res-tbody"></tbody>
         </table>
@@ -380,49 +380,47 @@ tbody tr:hover{background:#F8F9FC}
   </div>
 
   <!-- MODAL: Nueva/Editar Reserva -->
-  <div id="modal-reserva" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
-    <div style="background:white;border-radius:16px;padding:28px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <h3 style="font-size:16px;font-weight:700" id="modal-res-title">Nueva Reserva</h3>
+  <div id="modal-reserva" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:16px">
+    <div style="background:white;border-radius:12px;padding:20px;width:100%;max-width:640px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <h3 style="font-size:15px;font-weight:700" id="modal-res-title">Nueva Reserva</h3>
         <button onclick="closeModalReserva()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text2)">&#215;</button>
       </div>
-      <div class="form-grid">
-        <div><label>Piso</label>
-          <select id="res-piso">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label style="font-size:10px">Piso</label>
+          <select id="res-piso" style="font-size:12px;padding:6px 8px">
             <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
             <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
             <option>Dolsa 3</option><option>Madriu 45</option>
           </select>
         </div>
-        <div><label>Plataforma</label>
-          <select id="res-plataforma"><option>Airbnb</option><option>Booking</option><option>Directo</option><option>Propietario</option></select>
+        <div><label style="font-size:10px">Plataforma</label>
+          <select id="res-plataforma" style="font-size:12px;padding:6px 8px"><option>Airbnb</option><option>Booking</option><option>Directo</option><option>Propietario</option></select>
+        </div>
+        <div><label style="font-size:10px">Periodo</label>
+          <input type="text" id="res-periodo" placeholder="2T 2026" style="font-size:12px;padding:6px 8px">
         </div>
       </div>
-      <div class="form-grid">
-        <div><label>Nombre huesped</label><input type="text" id="res-nombre" placeholder="Nombre completo"></div>
-        <div><label>Pais</label><input type="text" id="res-pais" placeholder="Francia, España..."></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label style="font-size:10px">Nombre huesped</label><input type="text" id="res-nombre" placeholder="Nombre completo" style="font-size:12px;padding:6px 8px"></div>
+        <div><label style="font-size:10px">Pais</label><input type="text" id="res-pais" placeholder="Francia, España..." style="font-size:12px;padding:6px 8px"></div>
       </div>
-      <div class="form-grid">
-        <div><label>Fecha entrada</label><input type="date" id="res-entrada"></div>
-        <div><label>Fecha salida</label><input type="date" id="res-salida"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label style="font-size:10px">Entrada</label><input type="date" id="res-entrada" style="font-size:12px;padding:6px 8px"></div>
+        <div><label style="font-size:10px">Salida</label><input type="date" id="res-salida" style="font-size:12px;padding:6px 8px"></div>
+        <div><label style="font-size:10px">Personas</label><input type="number" id="res-personas" min="1" value="2" style="font-size:12px;padding:6px 8px"></div>
+        <div><label style="font-size:10px">Hora llegada</label><input type="time" id="res-hora" style="font-size:12px;padding:6px 8px"></div>
       </div>
-      <div class="form-grid">
-        <div><label>Personas</label><input type="number" id="res-personas" min="1" value="2"></div>
-        <div><label>Hora llegada aprox.</label><input type="time" id="res-hora"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label style="font-size:10px">Precio reserva (€)</label><input type="number" id="res-precio" step="0.01" placeholder="0.00" style="font-size:12px;padding:6px 8px"></div>
+        <div><label style="font-size:10px">Taxa turistica (€)</label><input type="number" id="res-taxa" step="0.01" placeholder="0.00" style="font-size:12px;padding:6px 8px"></div>
       </div>
-      <div class="form-grid">
-        <div><label>Precio total (€)</label><input type="number" id="res-precio" step="0.01" placeholder="0.00"></div>
-        <div><label>Taxa turistica (€)</label><input type="number" id="res-taxa" step="0.01" placeholder="0.00"></div>
+      <div style="margin-bottom:14px"><label style="font-size:10px">Observaciones</label>
+        <textarea id="res-obs" rows="2" placeholder="Notas, parking, mascotas..." style="font-size:12px;padding:6px 8px"></textarea>
       </div>
-      <div class="form-grid">
-        <div><label>Precio reserva (€)</label><input type="number" id="res-precio" step="0.01" placeholder="0.00"></div>
-        <div><label>Taxa turistica (€)</label><input type="number" id="res-taxa" step="0.01" placeholder="0.00"></div>
-      </div>
-      <div class="form-full"><label>Periodo</label><input type="text" id="res-periodo" placeholder="Ej: Temporada alta, Navidad..."></div>
-      <div class="form-full"><label>Observaciones</label><textarea id="res-obs" rows="2" placeholder="Notas, parking, mascotas..."></textarea></div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
-        <button class="btn btn-light" onclick="closeModalReserva()">Cancelar</button>
-        <button class="btn btn-primary" onclick="saveReserva()">Guardar reserva</button>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-light btn-sm" onclick="closeModalReserva()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveReserva()">Guardar</button>
       </div>
     </div>
   </div>
