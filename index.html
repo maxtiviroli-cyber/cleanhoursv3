@@ -199,7 +199,7 @@ tbody tr:hover{background:#F8F9FC}
 
 /* ── TERMINAL TABLE (Reservas) ──────────────────────── */
 .terminal-table{background:#1E1E2E;border-radius:var(--radius-lg);border:1px solid #313244;overflow:hidden}
-.terminal-table thead th{background:#181825;color:#6C7086;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #313244;white-space:nowrap}
+.terminal-table thead th{position:sticky;top:113px;z-index:30;background:#181825;color:#6C7086;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid #313244;white-space:nowrap}
 .terminal-table tbody td{padding:11px 14px;border-bottom:1px solid #1E1E2E;color:#CDD6F4;font-size:12px;font-family:'DM Mono',monospace}
 .terminal-table tbody tr:hover{background:#313244}
 .terminal-table tbody tr:last-child td{border-bottom:none}
@@ -329,7 +329,10 @@ tbody tr:hover{background:#F8F9FC}
   <div class="panel" id="panel-reservas-lista">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
       <div><h2 style="font-size:20px;font-weight:700">Reservas</h2><div style="font-size:13px;color:var(--text2)">Gestion y seguimiento de reservas</div></div>
-      <button class="btn btn-primary" onclick="openNuevaReserva()">+ Nueva reserva</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-light" onclick="exportReservasExcel()">&#128190; Exportar Excel</button>
+        <button class="btn btn-primary" onclick="openNuevaReserva()">+ Nueva reserva</button>
+      </div>
     </div>
 
     <!-- Filtros -->
@@ -353,6 +356,11 @@ tbody tr:hover{background:#F8F9FC}
           <option value="">Todas las plataformas</option>
           <option>Airbnb</option><option>Booking</option><option>Directo</option><option>Propietario</option>
         </select>
+        <select id="res-filter-roat" onchange="renderReservas()">
+          <option value="">Todos los ROAT</option>
+          <option value="pendiente">Pendientes ROAT</option>
+          <option value="ok">ROAT registrado</option>
+        </select>
       </div>
     </div></div>
 
@@ -361,8 +369,8 @@ tbody tr:hover{background:#F8F9FC}
       <div class="table-wrap">
         <table class="terminal-table">
           <thead><tr>
-            <th>Piso</th><th>Huesped</th><th>Entrada</th><th>Salida</th>
-            <th>Noches</th><th>Plataforma</th><th>Taxa</th>
+            <th>Piso</th><th>Huesped</th><th>Pais</th><th>Entrada</th><th>Salida</th>
+            <th>Noches</th><th>Plataforma</th><th>Taxa</th><th>ROAT</th>
             <th>Checklist</th><th></th>
           </tr></thead>
           <tbody id="res-tbody"></tbody>
@@ -2536,6 +2544,51 @@ function showCalTooltip(el, text){
   document.addEventListener('click',function rm(){tip.remove();document.removeEventListener('click',rm);},{once:true});
 }
 
+//=== RESERVAS EXPORT ========================================================
+function exportReservasExcel(){
+  var fp  = document.getElementById('res-filter-piso').value;
+  var fm  = document.getElementById('res-filter-mes').value;
+  var fpl = document.getElementById('res-filter-plat').value;
+  var froat = document.getElementById('res-filter-roat') ? document.getElementById('res-filter-roat').value : '';
+  var data = reservas.filter(function(r){
+    return (!fp||r.piso===fp)
+      && (!fm||r.fecha_entrada.indexOf(fm)===0||r.fecha_salida.indexOf(fm)===0)
+      && (!fpl||r.plataforma===fpl)
+      && (!froat||(froat==='pendiente'&&!r.roat_registrado)||(froat==='ok'&&r.roat_registrado));
+  }).sort(function(a,b){return b.fecha_entrada.localeCompare(a.fecha_entrada);});
+
+  var header = ['Piso','Huesped','Pais','Entrada','Salida','Noches','Plataforma','Precio','Taxa','ROAT','Doc Recibido','Instrucciones','Taxa Cobrada','Observaciones'];
+  var rows = [header];
+  data.forEach(function(r){
+    rows.push([
+      r.piso, r.nombre_huesped, r.pais||'',
+      r.fecha_entrada, r.fecha_salida, r.noches,
+      r.plataforma, r.precio, r.taxa,
+      r.roat_registrado?'SI':'NO',
+      r.doc_recibido?'SI':'NO',
+      r.instrucciones_enviadas?'SI':'NO',
+      r.taxa_cobrada?'SI':'NO',
+      r.observaciones||''
+    ]);
+  });
+
+  var csv = rows.map(function(r){
+    return r.map(function(c){
+      var s = String(c===null||c===undefined?'':c);
+      if(s.indexOf(',')>=0||s.indexOf('"')>=0||s.indexOf('\n')>=0) s='"'+s.replace(/"/g,'""')+'"';
+      return s;
+    }).join(',');
+  }).join('\n');
+
+  var bom = '\uFEFF';
+  var blob = new Blob([bom+csv],{type:'text/csv;charset=utf-8;'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'reservas_servap_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  toast('Exportando '+data.length+' reservas...');
+}
+
 //=== HISTORIAL & BACKUP =====================================================
 function renderHistorial(){
   var el=document.getElementById('cfg-historial');
@@ -2680,10 +2733,12 @@ function renderReservas(){
   var fm = document.getElementById('res-filter-mes').value;
   var fpl = document.getElementById('res-filter-plat').value;
 
+  var froat = document.getElementById('res-filter-roat') ? document.getElementById('res-filter-roat').value : '';
   var data = reservas.filter(function(r){
     return (!fp||r.piso===fp)
       && (!fm||r.fecha_entrada.indexOf(fm)===0||r.fecha_salida.indexOf(fm)===0)
-      && (!fpl||r.plataforma===fpl);
+      && (!fpl||r.plataforma===fpl)
+      && (!froat||(froat==='pendiente'&&!r.roat_registrado)||(froat==='ok'&&r.roat_registrado));
   }).sort(function(a,b){return b.fecha_entrada.localeCompare(a.fecha_entrada);});
 
   var tb = document.getElementById('res-tbody');
@@ -2700,12 +2755,16 @@ function renderReservas(){
     var checkColor = done===4?'#22C55E':done>0?'#F59E0B':'#E5E7EB';
     h+='<tr>';
     h+='<td style="color:#CBA6F7;font-weight:600;white-space:nowrap">'+r.piso+'</td>';
-    h+='<td style="color:#CDD6F4">'+r.nombre_huesped+'<br><span style="font-size:10px;color:#6C7086">'+r.pais+'</span></td>';
-    h+='<td style="color:#A6E3A1;white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
-    h+='<td style="color:#F38BA8;white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
-    h+='<td style="color:#FAB387;text-align:center">'+r.noches+'n</td>';
+    h+='<td style="color:#CDD6F4">'+r.nombre_huesped+'</td>';
+    h+='<td style="color:#6C7086">'+r.pais+'</td>';
+    h+='<td style="color:#CDD6F4;white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
+    h+='<td style="color:#CDD6F4;white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
+    h+='<td style="color:#CDD6F4;text-align:center">'+r.noches+'n</td>';
     h+='<td><span style="background:'+col+'33;color:'+col+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em">'+r.plataforma.toUpperCase()+'</span></td>';
-    h+='<td style="color:#F9E2AF">'+r.taxa.toFixed(2)+' €</td>';
+    h+='<td style="color:#CDD6F4">'+r.taxa.toFixed(2)+' €</td>';
+    var roatColor=r.roat_registrado?'#A6E3A1':'#F38BA8';
+    var roatText=r.roat_registrado?'OK':'PENDIENTE';
+    h+='<td><span style="background:'+roatColor+'22;color:'+roatColor+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">'+roatText+'</span></td>';
     h+='<td><div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="openChecklist('+r.id+')">';
     h+='<div style="width:28px;height:28px;border-radius:50%;background:'+checkColor+'22;border:2px solid '+checkColor+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:'+checkColor+'">'+done+'/4</div>';
     h+='</div></td>';
