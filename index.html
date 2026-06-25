@@ -2575,10 +2575,11 @@ var PISOS_PAS = ['Chamois 47','Nuria 3A','Morera 5C','Sapporo 20','Nevada 32','N
 var PLAT_COLORS = {'Airbnb':'#FF5A5F','Booking':'#003580','Directo':'#22C55E','Propietario':'#9CA3AF','default':'#6B7280'};
 
 async function loadReservas(){
-  if(!supa) return;
+  if(!supa) { console.warn('loadReservas: supa es null'); return; }
   try {
     var res = await sbGet('reservas');
     reservas = res || [];
+    console.log('loadReservas: cargadas', reservas.length, 'reservas');
   } catch(e){ console.warn('loadReservas error:',e); }
 }
 
