@@ -57,7 +57,7 @@ a{color:var(--primary);text-decoration:none}
 .sb-brand-sub{font-size:10px;color:var(--text3);font-weight:400;letter-spacing:.06em;text-transform:uppercase}
 
 .sb-section{padding:16px 16px 6px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
-.sb-item{display:flex;align-items:center;gap:10px;padding:9px 16px;margin:1px 8px;border-radius:var(--radius);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;border:none;background:none;width:calc(100% - 16px);text-align:left;transition:all 0.12s;position:relative}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 16px;margin:1px 8px;border-radius:var(--radius);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;border:none !important;background:transparent !important;width:calc(100% - 16px);text-align:left;transition:all 0.12s;position:relative}
 .sb-item:hover{background:var(--navy3);color:var(--text)}
 .sb-item.active{background:var(--primary);color:white}
 .sb-item.active .sb-icon{opacity:1}
@@ -72,7 +72,7 @@ a{color:var(--primary);text-decoration:none}
 .sb-module-name{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;flex:1}
 .sb-module-arrow{font-size:10px;color:var(--text3);transition:transform 0.2s}
 .sb-module.open .sb-module-arrow{transform:rotate(90deg)}
-.sb-module-items{overflow:hidden;max-height:0;transition:max-height 0.2s}
+.sb-module-items{overflow:hidden;max-height:0;transition:max-height 0.2s;display:flex;flex-direction:column}
 .sb-module.open .sb-module-items{max-height:300px}
 
 .sb-footer{margin-top:auto;padding:14px 12px;border-top:1px solid var(--border)}
