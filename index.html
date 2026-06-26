@@ -1924,13 +1924,7 @@ var currentUser = null;
 
 function getAppUsers(){
   var stored=null; try{stored=JSON.parse(localStorage.getItem('app_users'));}catch(e){}
-  if(stored&&stored.length) return stored;
-  // default users
-  return [
-    {username:'admin',  password:'admin123', role:'admin',      name:'Administrador'},
-    {username:'super',  password:'super123', role:'supervisor', name:'Supervisor'},
-    {username:'viewer', password:'view123',  role:'normal',     name:'Visualizador'}
-  ];
+  return stored||[];
 }
 function saveAppUsers(users){
   try{localStorage.setItem('app_users',JSON.stringify(users));}catch(e){}
@@ -2700,6 +2694,7 @@ async function saveReserva(){
   var precio  = parseFloat(document.getElementById('res-precio').value)||0;
   var taxa    = parseFloat(document.getElementById('res-taxa').value)||0;
   var obs     = document.getElementById('res-obs').value.trim();
+  var periodo = document.getElementById('res-periodo') ? document.getElementById('res-periodo').value.trim() : '';
 
   if(!nombre) return toast('Escribe el nombre del huesped');
   if(!entrada||!salida) return toast('Selecciona fechas de entrada y salida');
@@ -2712,10 +2707,15 @@ async function saveReserva(){
     piso:piso, plataforma:plat, nombre_huesped:nombre, pais:pais,
     fecha_entrada:entrada, fecha_salida:salida, noches:noches,
     personas:pers, hora_llegada:hora, precio:precio, taxa:taxa,
-    observaciones:obs, doc_recibido:false, roat_registrado:false,
-    instrucciones_enviadas:false, taxa_cobrada:false
+    periodo:periodo, observaciones:obs,
+    doc_recibido: currentReservaId ? undefined : false,
+    roat_registrado: currentReservaId ? undefined : false,
+    instrucciones_enviadas: currentReservaId ? undefined : false,
+    taxa_cobrada: currentReservaId ? undefined : false
   };
 
+  // Remove undefined keys for edit mode
+  Object.keys(data).forEach(function(k){ if(data[k]===undefined) delete data[k]; });
   try {
     if(currentReservaId){
       await sbUpdate('reservas', currentReservaId, data);
