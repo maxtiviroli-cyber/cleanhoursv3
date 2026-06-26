@@ -2664,6 +2664,10 @@ async function loadReservas(){
     var res = await supa.from('reservas').select('*').order('fecha_entrada', {ascending:false}).limit(1000);
     if(res.error){ console.warn('loadReservas error:', res.error); return; }
     reservas = res.data || [];
+    // Debug: check periodo field
+    var withPeriodo = reservas.filter(function(r){ return r.periodo && r.periodo !== ''; });
+    console.log('Total reservas:', reservas.length, '| Con periodo:', withPeriodo.length);
+    if(reservas.length > 0) console.log('Sample fields:', Object.keys(reservas[0]));
   } catch(e){ console.warn('loadReservas error:',e); }
 }
 
