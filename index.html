@@ -2661,9 +2661,9 @@ var PLAT_COLORS = {'Airbnb':'#FF5A5F','Booking':'#003580','Directo':'#22C55E','P
 async function loadReservas(){
   if(!supa) { console.warn('loadReservas: supa es null'); return; }
   try {
-    var res = await sbGet('reservas');
-    reservas = res || [];
-
+    var res = await supa.from('reservas').select('*').order('fecha_entrada', {ascending:false}).limit(1000);
+    if(res.error){ console.warn('loadReservas error:', res.error); return; }
+    reservas = res.data || [];
   } catch(e){ console.warn('loadReservas error:',e); }
 }
 
