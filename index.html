@@ -568,12 +568,13 @@ tbody tr:hover{background:#F8F9FC}
 
   <!-- ══ PANEL: AUDITORIA ═══════════════════════════════ -->
   <div class="panel" id="panel-auditoria">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
-      <div><h2 style="font-size:20px;font-weight:700">Auditoria</h2><div style="font-size:13px;color:var(--text2)">Contraste registros trabajadores vs admin</div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:16px;font-weight:700">Auditoria</div><div style="font-size:11px;color:var(--text2)">Contraste registros trabajadores vs admin</div></div>
+      <button class="btn btn-light btn-sm" onclick="exportAuditoriaExcel()">&#128190; Exportar Excel</button>
     </div>
-    <div class="card"><div class="card-body">
-      <div class="filter-bar">
-        <select id="filter-month-audit" onchange="renderAudit()">
+    <div style="position:sticky;top:60px;z-index:40;margin-bottom:8px;background:var(--bg);padding:4px 0">
+      <div style="display:flex;gap:6px;flex-wrap:nowrap">
+        <select id="filter-month-audit" onchange="renderAudit()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
           <option value="">Todos los meses</option>
           <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
           <option value="2026-03">Marzo 2026</option><option value="2026-04">Abril 2026</option>
@@ -582,20 +583,26 @@ tbody tr:hover{background:#F8F9FC}
           <option value="2026-09">Sept 2026</option><option value="2026-10">Oct 2026</option>
           <option value="2026-11">Nov 2026</option><option value="2026-12">Dic 2026</option>
         </select>
-        <select id="filter-worker" onchange="renderAudit()"><option value="">Todos los trabajadores</option></select>
-        <select id="filter-status" onchange="renderAudit()">
+        <select id="filter-worker" onchange="renderAudit()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0"><option value="">Todos los trabajadores</option></select>
+        <select id="filter-status" onchange="renderAudit()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
           <option value="">Todos los estados</option>
           <option value="ok">Cuadra</option>
           <option value="pending">Pendiente</option>
           <option value="mismatch">Conflicto</option>
         </select>
-        <select id="filter-neg-audit" onchange="renderAudit()"><option value="">Todos los negocios</option></select>
+        <select id="filter-neg-audit" onchange="renderAudit()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0"><option value="">Todos los negocios</option></select>
       </div>
-    </div></div>
-    <div class="card"><div class="table-wrap">
-      <table><thead><tr><th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Trabajador</th><th>Admin</th><th>Estado</th><th></th></tr></thead>
-      <tbody id="audit-tbody"></tbody></table>
-    </div></div>
+    </div>
+    <div class="terminal-table" style="max-height:calc(100vh - 200px);overflow-y:auto;overflow-x:auto">
+      <div style="min-width:max-content">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr>
+            <th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Hrs trabajador</th><th>Hrs admin</th><th>Estado</th><th></th>
+          </tr></thead>
+          <tbody id="audit-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- ══ PANEL: DASHBOARD ═══════════════════════════════ -->
@@ -1386,12 +1393,14 @@ function renderAudit(){
     var ac=r.adminHrs?'<b>'+fmtHrs(r.adminHrs)+'</b>':'—';
     var acts=r.status==='pending'?'<button onclick="confRec('+idx+')" style="padding:5px 10px;border-radius:6px;border:none;background:#51BB25;color:white;cursor:pointer;font-size:11px;font-weight:600;margin-right:4px">OK</button><button onclick="rejRec('+idx+')" style="padding:5px 10px;border-radius:6px;border:none;background:#DC3545;color:white;cursor:pointer;font-size:11px;font-weight:600;margin-right:4px">X</button>':'';
     acts+='<button onclick="delRec('+idx+')" title="Eliminar registro" style="padding:5px 10px;border-radius:6px;border:1px solid #DDD;background:white;color:#DC3545;cursor:pointer;font-size:13px;line-height:1">&#128465;</button>';
-    var rbg=r.status==='mismatch'?'#FFF0F0':r.status==='pending'?'#FFFBEA':'';
+    var rbg=r.status==='mismatch'?'rgba(243,139,168,0.08)':r.status==='pending'?'rgba(249,226,175,0.05)':'';
     h+='<tr style="background:'+rbg+'">';
-    h+='<td style="white-space:nowrap;font-weight:500">'+fmtDate(r.date)+'</td>';
-    h+='<td>'+r.negocio+'</td>';
-    h+='<td><span class="badge badge-worker">'+r.user+'</span></td>';
-    h+='<td>'+wc+'</td><td>'+ac+'</td><td>'+badge+'</td><td>'+acts+'</td></tr>';
+    h+='<td style="color:#A6E3A1;white-space:nowrap">'+fmtDate(r.date)+'</td>';
+    h+='<td style="color:#CBA6F7;font-weight:600">'+r.negocio+'</td>';
+    h+='<td style="color:#CDD6F4">'+r.user+'</td>';
+    h+='<td style="color:#FAB387;font-family:\'DM Mono\',monospace">'+wc+'</td>';
+    h+='<td style="color:#F9E2AF;font-family:\'DM Mono\',monospace">'+ac+'</td>';
+    h+='<td>'+badge+'</td><td>'+acts+'</td></tr>';
   });
   tb.innerHTML=h;
 }
@@ -2584,6 +2593,38 @@ function exportReservasExcel(){
   a.download = 'reservas_servap_'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();
   toast('Exportando '+data.length+' reservas...');
+}
+
+//=== AUDITORIA EXPORT =======================================================
+function exportAuditoriaExcel(){
+  var fm=document.getElementById('filter-month-audit').value;
+  var fw=document.getElementById('filter-worker').value;
+  var fs=document.getElementById('filter-status').value;
+  var fn=document.getElementById('filter-neg-audit').value;
+  var data=records.filter(function(r){
+    return (!fm||r.date.indexOf(fm)===0)
+      &&(!fw||r.user===fw)
+      &&(!fs||r.status===fs)
+      &&(!fn||r.negocio===fn);
+  }).sort(function(a,b){return b.date.localeCompare(a.date);});
+
+  var header=['Fecha','Negocio','Trabajador','Hrs Trabajador','Hrs Admin','Estado','Observaciones'];
+  var rows=[header];
+  data.forEach(function(r){
+    rows.push([r.date,r.negocio,r.user,r.hrs,r.adminHrs||'',r.status,r.obs||'']);
+  });
+  var csv=rows.map(function(r){
+    return r.map(function(c){
+      var s=String(c===null||c===undefined?'':c);
+      if(s.indexOf(',')>=0||s.indexOf('"')>=0) s='"'+s.replace(/"/g,'""')+'"';
+      return s;
+    }).join(',');
+  }).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='auditoria_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  toast('Exportando '+data.length+' registros...');
 }
 
 //=== HISTORIAL & BACKUP =====================================================
