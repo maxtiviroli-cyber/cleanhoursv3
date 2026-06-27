@@ -1776,9 +1776,11 @@ function renderCal(){
     var dayJobs=monthJobs.filter(function(j){return j.date===ds;});
     var isToday=ds===todayStr;
     var isSun=(new Date(calYear,calMonth,d).getDay()===0);
-    var bg=isToday?'var(--primary)':'white';
-    var tc=isToday?'white':(isSun?'var(--danger)':'var(--text)');
-    grid+='<div style="height:80px;border-radius:8px;border:1px solid '+(isToday?'var(--primary)':'#EBEBEB')+';background:'+bg+';padding:5px 6px;cursor:pointer;overflow:hidden" onclick="calClickDay(\''+ds+'\')"><div style="font-size:12px;font-weight:700;color:'+tc+';margin-bottom:3px;line-height:1">'+d+'</div>';
+    var isSat=(new Date(calYear,calMonth,d).getDay()===6);
+    var bg=isToday?'var(--primary)':(isSun||isSat?'#1E2030':'#252836');
+    var tc=isToday?'white':(isSun?'#F38BA8':(isSat?'#FAB387':'#CDD6F4'));
+    var border=isToday?'var(--primary)':(isSun?'#3D1F2A':'#313244');
+    grid+='<div style="height:80px;border-radius:8px;border:1px solid '+border+';background:'+bg+';padding:5px 6px;cursor:pointer;overflow:hidden" onclick="calClickDay(\''+ds+'\')"><div style="font-size:12px;font-weight:700;color:'+tc+';margin-bottom:3px;line-height:1">'+d+'</div>';
     // Group by negocio
     var negMap={};
     dayJobs.forEach(function(j){
@@ -1794,7 +1796,7 @@ function renderCal(){
       var tip=info.time+'h | '+neg+' | '+workers+(info.notes?' | '+info.notes:'');
       var shortNeg=neg.length>9?neg.substring(0,8)+'..':neg;
       var safeTip=tip.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
-      grid+='<div style="background:'+(isToday?'rgba(255,255,255,0.22)':'var(--primary-light)')+';color:'+(isToday?'white':'var(--primary)')+';border-radius:3px;font-size:9px;font-weight:600;padding:2px 4px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer" onclick="event.stopPropagation();showCalTooltip(this,\''+safeTip+'\')">'+info.time.substring(0,5)+' '+shortNeg+'</div>';
+      grid+='<div style="background:'+(isToday?'rgba(255,255,255,0.22)':'#2A2D4A')+';color:'+(isToday?'white':'#A6B8FF')+';border-radius:3px;font-size:9px;font-weight:600;padding:2px 4px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer" onclick="event.stopPropagation();showCalTooltip(this,\''+safeTip+'\')">'+info.time.substring(0,5)+' '+shortNeg+'</div>';
     });
     if(extra>0) grid+='<div style="font-size:9px;color:'+(isToday?'rgba(255,255,255,0.65)':'var(--text3)')+'">+'+extra+' mas</div>';
     // Disponibilidad dots (small colored circles per worker)
