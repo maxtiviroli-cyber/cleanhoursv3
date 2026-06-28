@@ -454,14 +454,14 @@ tbody tr:hover{background:#F8F9FC}
 
     <!-- Filtros -->
     <div style="position:sticky;top:60px;z-index:40;margin-bottom:8px;background:var(--bg);padding:4px 0">
-      <div style="display:flex;gap:6px;flex-wrap:nowrap">
-        <select id="inf-res-piso" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <select id="inf-res-piso" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:120px">
           <option value="all">Todos los pisos</option>
           <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
           <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
           <option>Dolsa 3</option><option>Madriu 45</option>
         </select>
-        <select id="inf-res-periodo" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
+        <select id="inf-res-periodo" onchange="toggleInfPeriodoFechas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:120px">
           <option value="all">Todos los periodos</option>
           <option value="4T 2024">4T 2024</option>
           <option value="1T 2025">1T 2025</option>
@@ -472,11 +472,19 @@ tbody tr:hover{background:#F8F9FC}
           <option value="2T 2026">2T 2026</option>
           <option value="3T 2026">3T 2026</option>
           <option value="4T 2026">4T 2026</option>
+          <option value="custom">Fechas personalizadas...</option>
         </select>
-        <select id="inf-res-plat" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
+        <select id="inf-res-plat" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:120px">
           <option value="all">Todas las plataformas</option>
           <option>Airbnb</option><option>Booking</option><option>Directo</option><option>Propietario</option>
         </select>
+      </div>
+      <div id="inf-res-fechas-custom" style="display:none;margin-top:6px;display:none;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="font-size:11px;color:var(--text2);font-weight:600">Desde:</div>
+        <input type="date" id="inf-res-fecha-desde" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;border:1px solid #E2E5ED;border-radius:var(--radius)">
+        <div style="font-size:11px;color:var(--text2);font-weight:600">Hasta:</div>
+        <input type="date" id="inf-res-fecha-hasta" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;border:1px solid #E2E5ED;border-radius:var(--radius)">
+        <button class="btn btn-light btn-sm" onclick="renderInformeReservas()">Generar</button>
       </div>
     </div>
 
@@ -2691,12 +2699,23 @@ function getInfResData(){
   var piso   = document.getElementById('inf-res-piso').value;
   var periodo= document.getElementById('inf-res-periodo').value;
   var plat   = document.getElementById('inf-res-plat').value;
+  var desde  = document.getElementById('inf-res-fecha-desde') ? document.getElementById('inf-res-fecha-desde').value : '';
+  var hasta  = document.getElementById('inf-res-fecha-hasta') ? document.getElementById('inf-res-fecha-hasta').value : '';
   return reservas.filter(function(r){
+    var matchPeriodo = periodo==='all' || (periodo==='custom'
+      ? (!desde||r.fecha_entrada>=desde) && (!hasta||r.fecha_entrada<=hasta)
+      : r.periodo===periodo);
     return (piso==='all'||r.piso===piso)
-      && (periodo==='all'||r.periodo===periodo)
+      && matchPeriodo
       && (plat==='all'||r.plataforma===plat)
-      && r.precio > 0; // only reservas with price
+      && r.precio > 0;
   }).sort(function(a,b){ return a.fecha_entrada.localeCompare(b.fecha_entrada); });
+}
+function toggleInfPeriodoFechas(){
+  var v = document.getElementById('inf-res-periodo').value;
+  var el = document.getElementById('inf-res-fechas-custom');
+  if(el){ el.style.display = v==='custom' ? 'flex' : 'none'; }
+  if(v!=='custom') renderInformeReservas();
 }
 
 function calcFinancials(total, adelanto){
@@ -2760,25 +2779,26 @@ function renderInformeReservas(){
     h += '<div style="padding:12px 16px;border-right:1px solid #F0F2F7"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:600">Reservas</div><div style="font-size:20px;font-weight:700;color:var(--primary)">'+pData.length+'</div></div>';
     h += '<div style="padding:12px 16px;border-right:1px solid #F0F2F7"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:600">Noches</div><div style="font-size:20px;font-weight:700;color:var(--primary)">'+noches+'</div></div>';
     h += '<div style="padding:12px 16px;border-right:1px solid #F0F2F7"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:600">Precio medio</div><div style="font-size:20px;font-weight:700;color:var(--primary)">'+fmt2(totalPeriodo/pData.length)+'</div></div>';
-    h += '<div style="padding:12px 16px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:600">Precio/noche</div><div style="font-size:20px;font-weight:700;color:var(--primary)">'+(noches>0?fmt2(totalPeriodo/noches):'—')+'</div></div>';
+    h += '<div style="padding:10px 16px"><div style="font-size:9px;color:var(--text2);text-transform:uppercase;font-weight:600;letter-spacing:.06em">PRECIO/NOCHE</div><div style="font-size:18px;font-weight:700;color:var(--primary);font-family:\'DM Mono\',monospace">'+(noches>0?fmt2(totalPeriodo/noches):'—')+'</div></div>';
     h += '</div>';
 
     // Detail table
-    h += '<div class="table-wrap"><table><thead><tr>';
-    h += '<th style="padding:4px 8px">Llegada</th><th style="padding:4px 8px">Salida</th><th style="padding:4px 8px">Plataforma</th><th style="padding:4px 8px">Huesped</th><th style="padding:4px 8px">Pais</th><th style="padding:4px 8px;text-align:center">N</th><th style="padding:4px 8px;text-align:center">Personas</th><th style="padding:4px 8px;text-align:right">Total</th>';
+    var TH='padding:3px 8px;font-size:9px;font-family:\'DM Mono\',monospace;letter-spacing:.06em';
+    h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px;font-family:\'DM Mono\',monospace"><thead><tr>';
+    h += '<th style="'+TH+'">LLEGADA</th><th style="'+TH+'">SALIDA</th><th style="'+TH+'">PLATAFORMA</th><th style="'+TH+'">HUESPED</th><th style="'+TH+'">PAIS</th><th style="'+TH+';text-align:center">N</th><th style="'+TH+';text-align:center">PERS</th><th style="'+TH+';text-align:right">TOTAL</th>';
     h += '</tr></thead><tbody>';
     pData.forEach(function(r){
       var col = PLAT_COLORS[r.plataforma]||'#6B7280';
-      var td='padding:4px 8px';
-      h += '<tr style="border-bottom:1px solid #F5F5F5">';
-      h += '<td style="'+td+';white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
-      h += '<td style="'+td+';white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
-      h += '<td style="'+td+'"><span style="background:'+col+'22;color:'+col+';padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">'+r.plataforma+'</span></td>';
-      h += '<td style="'+td+';font-weight:500">'+r.nombre_huesped+'</td>';
-      h += '<td style="'+td+';color:var(--text2)">'+(r.pais||'')+'</td>';
-      h += '<td style="'+td+';text-align:center">'+r.noches+'</td>';
-      h += '<td style="'+td+';text-align:center;color:var(--text2)">'+(r.personas||'')+'</td>';
-      h += '<td style="'+td+';text-align:right;font-weight:600;font-family:\'DM Mono\',monospace">'+fmt2(r.precio)+'</td>';
+      var td='padding:2px 8px;font-size:10px';
+      h += '<tr style="border-bottom:1px solid #F0F2F7">';
+      h += '<td style="'+td+';white-space:nowrap;font-family:\'DM Mono\',monospace">'+fmtDate(r.fecha_entrada)+'</td>';
+      h += '<td style="'+td+';white-space:nowrap;font-family:\'DM Mono\',monospace">'+fmtDate(r.fecha_salida)+'</td>';
+      h += '<td style="'+td+'"><span style="background:'+col+'22;color:'+col+';padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;font-family:\'DM Mono\',monospace">'+r.plataforma.toUpperCase()+'</span></td>';
+      h += '<td style="'+td+'">'+r.nombre_huesped+'</td>';
+      h += '<td style="'+td+';color:var(--text2)">'+(r.pais||'—')+'</td>';
+      h += '<td style="'+td+';text-align:center;font-family:\'DM Mono\',monospace">'+r.noches+'</td>';
+      h += '<td style="'+td+';text-align:center;font-family:\'DM Mono\',monospace">'+((r.personas&&r.personas>0)?r.personas:'—')+'</td>';
+      h += '<td style="'+td+';text-align:right;font-weight:700;font-family:\'DM Mono\',monospace">'+fmt2(r.precio)+'</td>';
       h += '</tr>';
     });
     // Total row
