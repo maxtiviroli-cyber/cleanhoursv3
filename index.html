@@ -442,13 +442,45 @@ tbody tr:hover{background:#F8F9FC}
     </div>
   </div>
 
-  <!-- ══ PANEL: RESERVAS INFORMES (próximamente) ═════════ -->
+  <!-- ══ PANEL: RESERVAS INFORMES ══════════════════════════ -->
   <div class="panel" id="panel-reservas-inf">
-    <div class="module-welcome">
-      <div class="module-welcome-icon">&#128196;</div>
-      <div class="module-welcome-title">Informes de Reservas</div>
-      <div class="module-welcome-sub">Resúmenes trimestrales para propietarios y emisión de facturas de comisión. En construcción.</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:16px;font-weight:700">Informes de Reservas</div><div style="font-size:11px;color:var(--text2)">Resumen por piso y periodo para propietarios</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-light btn-sm" onclick="exportInformeReservasExcel()">&#128190; Excel</button>
+        <button class="btn btn-light btn-sm" onclick="exportInformeReservasPDF()">&#128196; PDF</button>
+      </div>
     </div>
+
+    <!-- Filtros -->
+    <div style="position:sticky;top:60px;z-index:40;margin-bottom:8px;background:var(--bg);padding:4px 0">
+      <div style="display:flex;gap:6px;flex-wrap:nowrap">
+        <select id="inf-res-piso" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
+          <option value="all">Todos los pisos</option>
+          <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
+          <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
+          <option>Dolsa 3</option><option>Madriu 45</option>
+        </select>
+        <select id="inf-res-periodo" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
+          <option value="all">Todos los periodos</option>
+          <option value="4T 2024">4T 2024</option>
+          <option value="1T 2025">1T 2025</option>
+          <option value="2T 2025">2T 2025</option>
+          <option value="3T 2025">3T 2025</option>
+          <option value="4T 2025">4T 2025</option>
+          <option value="1T 2026">1T 2026</option>
+          <option value="2T 2026">2T 2026</option>
+          <option value="3T 2026">3T 2026</option>
+          <option value="4T 2026">4T 2026</option>
+        </select>
+        <select id="inf-res-plat" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
+          <option value="all">Todas las plataformas</option>
+          <option>Airbnb</option><option>Booking</option><option>Directo</option><option>Propietario</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="informe-reservas-output"></div>
   </div>
 
   <!-- ══ PANEL: FACTURAS EMITIDAS (próximamente) ═════════ -->
@@ -993,7 +1025,10 @@ async function loadFromSupabase(){
     var cfgRows = await sbGet('config');
     if(cfgRows.length > 0){
       var cfg = {};
-      cfgRows.forEach(function(r){ cfg[r.key] = r.value; });
+      cfgRows.forEach(function(r){
+        // Supabase JSONB returns already parsed objects
+        cfg[r.key] = (typeof r.value === 'string') ? JSON.parse(r.value) : r.value;
+      });
       var fullCfg = {
         workers: cfg.workers || WORKERS_BASE.slice(),
         grupos: cfg.grupos || JSON.parse(JSON.stringify(GRUPOS_BASE)),
@@ -1001,6 +1036,7 @@ async function loadFromSupabase(){
         disabled: cfg.disabled || []
       };
       try{localStorage.setItem('horas_config',JSON.stringify(fullCfg));}catch(e){}
+      console.log('Config cargada de Supabase. Workers:', fullCfg.workers);
     }
     // Load app users
     var users = await sbGet('app_users');
@@ -1176,6 +1212,7 @@ function showTab(name){
   if(name==='informe')   initInforme();
   if(name==='planning'){loadReservas().then(function(){ setTimeout(renderPlanning, 100); });}
   if(name==='reservas-lista'){loadReservas().then(function(){ setTimeout(renderReservas, 100); });}
+  if(name==='reservas-inf'){loadReservas().then(function(){ setTimeout(renderInformeReservas, 100); });}
   closeSidebar();
 }
 
@@ -1273,7 +1310,7 @@ function renderWa(){
   var body=document.getElementById('wa-body'); if(!body) return;
   var h='';
   waMessages.slice(-3).forEach(function(m){
-    if(m.dir==='system'){h+='<div style="background:#FEF3C7;border-radius:8px;padding:10px 14px;font-size:12px;color:#8A6500;text-align:center">'+m.text+'</div>';return;}
+    if(m.dir==='system'){h+='<div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:10px 14px;font-size:12px;color:#78350F;text-align:center;font-weight:500">'+m.text+'</div>';return;}
     var out=m.dir==='out';
     var bg=out?'linear-gradient(89deg,var(--primary),var(--primary-dark))':'var(--surface)';
     var tc=out?'white':'var(--text)';
@@ -1426,13 +1463,18 @@ function renderDashboard(){
     '<div class="kpi warning"><div class="kpi-icon">&#8987;</div><div class="kpi-value">'+pend+'</div><div class="kpi-label">Pendientes</div></div>'+
     '<div class="kpi secondary"><div class="kpi-icon">&#128197;</div><div class="kpi-value">'+uniqD+'</div><div class="kpi-label">Dias del mes</div></div>';
 
-  // Workers beige cards — solo trabajadores habilitados
+  // Workers beige cards — todos los trabajadores con registros en el periodo
   var disabled=cfg.disabled||[];
   var activeWorkers=cfg.workers.filter(function(w){return disabled.indexOf(w)<0;});
+  // Also include any worker found in records but not in config (e.g. Paola)
+  var extraWorkers=[];
+  data.forEach(function(r){ if(activeWorkers.indexOf(r.user)<0&&extraWorkers.indexOf(r.user)<0) extraWorkers.push(r.user); });
+  var allDisplayWorkers=activeWorkers.concat(extraWorkers);
   var wh='';
-  activeWorkers.forEach(function(w){
+  allDisplayWorkers.forEach(function(w){
     var h=data.filter(function(r){return r.user===w;}).reduce(function(s,r){return s+(r.hrs||0);},0);
-    wh+='<div style="background:#F5F0E8;border:1px solid #E0D8C8;border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow)">';
+    if(!h) return; // skip workers with 0 hours in this period
+    wh+='<div style="background:#FFFFFF;border:2px solid #4F7FFF;border-radius:var(--radius-lg);padding:20px;box-shadow:0 4px 16px rgba(79,127,255,0.15)">';
     wh+='<div style="font-size:26px;margin-bottom:10px">&#128100;</div>';
     wh+='<div style="font-size:28px;font-weight:700;color:#3A3020;line-height:1">'+h.toFixed(1)+'</div>';
     wh+='<div style="font-size:12px;font-weight:600;color:#7A6A50;margin-top:6px;text-transform:uppercase;letter-spacing:.04em">'+w+'</div>';
@@ -2163,6 +2205,7 @@ function renderInforme(){
   // By worker table
   h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128101; Por trabajador</div></div></div>';
   h+='<div class="table-wrap"><table><thead><tr><th>Trabajador</th><th>Horas</th><th>Dias trabajados</th><th>% del total</th></tr></thead><tbody>';
+  // Include all workers with hours (including Paola and others not in config)
   Object.keys(byWorker).sort(function(a,b){return byWorker[b]-byWorker[a];}).forEach(function(w){
     var wdays=Object.keys(data.filter(function(r){return r.user===w;}).reduce(function(m,r){m[r.date]=1;return m;},{})).length; var cnt=wdays;
     var pct=total>0?Math.round(byWorker[w]/total*100):0;
@@ -2627,6 +2670,309 @@ function exportAuditoriaExcel(){
   a.download='auditoria_'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();
   toast('Exportando '+data.length+' registros...');
+}
+
+
+//=== INFORMES RESERVAS ======================================================
+var EGHUT_PCT = 0.35;  // comision Servap
+var IGI_PCT   = 0.045; // impuesto andorra
+var GASTOS_PCT = 0.20; // gastos propietario
+var INRN_PCT   = 0.10; // retencion
+
+function getInfResData(){
+  var piso   = document.getElementById('inf-res-piso').value;
+  var periodo= document.getElementById('inf-res-periodo').value;
+  var plat   = document.getElementById('inf-res-plat').value;
+  return reservas.filter(function(r){
+    return (piso==='all'||r.piso===piso)
+      && (periodo==='all'||r.periodo===periodo)
+      && (plat==='all'||r.plataforma===plat)
+      && r.precio > 0; // only reservas with price
+  }).sort(function(a,b){ return a.fecha_entrada.localeCompare(b.fecha_entrada); });
+}
+
+function calcFinancials(total){
+  var eghut   = total * EGHUT_PCT;
+  var igi     = eghut * IGI_PCT;
+  var neto    = total - eghut;
+  var gastos  = neto * GASTOS_PCT;
+  var inrn    = neto * INRN_PCT;
+  var propiet = neto - gastos - inrn;
+  return { total:total, eghut:eghut, igi:igi, neto:neto, gastos:gastos, inrn:inrn, propiet:propiet };
+}
+
+function fmt2(n){ return (n||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+
+function renderInformeReservas(){
+  var data = getInfResData();
+  var out  = document.getElementById('informe-reservas-output');
+  if(!out) return;
+
+  if(!data.length){
+    out.innerHTML='<div style="text-align:center;padding:40px;color:#999;font-size:13px">Sin reservas para los filtros seleccionados</div>';
+    return;
+  }
+
+  var piso   = document.getElementById('inf-res-piso').value;
+  var periodo= document.getElementById('inf-res-periodo').value;
+
+  var h = '';
+
+  // If showing all pisos, group by piso
+  var pisos = piso==='all'
+    ? [...new Set(data.map(function(r){return r.piso;}))]
+    : [piso];
+
+  pisos.forEach(function(p){
+    var pData = data.filter(function(r){return r.piso===p;});
+    if(!pData.length) return;
+
+    var totalPeriodo = pData.reduce(function(s,r){return s+(r.precio||0);},0);
+    var fin = calcFinancials(totalPeriodo);
+    var noches = pData.reduce(function(s,r){return s+(r.noches||0);},0);
+    var plats = {};
+    pData.forEach(function(r){ plats[r.plataforma]=(plats[r.plataforma]||0)+(r.precio||0); });
+
+    // KPIs
+    h += '<div class="card" style="margin-bottom:20px">';
+    h += '<div class="card-header" style="background:var(--navy);color:white;border-radius:var(--radius-lg) var(--radius-lg) 0 0">';
+    h += '<div><div style="font-size:15px;font-weight:700;color:white">'+p+'</div>';
+    h += '<div style="font-size:11px;color:rgba(255,255,255,0.6)">'+(periodo==='all'?'Todos los periodos':periodo)+'</div></div>';
+    h += '<div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#F9E2AF">'+fmt2(totalPeriodo)+'</div><div style="font-size:10px;color:rgba(255,255,255,0.6)">TOTAL PERIODO</div></div>';
+    h += '</div>';
+
+    h += '<div class="card-body" style="padding:0">';
+
+    // KPI row
+    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #F0F2F7">';
+    h += '<div style="padding:12px 16px;border-right:1px solid #F0F2F7"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:600">Reservas</div><div style="font-size:20px;font-weight:700;color:var(--primary)">'+pData.length+'</div></div>';
+    h += '<div style="padding:12px 16px;border-right:1px solid #F0F2F7"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:600">Noches</div><div style="font-size:20px;font-weight:700;color:var(--primary)">'+noches+'</div></div>';
+    h += '<div style="padding:12px 16px;border-right:1px solid #F0F2F7"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:600">Precio medio</div><div style="font-size:20px;font-weight:700;color:var(--primary)">'+fmt2(totalPeriodo/pData.length)+'</div></div>';
+    h += '<div style="padding:12px 16px"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:600">Precio/noche</div><div style="font-size:20px;font-weight:700;color:var(--primary)">'+(noches>0?fmt2(totalPeriodo/noches):'—')+'</div></div>';
+    h += '</div>';
+
+    // Detail table
+    h += '<div class="table-wrap"><table><thead><tr>';
+    h += '<th>Llegada</th><th>Salida</th><th>Plataforma</th><th>Huesped</th><th>Pais</th><th>Noches</th><th>Personas</th><th style="text-align:right">Total</th>';
+    h += '</tr></thead><tbody>';
+    pData.forEach(function(r){
+      var col = PLAT_COLORS[r.plataforma]||'#6B7280';
+      h += '<tr>';
+      h += '<td style="white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
+      h += '<td style="white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
+      h += '<td><span style="background:'+col+'22;color:'+col+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">'+r.plataforma+'</span></td>';
+      h += '<td style="font-weight:500">'+r.nombre_huesped+'</td>';
+      h += '<td style="color:var(--text2);font-size:12px">'+(r.pais||'')+'</td>';
+      h += '<td style="text-align:center">'+r.noches+'</td>';
+      h += '<td style="text-align:center;font-size:12px">'+(r.personas||'')+'</td>';
+      h += '<td style="text-align:right;font-weight:600;font-family:'DM Mono',monospace">'+fmt2(r.precio)+'</td>';
+      h += '</tr>';
+    });
+    // Total row
+    h += '<tr style="background:#F8F9FC;border-top:2px solid #E2E5ED">';
+    h += '<td colspan="7" style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Total periodo</td>';
+    h += '<td style="text-align:right;font-weight:700;font-size:14px;font-family:'DM Mono',monospace">'+fmt2(totalPeriodo)+'</td>';
+    h += '</tr>';
+    h += '</tbody></table></div>';
+
+    // Financial summary
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid var(--border)">';
+    // Left: por plataforma
+    h += '<div style="padding:16px;border-right:1px solid var(--border)">';
+    h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:10px">Por plataforma</div>';
+    Object.keys(plats).forEach(function(pl){
+      var col = PLAT_COLORS[pl]||'#6B7280';
+      var pct = totalPeriodo>0?Math.round(plats[pl]/totalPeriodo*100):0;
+      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+      h += '<span style="background:'+col+'22;color:'+col+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;min-width:70px">'+pl+'</span>';
+      h += '<div style="flex:1;height:6px;background:#F0F2F7;border-radius:3px"><div style="width:'+pct+'%;height:6px;background:'+col+';border-radius:3px"></div></div>';
+      h += '<span style="font-size:12px;font-weight:600;font-family:'DM Mono',monospace;min-width:80px;text-align:right">'+fmt2(plats[pl])+'</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+    // Right: financial breakdown
+    h += '<div style="padding:16px">';
+    h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:10px">Resumen financiero</div>';
+    var rows2=[
+      {label:'Monto periodo',val:fin.total,bold:false,bg:''},
+      {label:'EGHUT 35% (Servap)',val:-fin.eghut,bold:false,bg:'#FEF2F2'},
+      {label:'IGI 4.5%',val:-fin.igi,bold:false,bg:'#FEF2F2'},
+      {label:'Monto neto',val:fin.neto,bold:true,bg:'#F0FDF4'},
+      {label:'Gastos 20%',val:-fin.gastos,bold:false,bg:'#FFFBEB'},
+      {label:'INRN 10%',val:-fin.inrn,bold:false,bg:'#FFFBEB'},
+      {label:'TOTAL PROPIETARIO',val:fin.propiet,bold:true,bg:'#EEF3FF'},
+    ];
+    rows2.forEach(function(row){
+      var isNeg=row.val<0;
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:4px;margin-bottom:3px;background:'+row.bg+'">';
+      h += '<span style="font-size:12px;'+(row.bold?'font-weight:700':'')+'">'+row.label+'</span>';
+      h += '<span style="font-size:12px;font-weight:'+(row.bold?'700':'500')+';font-family:'DM Mono',monospace;color:'+(isNeg?'#DC2626':(row.bold?'var(--primary)':'#1A1D27'))+'">'+fmt2(Math.abs(row.val))+'</span>';
+      h += '</div>';
+    });
+    h += '</div></div>'; // /grid financial
+
+    h += '</div></div>'; // /card-body /card
+  });
+
+  out.innerHTML = h;
+}
+
+function exportInformeReservasExcel(){
+  var data = getInfResData();
+  if(!data.length) return toast('Sin datos para exportar');
+
+  var piso   = document.getElementById('inf-res-piso').value;
+  var periodo= document.getElementById('inf-res-periodo').value;
+
+  // Group by piso
+  var pisos = piso==='all' ? [...new Set(data.map(function(r){return r.piso;}))] : [piso];
+
+  var rows = [];
+  pisos.forEach(function(p){
+    var pData = data.filter(function(r){return r.piso===p;});
+    if(!pData.length) return;
+    var total = pData.reduce(function(s,r){return s+(r.precio||0);},0);
+    var fin = calcFinancials(total);
+
+    // Header block
+    rows.push(['APARTAMENTO',p,'','','','','','']);
+    rows.push(['PERIODO',periodo==='all'?'Todos':periodo,'','','','','','']);
+    rows.push([]);
+    rows.push(['LLEGADA','SALIDA','PLATAFORMA','NOMBRE','NOCHES','PERSONAS','PAIS','TOTAL']);
+    pData.forEach(function(r){
+      rows.push([r.fecha_entrada,r.fecha_salida,r.plataforma,r.nombre_huesped,r.noches,r.personas||'',r.pais||'',r.precio]);
+    });
+    rows.push(['TOTAL PERIODO','','','','','','',total]);
+    rows.push([]);
+    rows.push(['','','','','','MONTO PERIODO','',total]);
+    rows.push(['','','','','','EGHUT 35%','FACTURAR',fin.eghut]);
+    rows.push(['','','','','','I.G.I. 4,5%','FACTURAR',fin.igi]);
+    rows.push(['','','','','','MONTO NETO','',fin.neto]);
+    rows.push(['','','','','','GASTOS 20%','',fin.gastos]);
+    rows.push(['','','','','','INRN 10%','RETENCION',fin.inrn]);
+    rows.push(['','','','','','TOTAL PROPIETARIO','TRANSFERENCIA',fin.propiet]);
+    rows.push([]);
+    rows.push([]);
+  });
+
+  var csv = rows.map(function(r){
+    return r.map(function(c){
+      var s=String(c===null||c===undefined?'':c);
+      if(s.indexOf(',')>=0||s.indexOf('"')>=0) s='"'+s.replace(/"/g,'""')+'"';
+      return s;
+    }).join(',');
+  }).join('\n');
+
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='informe_reservas_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  toast('Excel exportado');
+}
+
+function exportInformeReservasPDF(){
+  var data = getInfResData();
+  if(!data.length) return toast('Sin datos para exportar');
+
+  var piso   = document.getElementById('inf-res-piso').value;
+  var periodo= document.getElementById('inf-res-periodo').value;
+  var pisos  = piso==='all' ? [...new Set(data.map(function(r){return r.piso;}))] : [piso];
+
+  var html = '<html><head><meta charset="UTF-8"><style>'
+    +'*{box-sizing:border-box}'
+    +'@page{size:A4;margin:14mm 12mm}'
+    +'body{font-family:Arial,sans-serif;font-size:11px;color:#1A1D27;margin:0}'
+    +'.header{background:#0F1117;color:white;padding:14px 18px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}'
+    +'.header-title{font-size:15px;font-weight:700}'
+    +'.header-sub{font-size:10px;opacity:.6;margin-top:2px}'
+    +'.header-total{font-size:22px;font-weight:700;color:#F9E2AF;text-align:right}'
+    +'.header-total-lbl{font-size:9px;opacity:.6}'
+    +'.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}'
+    +'.kpi{background:#F0EEFF;border-radius:6px;padding:10px 12px}'
+    +'.kpi-val{font-size:20px;font-weight:700;color:#5B4FE8}'
+    +'.kpi-lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.05em}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:10px}'
+    +'th{background:#0F1117;color:white;padding:5px 8px;text-align:left;font-size:9px}'
+    +'td{padding:5px 8px;border-bottom:1px solid #EEE}'
+    +'.total-row td{background:#F0EEFF;font-weight:700;border-top:2px solid #5B4FE8}'
+    +'.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}'
+    +'.fin-row{display:flex;justify-content:space-between;padding:5px 8px;border-radius:4px;margin-bottom:3px;font-size:10px}'
+    +'.fin-bold{font-weight:700}'
+    +'.fin-neg{color:#DC2626}'
+    +'.fin-pos{color:#059669}'
+    +'.plat-badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700}'
+    +'</style></head><body>';
+
+  pisos.forEach(function(p, pi){
+    var pData = data.filter(function(r){return r.piso===p;});
+    if(!pData.length) return;
+    var total = pData.reduce(function(s,r){return s+(r.precio||0);},0);
+    var noches = pData.reduce(function(s,r){return s+(r.noches||0);},0);
+    var fin = calcFinancials(total);
+    var plats = {};
+    pData.forEach(function(r){ plats[r.plataforma]=(plats[r.plataforma]||0)+(r.precio||0); });
+
+    if(pi>0) html += '<div style="page-break-before:always"></div>';
+
+    html += '<div class="header">';
+    html += '<div><div class="header-title">'+p+'</div><div class="header-sub">'+(periodo==='all'?'Todos los periodos':periodo)+'  ·  Servap Turistics</div></div>';
+    html += '<div style="text-align:right"><div class="header-total">'+fmt2(total)+'</div><div class="header-total-lbl">TOTAL PERIODO</div></div>';
+    html += '</div>';
+
+    html += '<div class="kpi-row">';
+    html += '<div class="kpi"><div class="kpi-val">'+pData.length+'</div><div class="kpi-lbl">Reservas</div></div>';
+    html += '<div class="kpi"><div class="kpi-val">'+noches+'</div><div class="kpi-lbl">Noches</div></div>';
+    html += '<div class="kpi"><div class="kpi-val">'+fmt2(total/pData.length)+'</div><div class="kpi-lbl">Precio medio</div></div>';
+    html += '<div class="kpi"><div class="kpi-val">'+(noches>0?fmt2(total/noches):'—')+'</div><div class="kpi-lbl">Precio/noche</div></div>';
+    html += '</div>';
+
+    html += '<table><thead><tr><th>Llegada</th><th>Salida</th><th>Plataforma</th><th>Huesped</th><th>Pais</th><th>Noches</th><th style="text-align:right">Total</th></tr></thead><tbody>';
+    pData.forEach(function(r){
+      html += '<tr><td>'+fmtDate(r.fecha_entrada)+'</td><td>'+fmtDate(r.fecha_salida)+'</td>';
+      html += '<td>'+r.plataforma+'</td>';
+      html += '<td>'+r.nombre_huesped+'</td>';
+      html += '<td>'+(r.pais||'')+'</td>';
+      html += '<td style="text-align:center">'+r.noches+'</td>';
+      html += '<td style="text-align:right;font-weight:600">'+fmt2(r.precio)+'</td></tr>';
+    });
+    html += '<tr class="total-row"><td colspan="6">TOTAL PERIODO</td><td style="text-align:right">'+fmt2(total)+'</td></tr>';
+    html += '</tbody></table>';
+
+    html += '<div class="fin-grid">';
+    // Plataformas
+    html += '<div>';
+    html += '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:8px">Por plataforma</div>';
+    Object.keys(plats).forEach(function(pl){
+      html += '<div class="fin-row"><span>'+pl+'</span><span style="font-weight:600">'+fmt2(plats[pl])+'</span></div>';
+    });
+    html += '</div>';
+    // Financiero
+    html += '<div>';
+    html += '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:8px">Resumen financiero</div>';
+    var finRows=[
+      {label:'Monto periodo',val:fin.total,cls:''},
+      {label:'EGHUT 35% (Servap)',val:fin.eghut,cls:'fin-neg'},
+      {label:'I.G.I. 4,5%',val:fin.igi,cls:'fin-neg'},
+      {label:'Monto neto',val:fin.neto,cls:'fin-bold'},
+      {label:'Gastos 20%',val:fin.gastos,cls:'fin-neg'},
+      {label:'INRN 10% (Retencion)',val:fin.inrn,cls:'fin-neg'},
+      {label:'TOTAL PROPIETARIO',val:fin.propiet,cls:'fin-bold fin-pos'},
+    ];
+    finRows.forEach(function(row){
+      html += '<div class="fin-row '+row.cls+'" style="'+(row.cls.indexOf('bold')>=0?'background:#F0EEFF;border-radius:4px':'')+'"><span>'+row.label+'</span><span>'+fmt2(row.val)+'</span></div>';
+    });
+    html += '</div></div>'; // /fin-grid
+
+    html += '<div style="margin-top:16px;font-size:9px;color:#999;text-align:center">Mora Banc · AD13 0007 0039 0001 6297 0016 · servapturistics@gmail.com · +376 679669</div>';
+  });
+
+  html += '</body></html>';
+
+  var w2=window.open('','_blank');
+  w2.document.write(html);
+  w2.document.close();
+  w2.focus();
+  setTimeout(function(){w2.print();},600);
 }
 
 //=== HISTORIAL & BACKUP =====================================================
