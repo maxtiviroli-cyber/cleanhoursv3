@@ -1138,16 +1138,25 @@ function getCfg(){
 function saveCfg(c){
   try{localStorage.setItem('horas_config',JSON.stringify(c));}catch(e){}
   if(supa){
-    ['workers','admins','grupos','disabled'].forEach(function(key){
-      if(c[key]!==undefined){
-        // Send as parsed object - Supabase handles JSONB conversion
-        supa.from('config').upsert({key:key, value:c[key], updated_at:new Date().toISOString()})
-          .then(function(res){
-            if(res.error) console.warn('saveCfg error for key '+key+':', res.error);
-          })
-          .catch(function(e){console.warn('saveCfg supa error:',e);});
+    var saves = ['workers','admins','grupos','disabled'].map(function(key){
+      if(c[key]===undefined) return Promise.resolve();
+      var val = c[key];
+      // Ensure value is a plain JS object/array (not a string)
+      if(typeof val === 'string'){
+        try{val = JSON.parse(val);}catch(e){}
       }
+      return supa.from('config')
+        .upsert({key:key, value:val, updated_at:new Date().toISOString()}, {onConflict:'key'})
+        .then(function(res){
+          if(res.error){
+            console.error('saveCfg ERROR key='+key+':', res.error.message, res.error);
+            toast('Error guardando '+key+': '+res.error.message);
+          } else {
+            console.log('saveCfg OK: key='+key, 'value preview:', JSON.stringify(val).substring(0,60));
+          }
+        }).catch(function(e){console.error('saveCfg catch key='+key+':',e);});
     });
+    Promise.all(saves).catch(function(e){console.error('saveCfg all error:',e);});
   }
 }
 
@@ -1709,9 +1718,11 @@ function cfgAddWorker(){
   if(!name) return toast('Escribe el nombre');
   var cfg=getCfg();
   if(cfg.workers.indexOf(name)>=0) return toast('Ya existe');
-  cfg.workers.push(name); saveCfg(cfg); inp.value=''; buildSelects(); renderConfig();
+  cfg.workers.push(name);
+  saveCfg(cfg);
+  inp.value=''; buildSelects(); renderConfig();
   logConfig('agregar_trabajador',name,'',name);
-  toast('Trabajador '+name+' agregado');
+  toast('Trabajador '+name+' agregado — guardando en Supabase...');
 }
 function cfgDelWorker(name){
   var cfg=getCfg();
