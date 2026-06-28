@@ -480,6 +480,14 @@ tbody tr:hover{background:#F8F9FC}
       </div>
     </div>
 
+    <!-- Adelanto input -->
+    <div style="background:white;border:1px solid #E8EAF0;border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:12px;font-weight:600;color:#1A1D27">Adelanto pagado al propietario:</div>
+      <input type="number" id="inf-res-adelanto" step="0.01" placeholder="0.00" value="0"
+        style="width:140px;font-size:13px;padding:6px 10px;border:1px solid #E2E5ED;border-radius:var(--radius);font-family:'DM Mono',monospace"
+        onchange="renderInformeReservas()">
+      <div style="font-size:11px;color:var(--text2)">Se descontará del total a transferir al propietario</div>
+    </div>
     <div id="informe-reservas-output"></div>
   </div>
 
@@ -2691,14 +2699,16 @@ function getInfResData(){
   }).sort(function(a,b){ return a.fecha_entrada.localeCompare(b.fecha_entrada); });
 }
 
-function calcFinancials(total){
+function calcFinancials(total, adelanto){
+  adelanto = adelanto || 0;
   var eghut   = total * EGHUT_PCT;
   var igi     = eghut * IGI_PCT;
-  var neto    = total - eghut;
-  var gastos  = neto * GASTOS_PCT;
-  var inrn    = neto * INRN_PCT;
-  var propiet = neto - gastos - inrn;
-  return { total:total, eghut:eghut, igi:igi, neto:neto, gastos:gastos, inrn:inrn, propiet:propiet };
+  var neto    = total - eghut - igi;
+  var gastos  = neto * GASTOS_PCT; // display only (80% of neto)
+  var inrn    = neto * 0.08;       // 10% of 80% = 8% of neto
+  var propiet = neto - inrn;
+  var pendiente = propiet - adelanto;
+  return { total:total, eghut:eghut, igi:igi, neto:neto, gastos:gastos, inrn:inrn, propiet:propiet, adelanto:adelanto, pendiente:pendiente };
 }
 
 function fmt2(n){ return (n||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
@@ -2715,6 +2725,8 @@ function renderInformeReservas(){
 
   var piso   = document.getElementById('inf-res-piso').value;
   var periodo= document.getElementById('inf-res-periodo').value;
+  var adelantoEl = document.getElementById('inf-res-adelanto');
+  var adelanto = adelantoEl ? parseFloat(adelantoEl.value)||0 : 0;
 
   var h = '';
 
@@ -2728,7 +2740,7 @@ function renderInformeReservas(){
     if(!pData.length) return;
 
     var totalPeriodo = pData.reduce(function(s,r){return s+(r.precio||0);},0);
-    var fin = calcFinancials(totalPeriodo);
+    var fin = calcFinancials(totalPeriodo, adelanto);
     var noches = pData.reduce(function(s,r){return s+(r.noches||0);},0);
     var plats = {};
     pData.forEach(function(r){ plats[r.plataforma]=(plats[r.plataforma]||0)+(r.precio||0); });
@@ -2757,15 +2769,15 @@ function renderInformeReservas(){
     h += '</tr></thead><tbody>';
     pData.forEach(function(r){
       var col = PLAT_COLORS[r.plataforma]||'#6B7280';
-      h += '<tr>';
-      h += '<td style="white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
-      h += '<td style="white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
-      h += '<td><span style="background:'+col+'22;color:'+col+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">'+r.plataforma+'</span></td>';
-      h += '<td style="font-weight:500">'+r.nombre_huesped+'</td>';
-      h += '<td style="color:var(--text2);font-size:12px">'+(r.pais||'')+'</td>';
-      h += '<td style="text-align:center">'+r.noches+'</td>';
-      h += '<td style="text-align:center;font-size:12px">'+(r.personas||'')+'</td>';
-      h += '<td style="text-align:right;font-weight:600;font-family:\'DM Mono\',monospace">'+fmt2(r.precio)+'</td>';
+      var td='padding:4px 8px';
+      h += '<tr style="border-bottom:1px solid #F5F5F5">';
+      h += '<td style="'+td+';white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
+      h += '<td style="'+td+';white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
+      h += '<td style="'+td+'"><span style="background:'+col+'22;color:'+col+';padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">'+r.plataforma+'</span></td>';
+      h += '<td style="'+td+';font-weight:500">'+r.nombre_huesped+'</td>';
+      h += '<td style="'+td+';color:var(--text2)">'+(r.pais||'')+'</td>';
+      h += '<td style="'+td+';text-align:center">'+r.noches+'</td>';
+      h += '<td style="'+td+';text-align:right;font-weight:600;font-family:\'DM Mono\',monospace">'+fmt2(r.precio)+'</td>';
       h += '</tr>';
     });
     // Total row
@@ -2794,19 +2806,23 @@ function renderInformeReservas(){
     h += '<div style="padding:16px">';
     h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:10px">Resumen financiero</div>';
     var rows2=[
-      {label:'Monto periodo',val:fin.total,bold:false,bg:''},
-      {label:'EGHUT 35% (Servap)',val:-fin.eghut,bold:false,bg:'#FEF2F2'},
-      {label:'IGI 4.5%',val:-fin.igi,bold:false,bg:'#FEF2F2'},
-      {label:'Monto neto',val:fin.neto,bold:true,bg:'#F0FDF4'},
-      {label:'Gastos 20%',val:-fin.gastos,bold:false,bg:'#FFFBEB'},
-      {label:'INRN 10%',val:-fin.inrn,bold:false,bg:'#FFFBEB'},
-      {label:'TOTAL PROPIETARIO',val:fin.propiet,bold:true,bg:'#EEF3FF'},
+      {label:'Monto periodo',val:fin.total,sign:1,bold:false,bg:''},
+      {label:'EGHUT 35% (Servap) — FACTURAR',val:fin.eghut,sign:-1,bold:false,bg:'#FEF2F2'},
+      {label:'I.G.I. 4,5% — FACTURAR',val:fin.igi,sign:-1,bold:false,bg:'#FEF2F2'},
+      {label:'Monto neto',val:fin.neto,sign:1,bold:true,bg:'#F0FDF4'},
+      {label:'Gastos 20%',val:fin.gastos,sign:1,bold:false,bg:'#FFFBEB',note:true},
+      {label:'INRN 10% — RETENCION',val:fin.inrn,sign:-1,bold:false,bg:'#FFFBEB'},
+      {label:'TOTAL PROPIETARIO',val:fin.propiet,sign:1,bold:true,bg:'#EEF3FF'},
     ];
+    if(adelanto>0){
+      rows2.push({label:'Adelanto pagado',val:adelanto,sign:-1,bold:false,bg:'#F3F4F6'});
+      rows2.push({label:'PENDIENTE TRANSFERENCIA',val:fin.pendiente,sign:1,bold:true,bg:'#ECFDF5'});
+    }
     rows2.forEach(function(row){
-      var isNeg=row.val<0;
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:4px;margin-bottom:3px;background:'+row.bg+'">';
-      h += '<span style="font-size:12px;'+(row.bold?'font-weight:700':'')+'">'+row.label+'</span>';
-      h += '<span style="font-size:12px;font-weight:'+(row.bold?'700':'500')+';font-family:\'DM Mono\',monospace;color:'+(isNeg?'#DC2626':(row.bold?'var(--primary)':'#1A1D27'))+'">'+fmt2(Math.abs(row.val))+'</span>';
+      var isNeg=row.sign<0;
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:4px;margin-bottom:2px;background:'+row.bg+'">';
+      h += '<span style="font-size:11px;'+(row.bold?'font-weight:700':'color:#555')+'">'+row.label+'</span>';
+      h += '<span style="font-size:12px;font-weight:'+(row.bold?'700':'500')+';font-family:\'DM Mono\',monospace;color:'+(isNeg?'#DC2626':(row.bold?'var(--primary)':'#1A1D27'))+'">'+fmt2(row.val)+'</span>';
       h += '</div>';
     });
     h += '</div></div>'; // /grid financial
@@ -2876,6 +2892,8 @@ function exportInformeReservasPDF(){
 
   var piso   = document.getElementById('inf-res-piso').value;
   var periodo= document.getElementById('inf-res-periodo').value;
+  var adelantoEl = document.getElementById('inf-res-adelanto');
+  var adelanto = adelantoEl ? parseFloat(adelantoEl.value)||0 : 0;
   var pisos  = piso==='all' ? [...new Set(data.map(function(r){return r.piso;}))] : [piso];
 
   var html = '<html><head><meta charset="UTF-8"><style>'
@@ -2951,13 +2969,17 @@ function exportInformeReservasPDF(){
     html += '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:8px">Resumen financiero</div>';
     var finRows=[
       {label:'Monto periodo',val:fin.total,cls:''},
-      {label:'EGHUT 35% (Servap)',val:fin.eghut,cls:'fin-neg'},
-      {label:'I.G.I. 4,5%',val:fin.igi,cls:'fin-neg'},
+      {label:'EGHUT 35% (Servap) — Facturar',val:fin.eghut,cls:'fin-neg'},
+      {label:'I.G.I. 4,5% — Facturar',val:fin.igi,cls:'fin-neg'},
       {label:'Monto neto',val:fin.neto,cls:'fin-bold'},
-      {label:'Gastos 20%',val:fin.gastos,cls:'fin-neg'},
-      {label:'INRN 10% (Retencion)',val:fin.inrn,cls:'fin-neg'},
+      {label:'Gastos 20% (referencia)',val:fin.gastos,cls:''},
+      {label:'INRN 10% — Retención',val:fin.inrn,cls:'fin-neg'},
       {label:'TOTAL PROPIETARIO',val:fin.propiet,cls:'fin-bold fin-pos'},
     ];
+    if(adelanto>0){
+      finRows.push({label:'Adelanto pagado',val:adelanto,cls:'fin-neg'});
+      finRows.push({label:'PENDIENTE TRANSFERENCIA',val:fin.pendiente,cls:'fin-bold fin-pos'});
+    }
     finRows.forEach(function(row){
       html += '<div class="fin-row '+row.cls+'" style="'+(row.cls.indexOf('bold')>=0?'background:#F0EEFF;border-radius:4px':'')+'"><span>'+row.label+'</span><span>'+fmt2(row.val)+'</span></div>';
     });
