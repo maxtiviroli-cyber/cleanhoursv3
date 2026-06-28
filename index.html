@@ -2711,7 +2711,7 @@ function calcFinancials(total, adelanto){
   return { total:total, eghut:eghut, igi:igi, neto:neto, gastos:gastos, inrn:inrn, propiet:propiet, adelanto:adelanto, pendiente:pendiente };
 }
 
-function fmt2(n){ return (n||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+function fmt2(n){ return Number(n||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
 
 function renderInformeReservas(){
   var data = getInfResData();
@@ -2765,7 +2765,7 @@ function renderInformeReservas(){
 
     // Detail table
     h += '<div class="table-wrap"><table><thead><tr>';
-    h += '<th>Llegada</th><th>Salida</th><th>Plataforma</th><th>Huesped</th><th>Pais</th><th>Noches</th><th>Personas</th><th style="text-align:right">Total</th>';
+    h += '<th style="padding:4px 8px">Llegada</th><th style="padding:4px 8px">Salida</th><th style="padding:4px 8px">Plataforma</th><th style="padding:4px 8px">Huesped</th><th style="padding:4px 8px">Pais</th><th style="padding:4px 8px;text-align:center">N</th><th style="padding:4px 8px;text-align:center">Personas</th><th style="padding:4px 8px;text-align:right">Total</th>';
     h += '</tr></thead><tbody>';
     pData.forEach(function(r){
       var col = PLAT_COLORS[r.plataforma]||'#6B7280';
@@ -2777,12 +2777,13 @@ function renderInformeReservas(){
       h += '<td style="'+td+';font-weight:500">'+r.nombre_huesped+'</td>';
       h += '<td style="'+td+';color:var(--text2)">'+(r.pais||'')+'</td>';
       h += '<td style="'+td+';text-align:center">'+r.noches+'</td>';
+      h += '<td style="'+td+';text-align:center;color:var(--text2)">'+(r.personas||'')+'</td>';
       h += '<td style="'+td+';text-align:right;font-weight:600;font-family:\'DM Mono\',monospace">'+fmt2(r.precio)+'</td>';
       h += '</tr>';
     });
     // Total row
     h += '<tr style="background:#F8F9FC;border-top:2px solid #E2E5ED">';
-    h += '<td colspan="7" style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em">Total periodo</td>';
+    h += '<td colspan="8" style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px">Total periodo</td>';
     h += '<td style="text-align:right;font-weight:700;font-size:14px;font-family:\'DM Mono\',monospace">'+fmt2(totalPeriodo)+'</td>';
     h += '</tr>';
     h += '</tbody></table></div>';
