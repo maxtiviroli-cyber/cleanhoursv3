@@ -1328,14 +1328,14 @@ function renderWa(){
   waMessages.slice(-3).forEach(function(m){
     if(m.dir==='system'){h+='<div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:8px;padding:10px 14px;font-size:12px;color:#78350F;text-align:center;font-weight:500">'+m.text+'</div>';return;}
     var out=m.dir==='out';
-    var bg=out?'linear-gradient(89deg,var(--primary),var(--primary-dark))':'var(--surface)';
-    var tc=out?'white':'var(--text)';
-    var nc=out?'rgba(255,255,255,0.8)':(m.isAdm?'var(--success)':'var(--primary)');
-    h+='<div style="display:flex;justify-content:'+(out?'flex-end':'flex-start')+'">';
-    h+='<div style="max-width:88%;background:'+bg+';color:'+tc+';border-radius:12px;padding:11px 15px;font-size:13px;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,0.08)">';
-    h+='<div style="font-size:11px;font-weight:700;color:'+nc+';margin-bottom:4px">'+m.sender+'</div>';
+    var bg=out?'var(--primary)':'#1E1E2E';
+    var tc=out?'white':'#CDD6F4';
+    var nc=out?'rgba(255,255,255,0.8)':(m.isAdm?'#A6E3A1':'#89B4FA');
+    h+='<div style="display:flex;justify-content:'+(out?'flex-end':'flex-start')+';margin-bottom:8px">';
+    h+='<div style="max-width:88%;background:'+bg+';color:'+tc+';border-radius:12px;padding:11px 15px;font-size:12px;line-height:1.6;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-family:\'DM Mono\',monospace">';
+    h+='<div style="font-size:10px;font-weight:700;color:'+nc+';margin-bottom:5px;letter-spacing:.04em">'+m.sender+'</div>';
     h+=m.text;
-    h+='<div style="font-size:10px;opacity:0.5;text-align:right;margin-top:4px">'+m.time+'</div>';
+    h+='<div style="font-size:9px;opacity:0.5;text-align:right;margin-top:5px">'+m.time+'</div>';
     h+='</div></div>';
   });
   body.innerHTML=h; body.scrollTop=body.scrollHeight;
@@ -1369,7 +1369,25 @@ async function callIA(text,sender){
   var today=new Date().toISOString().split('T')[0];
   var ayer=new Date(Date.now()-86400000).toISOString().split('T')[0];
   var allPisos=[];Object.keys(cfg.grupos).forEach(function(g){allPisos=allPisos.concat(cfg.grupos[g]);});
-  var prompt='Eres un asistente que extrae registros de horas de limpieza.\nHoy:'+today+' Ayer:'+ayer+'\nRemitente:'+sender+'\nTrabajadores:'+cfg.workers.join(',')+'\nPisos:'+allPisos.join(',')+'\nMensaje:"'+text+'"\nResponde SOLO JSON sin markdown.\nFormato:{"entries":[{"user":"","date":"YYYY-MM-DD","negocio":"","start":"HH:MM","end":"HH:MM","obs":""}],"error":null}\nSi no puedes:{"entries":[],"error":"motivo"}';
+  var gruposList='';Object.keys(cfg.grupos).forEach(function(g){gruposList+=g+': '+cfg.grupos[g].join(', ')+'\n';});
+  var prompt='Eres un asistente que extrae registros de horas de limpieza de pisos turísticos.\n'
+    +'Hoy: '+today+' | Ayer: '+ayer+'\n'
+    +'Remitente del mensaje: '+sender+'\n'
+    +'Trabajadores disponibles: '+cfg.workers.join(', ')+'\n'
+    +'Pisos y negocios disponibles (usa el nombre EXACTO de la lista):\n'+gruposList
+    +'\nREGLAS IMPORTANTES:\n'
+    +'- Si el mensaje dice "de X a Y" o "X a Y hrs" son horas de inicio y fin\n'
+    +'- Si dice "ayer" usa la fecha: '+ayer+'\n'
+    +'- Si dice "hoy" usa la fecha: '+today+'\n'
+    +'- Si el remitente es un trabajador conocido y no menciona otro trabajador, usa el remitente como trabajador\n'
+    +'- Busca coincidencias parciales en nombres de pisos (ej: "Sapporo" = "Sapporo 20", "Chamois" = "Chamois 47")\n'
+    +'- Busca coincidencias parciales en nombres de trabajadores (ej: "Ana" = "Ana")\n'
+    +'- Si hay varios trabajadores en el mensaje, crea una entrada por cada uno\n'
+    +'- Si hay varias fechas o pisos, crea una entrada por cada combinación\n'
+    +'\nMensaje a interpretar: "'+text+'"\n'
+    +'\nResponde SOLO con JSON válido sin markdown ni explicaciones.\n'
+    +'Formato exacto: {"entries":[{"user":"nombre exacto del trabajador","date":"YYYY-MM-DD","negocio":"nombre exacto del piso","start":"HH:MM","end":"HH:MM","obs":""}],"error":null}\n'
+    +'Si no puedes interpretar: {"entries":[],"error":"motivo breve"}';
   var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:600,messages:[{role:'user',content:prompt}]})});
@@ -1380,11 +1398,11 @@ async function callIA(text,sender){
 function showPreview(parsed,sender,isAdm){
   pendingPreview={entries:parsed.entries,sender:sender,isAdm:isAdm};
   var lines='';
-  parsed.entries.forEach(function(e){var h=calcHrs(e.start,e.end);lines+='<b>'+e.user+'</b> - '+e.negocio+' - '+fmtDate(e.date)+'<br>'+e.start+' a '+e.end+' = <b>'+fmtHrs(h)+'</b><br>';});
-  var html='<div style="font-weight:700;color:var(--primary);margin-bottom:8px">IA detecto:</div>'+lines
-    +'<div style="display:flex;gap:8px;margin-top:10px">'
-    +'<button onclick="confPrev()" style="padding:7px 16px;border-radius:20px;border:none;background:var(--success);color:white;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer">Confirmar</button>'
-    +'<button onclick="cancelPrev()" style="padding:7px 16px;border-radius:20px;border:none;background:#EEE;color:#444;font-family:inherit;font-size:12px;cursor:pointer">Cancelar</button></div>';
+  parsed.entries.forEach(function(e){var h=calcHrs(e.start,e.end);lines+='<span style="color:#CBA6F7">'+e.user+'</span> <span style="color:#6C7086">→</span> <span style="color:#A6E3A1">'+e.negocio+'</span> <span style="color:#6C7086">'+fmtDate(e.date)+'</span><br><span style="color:#FAB387">'+e.start+' – '+e.end+'</span> <span style="color:#6C7086">=</span> <span style="color:#F9E2AF;font-weight:700">'+fmtHrs(h)+'</span><br><br>';});
+  var html='<div style="font-size:10px;color:#89B4FA;letter-spacing:.1em;margin-bottom:10px">// IA DETECTO:</div>'+lines
+    +'<div style="display:flex;gap:8px;margin-top:12px">'
+    +'<button onclick="confPrev()" style="padding:6px 14px;border-radius:4px;border:1px solid #A6E3A1;background:rgba(166,227,161,0.1);color:#A6E3A1;font-family:\'DM Mono\',monospace;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.04em">[CONFIRMAR]</button>'
+    +'<button onclick="cancelPrev()" style="padding:6px 14px;border-radius:4px;border:1px solid #F38BA8;background:rgba(243,139,168,0.1);color:#F38BA8;font-family:\'DM Mono\',monospace;font-size:11px;cursor:pointer;letter-spacing:.04em">[CANCELAR]</button></div>';
   addMsg(html,'IA','in',false);
 }
 function confPrev(){
@@ -1490,7 +1508,7 @@ function renderDashboard(){
   allDisplayWorkers.forEach(function(w){
     var h=data.filter(function(r){return r.user===w;}).reduce(function(s,r){return s+(r.hrs||0);},0);
     if(!h) return; // skip workers with 0 hours in this period
-    wh+='<div style="background:#FFFFFF;border:2px solid #4F7FFF;border-radius:var(--radius-lg);padding:20px;box-shadow:0 4px 16px rgba(79,127,255,0.15)">';
+    wh+='<div style="background:#1E1E2E;border:1px solid #313244;border-radius:var(--radius-lg);padding:16px;color:#CDD6F4;font-family:\'DM Mono\',monospace">';
     wh+='<div style="font-size:26px;margin-bottom:10px">&#128100;</div>';
     wh+='<div style="font-size:28px;font-weight:700;color:#3A3020;line-height:1">'+h.toFixed(1)+'</div>';
     wh+='<div style="font-size:12px;font-weight:600;color:#7A6A50;margin-top:6px;text-transform:uppercase;letter-spacing:.04em">'+w+'</div>';
