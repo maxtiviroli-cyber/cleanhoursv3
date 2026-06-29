@@ -646,9 +646,13 @@ tbody tr:hover{background:#F8F9FC}
     </div>
     <div class="terminal-table" style="max-height:calc(100vh - 200px);overflow-y:auto;overflow-x:auto">
       <div style="min-width:max-content">
-        <table style="width:100%;border-collapse:collapse;font-size:11px">
-          <thead><tr>
-            <th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Hrs trabajador</th><th>Hrs admin</th><th>Estado</th><th></th>
+        <table style="width:100%;border-collapse:collapse;font-size:11px" id="audit-table">
+          <thead><tr id="audit-thead">
+            <th onclick="sortAudit('date')" style="cursor:pointer;user-select:none" title="Ordenar por fecha">Fecha <span id="sort-date">↓</span></th>
+            <th onclick="sortAudit('negocio')" style="cursor:pointer;user-select:none" title="Ordenar por negocio">Negocio <span id="sort-negocio"></span></th>
+            <th onclick="sortAudit('user')" style="cursor:pointer;user-select:none" title="Ordenar por trabajador">Trabajador <span id="sort-user"></span></th>
+            <th onclick="sortAudit('hrs')" style="cursor:pointer;user-select:none" title="Ordenar por horas">Hrs trabajador <span id="sort-hrs"></span></th>
+            <th>Hrs admin</th><th onclick="sortAudit('status')" style="cursor:pointer;user-select:none">Estado <span id="sort-status"></span></th><th></th>
           </tr></thead>
           <tbody id="audit-tbody"></tbody>
         </table>
@@ -1600,8 +1604,30 @@ function filterAuditByNeg(neg){
   showTab('auditoria');
   setTimeout(function(){
     var sel=document.getElementById('filter-neg-audit');
-    if(sel){ sel.value=neg; renderAudit(); }
-  },300);
+    if(sel){
+      // Try exact match first, else use text search
+      var found=false;
+      for(var i=0;i<sel.options.length;i++){
+        if(sel.options[i].value===neg){sel.selectedIndex=i;found=true;break;}
+      }
+      if(!found){
+        // Add temporary option for the unclassified negocio
+        var opt=document.createElement('option');
+        opt.value=neg; opt.textContent=neg+' (sin clasificar)';
+        sel.appendChild(opt); sel.value=neg;
+      }
+      renderAudit();
+    }
+  },400);
+}
+
+var auditSortField='date';
+var auditSortDir=-1; // -1=desc, 1=asc
+
+function sortAudit(field){
+  if(auditSortField===field) auditSortDir*=-1;
+  else { auditSortField=field; auditSortDir=field==='date'?-1:1; }
+  renderAudit();
 }
 
 function renderAudit(){
@@ -1663,13 +1689,16 @@ function renderDashboard(){
   data.forEach(function(r){ if(activeWorkers.indexOf(r.user)<0&&extraWorkers.indexOf(r.user)<0) extraWorkers.push(r.user); });
   var allDisplayWorkers=activeWorkers.concat(extraWorkers);
   var wh='';
+  var maxH=Math.max.apply(null,allDisplayWorkers.map(function(w){return data.filter(function(r){return r.user===w;}).reduce(function(s,r){return s+(r.hrs||0);},0);})||[1]);
   allDisplayWorkers.forEach(function(w){
     var h=data.filter(function(r){return r.user===w;}).reduce(function(s,r){return s+(r.hrs||0);},0);
-    if(!h) return; // skip workers with 0 hours in this period
-    wh+='<div style="background:#1E1E2E;border:1px solid #313244;border-radius:var(--radius-lg);padding:16px;color:#CDD6F4;font-family:\'DM Mono\',monospace">';
-    wh+='<div style="font-size:26px;margin-bottom:10px">&#128100;</div>';
-    wh+='<div style="font-size:28px;font-weight:700;color:#3A3020;line-height:1">'+h.toFixed(1)+'</div>';
-    wh+='<div style="font-size:12px;font-weight:600;color:#7A6A50;margin-top:6px;text-transform:uppercase;letter-spacing:.04em">'+w+'</div>';
+    if(!h) return;
+    var pct=Math.round(h/maxH*100);
+    wh+='<div style="background:#0F1117;border:1px solid #2E3244;border-radius:var(--radius-lg);padding:16px">';
+    wh+='<div style="font-size:11px;color:white;font-weight:700;font-family:\'DM Mono\',monospace;letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase">'+w+'</div>';
+    wh+='<div style="font-size:30px;font-weight:700;color:white;font-family:\'DM Mono\',monospace;line-height:1">'+h.toFixed(1)+'</div>';
+    wh+='<div style="font-size:10px;color:#6C7086;font-family:\'DM Mono\',monospace;margin-bottom:10px">HRS</div>';
+    wh+='<div style="height:3px;background:#252836;border-radius:2px"><div style="width:'+pct+'%;height:3px;background:white;border-radius:2px"></div></div>';
     wh+='</div>';
   });
   document.getElementById('dash-workers').innerHTML=wh;
@@ -2880,7 +2909,18 @@ function exportAuditoriaPDF(){
   var data=records.filter(function(r){
     return (!fm||r.date.indexOf(fm)===0)&&(!fw||r.user===fw)
       &&(!fs||r.status===fs)&&(!fn2||r.negocio===fn2);
-  }).sort(function(a,b){return b.date.localeCompare(a.date);});
+  }).sort(function(a,b){
+    var av=a[auditSortField]||''; var bv=b[auditSortField]||'';
+    if(typeof av==='number'||auditSortField==='hrs'||auditSortField==='adminHrs'){
+      return auditSortDir*((parseFloat(bv)||0)-(parseFloat(av)||0));
+    }
+    return auditSortDir*(String(av).localeCompare(String(bv)));
+  });
+  // Update sort indicators
+  ['date','negocio','user','hrs','status'].forEach(function(f){
+    var el=document.getElementById('sort-'+f);
+    if(el) el.textContent=f===auditSortField?(auditSortDir===-1?'↓':'↑'):'';
+  });
 
   var mLabel=fm?fm:'Todos los meses';
   var wLabel=fw?fw:'Todos';
@@ -2986,8 +3026,19 @@ function exportAuditoriaExcel(){
     return (!fm||r.date.indexOf(fm)===0)
       &&(!fw||r.user===fw)
       &&(!fs||r.status===fs)
-      &&(!fn||r.negocio===fn);
-  }).sort(function(a,b){return b.date.localeCompare(a.date);});
+      &&(!fn||r.negocio===fn||r.negocio.toLowerCase().indexOf(fn.toLowerCase())>=0);
+  }).sort(function(a,b){
+    var av=a[auditSortField]||''; var bv=b[auditSortField]||'';
+    if(typeof av==='number'||auditSortField==='hrs'||auditSortField==='adminHrs'){
+      return auditSortDir*((parseFloat(bv)||0)-(parseFloat(av)||0));
+    }
+    return auditSortDir*(String(av).localeCompare(String(bv)));
+  });
+  // Update sort indicators
+  ['date','negocio','user','hrs','status'].forEach(function(f){
+    var el=document.getElementById('sort-'+f);
+    if(el) el.textContent=f===auditSortField?(auditSortDir===-1?'↓':'↑'):'';
+  });
 
   var header=['Fecha','Negocio','Trabajador','Hrs Trabajador','Hrs Admin','Estado','Observaciones'];
   var rows=[header];
