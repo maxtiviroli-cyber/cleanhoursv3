@@ -618,7 +618,10 @@ tbody tr:hover{background:#F8F9FC}
   <div class="panel" id="panel-auditoria">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div><div style="font-size:16px;font-weight:700">Auditoria</div><div style="font-size:11px;color:var(--text2)">Contraste registros trabajadores vs admin</div></div>
-      <button class="btn btn-light btn-sm" onclick="exportAuditoriaExcel()">&#128190; Exportar Excel</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-light btn-sm" onclick="exportAuditoriaExcel()">&#128190; Excel</button>
+        <button class="btn btn-light btn-sm" onclick="exportAuditoriaPDF()">&#128196; PDF</button>
+      </div>
     </div>
     <div style="position:sticky;top:60px;z-index:40;margin-bottom:8px;background:var(--bg);padding:4px 0">
       <div style="display:flex;gap:6px;flex-wrap:nowrap">
@@ -1459,6 +1462,35 @@ function rejRec(idx){
   logAudit('conflicto',records[idx].id,records[idx].user+' - '+records[idx].negocio+' - '+fmtDate(records[idx].date));
   saveRec(); saveRecToSupa(records[idx]); setPendBadge();renderAudit();toast('Conflicto marcado');
 }
+function editRec(idx){
+  var r=records[idx];
+  if(!r) return;
+  var newDate=prompt('Fecha (YYYY-MM-DD):',r.date);
+  if(!newDate||!newDate.trim()) return;
+  var newUser=prompt('Trabajador:',r.user);
+  if(!newUser||!newUser.trim()) return;
+  var newNeg=prompt('Negocio/Piso:',r.negocio);
+  if(!newNeg||!newNeg.trim()) return;
+  var newStart=prompt('Hora inicio (HH:MM):',r.start||'');
+  var newEnd=prompt('Hora fin (HH:MM):',r.end||'');
+  var newObs=prompt('Observaciones:',r.obs||'');
+  // Recalculate hours
+  var newHrs=r.hrs;
+  if(newStart&&newEnd){
+    var sp=newStart.split(':'),ep=newEnd.split(':');
+    newHrs=Math.round(((+ep[0]*60+ +ep[1])-(+sp[0]*60+ +sp[1]))/60*100)/100;
+  }
+  records[idx]=Object.assign({},r,{
+    date:newDate.trim(),user:newUser.trim(),negocio:newNeg.trim(),
+    start:newStart||r.start,end:newEnd||r.end,hrs:newHrs,obs:newObs||''
+  });
+  saveRec();
+  saveRecToSupa(records[idx]);
+  logAudit('editar',r.id,r.user+' → '+newUser.trim()+' | '+r.negocio+' → '+newNeg.trim());
+  renderAudit();
+  toast('Registro actualizado');
+}
+
 function delRec(idx){
   if(!confirm('Eliminar este registro? Esta accion no se puede deshacer.')) return;
   var deleted=records[idx];
@@ -1483,8 +1515,9 @@ function renderAudit(){
     var badge=r.status==='ok'?'<span class="badge badge-ok">Cuadra</span>':r.status==='pending'?'<span class="badge badge-pending">Pendiente</span>':r.status==='mismatch'?'<span class="badge badge-mismatch">Conflicto</span>':'<span class="badge badge-info">Admin</span>';
     var wc=r.hrs?'<b>'+fmtHrs(r.hrs)+'</b><br><span style="font-size:11px;color:#999">'+r.start+'-'+r.end+'</span>':'—';
     var ac=r.adminHrs?'<b>'+fmtHrs(r.adminHrs)+'</b>':'—';
-    var acts=r.status==='pending'?'<button onclick="confRec('+idx+')" style="padding:5px 10px;border-radius:6px;border:none;background:#51BB25;color:white;cursor:pointer;font-size:11px;font-weight:600;margin-right:4px">OK</button><button onclick="rejRec('+idx+')" style="padding:5px 10px;border-radius:6px;border:none;background:#DC3545;color:white;cursor:pointer;font-size:11px;font-weight:600;margin-right:4px">X</button>':'';
-    acts+='<button onclick="delRec('+idx+')" title="Eliminar registro" style="padding:5px 10px;border-radius:6px;border:1px solid #DDD;background:white;color:#DC3545;cursor:pointer;font-size:13px;line-height:1">&#128465;</button>';
+    var acts='<button onclick="editRec('+idx+')" style="padding:3px 7px;border-radius:4px;border:1px solid #6C7086;background:rgba(108,112,134,0.1);color:#CDD6F4;cursor:pointer;font-size:10px;font-family:\'DM Mono\',monospace;margin-right:3px">✎</button>';
+    if(r.status==='pending') acts+='<button onclick="confRec('+idx+')" style="padding:3px 7px;border-radius:4px;border:none;background:#A6E3A1;color:#1A1D27;cursor:pointer;font-size:10px;font-weight:700;font-family:\'DM Mono\',monospace;margin-right:3px">OK</button><button onclick="rejRec('+idx+')" style="padding:3px 7px;border-radius:4px;border:none;background:#F38BA8;color:#1A1D27;cursor:pointer;font-size:10px;font-weight:700;font-family:\'DM Mono\',monospace;margin-right:3px">!</button>';
+    acts+='<button onclick="delRec('+idx+')" style="padding:3px 7px;border-radius:4px;border:none;background:rgba(243,139,168,0.15);color:#F38BA8;cursor:pointer;font-size:10px;font-family:\'DM Mono\',monospace">✕</button>';
     var rbg=r.status==='mismatch'?'rgba(243,139,168,0.08)':r.status==='pending'?'rgba(249,226,175,0.05)':'';
     h+='<tr style="background:'+rbg+'">';
     h+='<td style="color:#A6E3A1;white-space:nowrap">'+fmtDate(r.date)+'</td>';
@@ -2730,6 +2763,65 @@ function showCalTooltip(el, text){
   // Auto-close after 3s or on next click anywhere
   setTimeout(function(){if(tip.parentNode)tip.remove();},3000);
   document.addEventListener('click',function rm(){tip.remove();document.removeEventListener('click',rm);},{once:true});
+}
+
+function exportAuditoriaPDF(){
+  var fm=document.getElementById('filter-month-audit').value;
+  var fw=document.getElementById('filter-worker').value;
+  var fs=document.getElementById('filter-status').value;
+  var fn2=document.getElementById('filter-neg-audit').value;
+  var data=records.filter(function(r){
+    return (!fm||r.date.indexOf(fm)===0)&&(!fw||r.user===fw)
+      &&(!fs||r.status===fs)&&(!fn2||r.negocio===fn2);
+  }).sort(function(a,b){return b.date.localeCompare(a.date);});
+
+  var mLabel=fm?fm:'Todos los meses';
+  var wLabel=fw?fw:'Todos';
+  var total=data.reduce(function(s,r){return s+(r.hrs||0);},0);
+  var ok=data.filter(function(r){return r.status==='ok';}).length;
+  var pend=data.filter(function(r){return r.status==='pending';}).length;
+
+  var html='<html><head><meta charset="UTF-8"><style>'
+    +'*{box-sizing:border-box}@page{size:A4;margin:12mm}'
+    +'body{font-family:'Courier New',monospace;font-size:10px;background:#1E1E2E;color:#CDD6F4;margin:0}'
+    +'.header{background:#0F1117;color:#F9E2AF;padding:14px 18px;border-radius:6px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}'
+    +'.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}'
+    +'.kpi{background:#252836;border:1px solid #313244;border-radius:6px;padding:10px}'
+    +'.kpi-val{font-size:20px;font-weight:700;color:#A6E3A1}'
+    +'.kpi-lbl{font-size:8px;color:#6C7086;text-transform:uppercase;letter-spacing:.06em}'
+    +'table{width:100%;border-collapse:collapse;font-size:9px}'
+    +'th{background:#181825;color:#6C7086;padding:5px 8px;text-align:left;letter-spacing:.06em;text-transform:uppercase}'
+    +'td{padding:4px 8px;border-bottom:1px solid #252836}'
+    +'</style></head><body>';
+
+  html+='<div class="header"><div><div style="font-size:14px;font-weight:700">// REGISTRO LIMPIEZA</div>'
+    +'<div style="font-size:9px;color:#6C7086;margin-top:2px">'+mLabel+' · '+wLabel+' · Servap Turistics</div></div>'
+    +'<div style="text-align:right"><div style="font-size:22px;font-weight:700">'+total.toFixed(1)+' hrs</div>'
+    +'<div style="font-size:9px;color:#6C7086">TOTAL HORAS</div></div></div>';
+
+  html+='<div class="kpi-row">';
+  html+='<div class="kpi"><div class="kpi-val">'+data.length+'</div><div class="kpi-lbl">Registros</div></div>';
+  html+='<div class="kpi"><div class="kpi-val" style="color:#A6E3A1">'+ok+'</div><div class="kpi-lbl">Confirmados</div></div>';
+  html+='<div class="kpi"><div class="kpi-val" style="color:#F9E2AF">'+pend+'</div><div class="kpi-lbl">Pendientes</div></div>';
+  html+='<div class="kpi"><div class="kpi-val" style="color:#CBA6F7">'+(total/data.length||0).toFixed(1)+'</div><div class="kpi-lbl">Media hrs</div></div>';
+  html+='</div>';
+
+  html+='<table><thead><tr><th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Hrs Trabajador</th><th>Hrs Admin</th><th>Estado</th><th>Obs</th></tr></thead><tbody>';
+  data.forEach(function(r){
+    var stColor=r.status==='ok'?'#A6E3A1':r.status==='pending'?'#F9E2AF':'#F38BA8';
+    html+='<tr><td style="color:#A6E3A1">'+fmtDate(r.date)+'</td>';
+    html+='<td style="color:#CBA6F7">'+r.negocio+'</td>';
+    html+='<td style="color:#CDD6F4">'+r.user+'</td>';
+    html+='<td style="color:#FAB387">'+r.hrs+'</td>';
+    html+='<td style="color:#F9E2AF">'+(r.adminHrs!=null?r.adminHrs:'—')+'</td>';
+    html+='<td style="color:'+stColor+'">'+r.status.toUpperCase()+'</td>';
+    html+='<td style="color:#6C7086">'+(r.obs||'')+'</td></tr>';
+  });
+  html+='</tbody></table></body></html>';
+
+  var w2=window.open('','_blank');
+  w2.document.write(html);w2.document.close();w2.focus();
+  setTimeout(function(){w2.print();},600);
 }
 
 //=== RESERVAS EXPORT ========================================================
