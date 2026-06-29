@@ -3578,8 +3578,8 @@ function renderReservas(){
     h+='<td style="color:#CDD6F4;white-space:nowrap">'+fmtDate(r.fecha_entrada)+'</td>';
     h+='<td style="color:#CDD6F4;white-space:nowrap">'+fmtDate(r.fecha_salida)+'</td>';
     h+='<td style="color:#CDD6F4;text-align:center">'+r.noches+'n</td>';
-    h+='<td style="color:#CDD6F4">'+r.precio.toFixed(2)+' €</td>';
     h+='<td><span style="background:'+col+'33;color:'+col+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em">'+r.plataforma.toUpperCase()+'</span></td>';
+    h+='<td style="color:#CDD6F4">'+r.precio.toFixed(2)+' €</td>';
     h+='<td style="color:#CDD6F4">'+r.taxa.toFixed(2)+' €</td>';
     h+='<td style="color:#CDD6F4">'+(r.periodo||'')+'</td>';
     var roatColor=r.roat_registrado?'#A6E3A1':'#F38BA8';
