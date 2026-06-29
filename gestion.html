@@ -2942,39 +2942,39 @@ function exportAuditoriaPDF(){
 
   var html='<html><head><meta charset="UTF-8"><style>'
     +'*{box-sizing:border-box}@page{size:A4;margin:12mm}'
-    +'body{font-family:\'Courier New\',monospace;font-size:10px;background:#1E1E2E;color:#CDD6F4;margin:0}'
-    +'.header{background:#0F1117;color:#F9E2AF;padding:14px 18px;border-radius:6px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}'
+    +'body{font-family:\'Courier New\',monospace;font-size:10px;background:#FFF;color:#000;margin:0}'
+    +'.header{background:#F5F5F5;color:#000;padding:14px 18px;border-radius:6px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid #DDD}'
     +'.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}'
-    +'.kpi{background:#252836;border:1px solid #313244;border-radius:6px;padding:10px}'
-    +'.kpi-val{font-size:20px;font-weight:700;color:#A6E3A1}'
-    +'.kpi-lbl{font-size:8px;color:#6C7086;text-transform:uppercase;letter-spacing:.06em}'
+    +'.kpi{background:#F9F9F9;border:1px solid #DDD;border-radius:6px;padding:10px}'
+    +'.kpi-val{font-size:20px;font-weight:700;color:#000}'
+    +'.kpi-lbl{font-size:8px;color:#666;text-transform:uppercase;letter-spacing:.06em}'
     +'table{width:100%;border-collapse:collapse;font-size:9px}'
-    +'th{background:#181825;color:#6C7086;padding:5px 8px;text-align:left;letter-spacing:.06em;text-transform:uppercase}'
-    +'td{padding:4px 8px;border-bottom:1px solid #252836}'
+    +'th{background:#F0F0F0;color:#333;padding:5px 8px;text-align:left;letter-spacing:.06em;text-transform:uppercase;border-bottom:2px solid #999}'
+    +'td{padding:4px 8px;border-bottom:1px solid #DDD;color:#000}'
     +'</style></head><body>';
 
   html+='<div class="header"><div><div style="font-size:14px;font-weight:700">// REGISTRO LIMPIEZA</div>'
-    +'<div style="font-size:9px;color:#6C7086;margin-top:2px">'+mLabel+' · '+wLabel+' · Servap Turistics</div></div>'
+    +'<div style="font-size:9px;color:#666;margin-top:2px">'+mLabel+' · '+wLabel+' · Servap Turistics</div></div>'
     +'<div style="text-align:right"><div style="font-size:22px;font-weight:700">'+total.toFixed(1)+' hrs</div>'
-    +'<div style="font-size:9px;color:#6C7086">TOTAL HORAS</div></div></div>';
+    +'<div style="font-size:9px;color:#666">TOTAL HORAS</div></div></div>';
 
   html+='<div class="kpi-row">';
   html+='<div class="kpi"><div class="kpi-val">'+data.length+'</div><div class="kpi-lbl">Registros</div></div>';
-  html+='<div class="kpi"><div class="kpi-val" style="color:#A6E3A1">'+ok+'</div><div class="kpi-lbl">Confirmados</div></div>';
-  html+='<div class="kpi"><div class="kpi-val" style="color:#F9E2AF">'+pend+'</div><div class="kpi-lbl">Pendientes</div></div>';
-  html+='<div class="kpi"><div class="kpi-val" style="color:#CBA6F7">'+(total/data.length||0).toFixed(1)+'</div><div class="kpi-lbl">Media hrs</div></div>';
+  html+='<div class="kpi"><div class="kpi-val">'+ok+'</div><div class="kpi-lbl">Confirmados</div></div>';
+  html+='<div class="kpi"><div class="kpi-val">'+pend+'</div><div class="kpi-lbl">Pendientes</div></div>';
+  html+='<div class="kpi"><div class="kpi-val">'+(total/data.length||0).toFixed(1)+'</div><div class="kpi-lbl">Media hrs</div></div>';
   html+='</div>';
 
-  html+='<table><thead><tr><th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Hrs Trabajador</th><th>Hrs Admin</th><th>Estado</th><th>Obs</th></tr></thead><tbody>';
+  html+='<table><thead><tr><th>Fecha</th><th>Negocio</th><th>Trabajador</th><th>Hrs Trabajador</th><th>Entrada</th><th>Salida</th><th>Estado</th><th>Obs</th></tr></thead><tbody>';
   data.forEach(function(r){
-    var stColor=r.status==='ok'?'#A6E3A1':r.status==='pending'?'#F9E2AF':'#F38BA8';
-    html+='<tr><td style="color:#A6E3A1">'+fmtDate(r.date)+'</td>';
-    html+='<td style="color:#CBA6F7">'+r.negocio+'</td>';
-    html+='<td style="color:#CDD6F4">'+r.user+'</td>';
-    html+='<td style="color:#FAB387">'+r.hrs+'</td>';
-    html+='<td style="color:#F9E2AF">'+(r.adminHrs!=null?r.adminHrs:'—')+'</td>';
-    html+='<td style="color:'+stColor+'">'+r.status.toUpperCase()+'</td>';
-    html+='<td style="color:#6C7086">'+(r.obs||'')+'</td></tr>';
+    html+='<tr><td>'+fmtDate(r.date)+'</td>';
+    html+='<td>'+r.negocio+'</td>';
+    html+='<td>'+r.user+'</td>';
+    html+='<td>'+r.hrs+'</td>';
+    html+='<td>'+(r.start||'—')+'</td>';
+    html+='<td>'+(r.end||'—')+'</td>';
+    html+='<td style="font-weight:700">'+r.status.toUpperCase()+'</td>';
+    html+='<td style="color:#666">'+(r.obs||'')+'</td></tr>';
   });
   html+='</tbody></table></body></html>';
 
