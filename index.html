@@ -865,7 +865,55 @@ tbody tr:hover{background:#F8F9FC}
   </div><!-- /content -->
 </div><!-- /main -->
 
-<!-- LOGIN OVERLAY -->
+<!-- MODAL: Editar Registro de Limpieza -->
+  <div id="modal-edit-rec" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1001;align-items:center;justify-content:center;padding:16px">
+    <div style="background:white;border-radius:12px;padding:24px;width:100%;max-width:520px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <h3 style="font-size:15px;font-weight:700">✎ Editar Registro</h3>
+        <button onclick="closeEditRec()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#999">&#215;</button>
+      </div>
+      <input type="hidden" id="edit-rec-idx">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Fecha</label>
+          <input type="date" id="edit-rec-date" style="width:100%;padding:8px 10px;border:1px solid #E2E5ED;border-radius:6px;font-size:13px">
+        </div>
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Trabajador</label>
+          <select id="edit-rec-user" style="width:100%;padding:8px 10px;border:1px solid #E2E5ED;border-radius:6px;font-size:13px"></select>
+        </div>
+      </div>
+      <div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Negocio / Piso</label>
+        <select id="edit-rec-negocio" style="width:100%;padding:8px 10px;border:1px solid #E2E5ED;border-radius:6px;font-size:13px"></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Hora inicio</label>
+          <input type="time" id="edit-rec-start" style="width:100%;padding:8px 10px;border:1px solid #E2E5ED;border-radius:6px;font-size:16px;font-weight:600;text-align:center" onchange="calcEditRecHrs()">
+        </div>
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Hora fin</label>
+          <input type="time" id="edit-rec-end" style="width:100%;padding:8px 10px;border:1px solid #E2E5ED;border-radius:6px;font-size:16px;font-weight:600;text-align:center" onchange="calcEditRecHrs()">
+        </div>
+      </div>
+      <div id="edit-rec-hrs-pill" style="display:none;margin-bottom:12px">
+        <div style="background:#EEF3FF;color:#3B5BDB;border-radius:50px;padding:8px 18px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px">&#9201; <span id="edit-rec-hrs-text"></span></div>
+      </div>
+      <div style="margin-bottom:12px"><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Estado</label>
+        <select id="edit-rec-status" style="width:100%;padding:8px 10px;border:1px solid #E2E5ED;border-radius:6px;font-size:13px">
+          <option value="pending">Pendiente</option>
+          <option value="ok">Confirmado (OK)</option>
+          <option value="admin-only">Admin only</option>
+          <option value="mismatch">Conflicto</option>
+        </select>
+      </div>
+      <div style="margin-bottom:18px"><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Observaciones</label>
+        <input type="text" id="edit-rec-obs" placeholder="Notas adicionales..." style="width:100%;padding:8px 10px;border:1px solid #E2E5ED;border-radius:6px;font-size:13px">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="closeEditRec()" style="padding:9px 18px;background:#F4F5F8;border:1px solid #E2E5ED;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cancelar</button>
+        <button onclick="saveEditRec()" style="padding:9px 18px;background:#4F7FFF;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN OVERLAY -->
 <div id="login-overlay" style="display:flex;position:fixed;inset:0;background:var(--navy);z-index:9999;align-items:center;justify-content:center;padding:20px">
   <div style="background:white;border-radius:16px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">
     <div style="text-align:center;margin-bottom:28px">
@@ -1463,31 +1511,79 @@ function rejRec(idx){
   saveRec(); saveRecToSupa(records[idx]); setPendBadge();renderAudit();toast('Conflicto marcado');
 }
 function editRec(idx){
-  var r=records[idx];
-  if(!r) return;
-  var newDate=prompt('Fecha (YYYY-MM-DD):',r.date);
-  if(!newDate||!newDate.trim()) return;
-  var newUser=prompt('Trabajador:',r.user);
-  if(!newUser||!newUser.trim()) return;
-  var newNeg=prompt('Negocio/Piso:',r.negocio);
-  if(!newNeg||!newNeg.trim()) return;
-  var newStart=prompt('Hora inicio (HH:MM):',r.start||'');
-  var newEnd=prompt('Hora fin (HH:MM):',r.end||'');
-  var newObs=prompt('Observaciones:',r.obs||'');
-  // Recalculate hours
+  var r=records[idx]; if(!r) return;
+  var modal=document.getElementById('modal-edit-rec');
+  document.getElementById('edit-rec-idx').value=idx;
+  document.getElementById('edit-rec-date').value=r.date||'';
+  document.getElementById('edit-rec-start').value=r.start||'';
+  document.getElementById('edit-rec-end').value=r.end||'';
+  document.getElementById('edit-rec-obs').value=r.obs||'';
+  document.getElementById('edit-rec-status').value=r.status||'pending';
+  // Populate worker select
+  var cfg=getCfg();
+  var wu=document.getElementById('edit-rec-user');
+  wu.innerHTML=''; cfg.workers.forEach(function(w){
+    var o=document.createElement('option'); o.value=w; o.textContent=w;
+    if(w===r.user) o.selected=true; wu.appendChild(o);
+  });
+  // Populate negocio select
+  var nu=document.getElementById('edit-rec-negocio');
+  nu.innerHTML=''; var allN=[];
+  Object.keys(cfg.grupos).forEach(function(g){allN=allN.concat(cfg.grupos[g]);});
+  allN.sort().forEach(function(n){
+    var o=document.createElement('option'); o.value=n; o.textContent=n;
+    if(n===r.negocio) o.selected=true; nu.appendChild(o);
+  });
+  // If current negocio not in list, add it
+  if(r.negocio && allN.indexOf(r.negocio)<0){
+    var o=document.createElement('option'); o.value=r.negocio; o.textContent=r.negocio+' (sin clasificar)';
+    o.selected=true; nu.insertBefore(o,nu.firstChild);
+  }
+  calcEditRecHrs();
+  modal.style.display='flex';
+}
+function calcEditRecHrs(){
+  var s=document.getElementById('edit-rec-start').value;
+  var e=document.getElementById('edit-rec-end').value;
+  var pill=document.getElementById('edit-rec-hrs-pill');
+  if(s&&e){
+    var sp=s.split(':'),ep=e.split(':');
+    var hrs=Math.round(((+ep[0]*60+ +ep[1])-(+sp[0]*60+ +sp[1]))/60*100)/100;
+    if(hrs>0){
+      document.getElementById('edit-rec-hrs-text').textContent=fmtHrs(hrs);
+      pill.style.display='block'; return;
+    }
+  }
+  pill.style.display='none';
+}
+function closeEditRec(){
+  document.getElementById('modal-edit-rec').style.display='none';
+}
+function saveEditRec(){
+  var idx=+document.getElementById('edit-rec-idx').value;
+  var r=records[idx]; if(!r) return;
+  var newDate=document.getElementById('edit-rec-date').value;
+  var newUser=document.getElementById('edit-rec-user').value;
+  var newNeg=document.getElementById('edit-rec-negocio').value;
+  var newStart=document.getElementById('edit-rec-start').value;
+  var newEnd=document.getElementById('edit-rec-end').value;
+  var newObs=document.getElementById('edit-rec-obs').value;
+  var newStatus=document.getElementById('edit-rec-status').value;
+  if(!newDate||!newUser||!newNeg) return toast('Rellena los campos obligatorios');
   var newHrs=r.hrs;
   if(newStart&&newEnd){
     var sp=newStart.split(':'),ep=newEnd.split(':');
     newHrs=Math.round(((+ep[0]*60+ +ep[1])-(+sp[0]*60+ +sp[1]))/60*100)/100;
   }
+  var oldInfo=r.user+' | '+r.negocio;
   records[idx]=Object.assign({},r,{
-    date:newDate.trim(),user:newUser.trim(),negocio:newNeg.trim(),
-    start:newStart||r.start,end:newEnd||r.end,hrs:newHrs,obs:newObs||''
+    date:newDate,user:newUser,negocio:newNeg,
+    start:newStart||r.start,end:newEnd||r.end,
+    hrs:newHrs,obs:newObs,status:newStatus
   });
-  saveRec();
-  saveRecToSupa(records[idx]);
-  logAudit('editar',r.id,r.user+' → '+newUser.trim()+' | '+r.negocio+' → '+newNeg.trim());
-  renderAudit();
+  saveRec(); saveRecToSupa(records[idx]);
+  logAudit('editar',r.id,oldInfo+' → '+newUser+' | '+newNeg);
+  closeEditRec(); renderAudit(); setPendBadge();
   toast('Registro actualizado');
 }
 
@@ -1500,6 +1596,14 @@ function delRec(idx){
   records.splice(idx,1);
   saveRec();setPendBadge();renderAudit();toast('Registro eliminado');
 }
+function filterAuditByNeg(neg){
+  showTab('auditoria');
+  setTimeout(function(){
+    var sel=document.getElementById('filter-neg-audit');
+    if(sel){ sel.value=neg; renderAudit(); }
+  },300);
+}
+
 function renderAudit(){
   var fm=document.getElementById('filter-month-audit').value;
   var fw=document.getElementById('filter-worker').value;
@@ -1603,15 +1707,18 @@ function renderDashboard(){
   if(Object.keys(unclassified).length>0){
     var uc=Object.keys(unclassified).reduce(function(s,n){return s+unclassified[n];},0);
     ph+='<div style="margin-bottom:20px">';
-    ph+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px dashed #CCC">';
-    ph+='<div style="width:10px;height:10px;border-radius:3px;background:#CCC"></div>';
-    ph+='<b style="font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#999">Sin clasificar</b>';
-    ph+='<span style="margin-left:auto;background:#EEE;color:#666;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">'+uc.toFixed(1)+' hrs</span>';
-    ph+='</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px">';
+    ph+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px dashed #F59E0B">';
+    ph+='<div style="width:10px;height:10px;border-radius:3px;background:#F59E0B"></div>';
+    ph+='<b style="font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#D97706">⚠ Sin clasificar</b>';
+    ph+='<span style="margin-left:auto;background:#FEF3C7;color:#D97706;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">'+uc.toFixed(1)+' hrs</span>';
+    ph+='</div>';
+    ph+='<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#92400E">Estos negocios no están en la lista de configuración. Ve a <b>Configuración → Pisos</b> para clasificarlos correctamente.</div>';
+    ph+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px">';
     Object.keys(unclassified).forEach(function(n){
-      ph+='<div style="background:white;border:1px solid #E8E8E8;border-top:3px solid #CCC;border-radius:10px;padding:12px 14px">';
-      ph+='<div style="font-size:22px;font-weight:700;color:#999;line-height:1">'+unclassified[n].toFixed(1)+'</div>';
-      ph+='<div style="font-size:11px;color:#666;margin-top:4px;line-height:1.3">'+n+'</div>';
+      ph+='<div style="background:white;border:1px solid #FDE68A;border-top:3px solid #F59E0B;border-radius:10px;padding:12px 14px;cursor:pointer" onclick="filterAuditByNeg(\''+n+'\')" title="Ver en Auditoría">';
+      ph+='<div style="font-size:22px;font-weight:700;color:#D97706;line-height:1">'+unclassified[n].toFixed(1)+'</div>';
+      ph+='<div style="font-size:11px;color:#92400E;margin-top:4px;line-height:1.3">'+n+'</div>';
+      ph+='<div style="font-size:9px;color:#F59E0B;margin-top:4px">Ver en auditoría →</div>';
       ph+='</div>';
     });
     ph+='</div></div>';
