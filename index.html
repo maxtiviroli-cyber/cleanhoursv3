@@ -648,11 +648,11 @@ tbody tr:hover{background:#F8F9FC}
       <div style="min-width:max-content">
         <table style="width:100%;border-collapse:collapse;font-size:11px" id="audit-table">
           <thead><tr id="audit-thead">
-            <th onclick="sortAudit('date')" style="cursor:pointer;user-select:none" title="Ordenar por fecha">Fecha <span id="sort-date">↓</span></th>
-            <th onclick="sortAudit('negocio')" style="cursor:pointer;user-select:none" title="Ordenar por negocio">Negocio <span id="sort-negocio"></span></th>
-            <th onclick="sortAudit('user')" style="cursor:pointer;user-select:none" title="Ordenar por trabajador">Trabajador <span id="sort-user"></span></th>
-            <th onclick="sortAudit('hrs')" style="cursor:pointer;user-select:none" title="Ordenar por horas">Hrs trabajador <span id="sort-hrs"></span></th>
-            <th>Hrs admin</th><th onclick="sortAudit('status')" style="cursor:pointer;user-select:none">Estado <span id="sort-status"></span></th><th></th>
+            <th onclick="sortAudit('date')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por fecha">FECHA <span id="sort-date" style="color:#89B4FA">↓</span></th>
+            <th onclick="sortAudit('negocio')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por negocio">NEGOCIO <span id="sort-negocio" style="color:#89B4FA"></span></th>
+            <th onclick="sortAudit('user')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por trabajador">TRABAJADOR <span id="sort-user" style="color:#89B4FA"></span></th>
+            <th onclick="sortAudit('hrs')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por horas">HRS TRAB <span id="sort-hrs" style="color:#89B4FA"></span></th>
+            <th>Hrs admin</th><th onclick="sortAudit('status')" style="cursor:pointer;user-select:none;background:#101020">ESTADO <span id="sort-status" style="color:#89B4FA"></span></th><th></th>
           </tr></thead>
           <tbody id="audit-tbody"></tbody>
         </table>
@@ -1658,6 +1658,11 @@ function renderAudit(){
     h+='<td>'+badge+'</td><td>'+acts+'</td></tr>';
   });
   tb.innerHTML=h;
+  // Update sort indicators after render
+  ['date','negocio','user','hrs','status'].forEach(function(f){
+    var el=document.getElementById('sort-'+f);
+    if(el) el.textContent=f===auditSortField?(auditSortDir===-1?'↓':'↑'):'';
+  });
 }
 
 //=== DASHBOARD ==============================================================
@@ -2916,12 +2921,6 @@ function exportAuditoriaPDF(){
     }
     return auditSortDir*(String(av).localeCompare(String(bv)));
   });
-  // Update sort indicators
-  ['date','negocio','user','hrs','status'].forEach(function(f){
-    var el=document.getElementById('sort-'+f);
-    if(el) el.textContent=f===auditSortField?(auditSortDir===-1?'↓':'↑'):'';
-  });
-
   var mLabel=fm?fm:'Todos los meses';
   var wLabel=fw?fw:'Todos';
   var total=data.reduce(function(s,r){return s+(r.hrs||0);},0);
@@ -3154,8 +3153,8 @@ function renderInformeReservas(){
     h += '</div>';
 
     // Detail table
-    var TH='padding:3px 8px;font-size:9px;font-family:\'DM Mono\',monospace;letter-spacing:.06em';
-    h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px;font-family:\'DM Mono\',monospace"><thead><tr>';
+    var TH='padding:3px 8px;font-size:9px;font-family:\'DM Mono\',monospace;letter-spacing:.06em;white-space:nowrap';
+    h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px;font-family:\'DM Mono\',monospace;table-layout:fixed"><colgroup><col style="width:90px"><col style="width:90px"><col style="width:80px"><col style="width:auto"><col style="width:90px"><col style="width:30px"><col style="width:40px"><col style="width:90px"></colgroup><thead><tr>';
     h += '<th style="'+TH+'">LLEGADA</th><th style="'+TH+'">SALIDA</th><th style="'+TH+'">PLATAFORMA</th><th style="'+TH+'">HUESPED</th><th style="'+TH+'">PAIS</th><th style="'+TH+';text-align:center">N</th><th style="'+TH+';text-align:center">PERS</th><th style="'+TH+';text-align:right">TOTAL</th>';
     h += '</tr></thead><tbody>';
     pData.forEach(function(r){
