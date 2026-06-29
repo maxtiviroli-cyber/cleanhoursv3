@@ -649,10 +649,10 @@ tbody tr:hover{background:#F8F9FC}
         <table style="width:100%;border-collapse:collapse;font-size:11px" id="audit-table">
           <thead><tr id="audit-thead">
             <th onclick="sortAudit('date')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por fecha">FECHA <span id="sort-date" style="color:#89B4FA">↓</span></th>
-            <th onclick="sortAudit('negocio')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por negocio">NEGOCIO <span id="sort-negocio" style="color:#89B4FA"></span></th>
-            <th onclick="sortAudit('user')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por trabajador">TRABAJADOR <span id="sort-user" style="color:#89B4FA"></span></th>
-            <th onclick="sortAudit('hrs')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por horas">HRS TRAB <span id="sort-hrs" style="color:#89B4FA"></span></th>
-            <th>Hrs admin</th><th onclick="sortAudit('status')" style="cursor:pointer;user-select:none;background:#101020">ESTADO <span id="sort-status" style="color:#89B4FA"></span></th><th></th>
+            <th onclick="sortAudit('negocio')" style="cursor:pointer;user-select:none;background:#101020" onmouseover="this.style.background='#1a1a30'" onmouseout="this.style.background='#101020'" title="Ordenar por negocio">NEGOCIO <span id="sort-negocio" style="color:#89B4FA;opacity:.35">⇅</span></th>
+            <th onclick="sortAudit('user')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por trabajador">TRABAJADOR <span id="sort-user" style="color:#89B4FA;opacity:.35">⇅</span></th>
+            <th onclick="sortAudit('hrs')" style="cursor:pointer;user-select:none;background:#101020" title="Ordenar por horas">HRS TRAB <span id="sort-hrs" style="color:#89B4FA;opacity:.35">⇅</span></th>
+            <th>Hrs admin</th><th onclick="sortAudit('status')" style="cursor:pointer;user-select:none;background:#101020">ESTADO <span id="sort-status" style="color:#89B4FA;opacity:.35">⇅</span></th><th></th>
           </tr></thead>
           <tbody id="audit-tbody"></tbody>
         </table>
@@ -1661,7 +1661,11 @@ function renderAudit(){
   // Update sort indicators after render
   ['date','negocio','user','hrs','status'].forEach(function(f){
     var el=document.getElementById('sort-'+f);
-    if(el) el.textContent=f===auditSortField?(auditSortDir===-1?'↓':'↑'):'';
+    if(el){
+      if(f===auditSortField) el.textContent=auditSortDir===-1?'↓':'↑';
+      else el.textContent='⇅';
+      el.style.opacity=f===auditSortField?'1':'0.35';
+    }
   });
 }
 
