@@ -1256,6 +1256,16 @@ function logAudit(accion,registroId,detalle){
   sheetPost({tipo:'auditoria_log',fecha:new Date().toLocaleString('es-ES'),
     usuario:u,accion:accion,registro_id:registroId||'',detalle:detalle||''});
   auditLog({tipo:'auditoria',accion:accion,detalle:detalle});
+  // Persist to Supabase audit_log table
+  try{
+    supa.from('audit_log').insert({
+      fecha:new Date().toISOString(),
+      usuario:u,
+      tipo:'auditoria',
+      accion:accion,
+      detalle:(registroId?'[ID:'+registroId+'] ':'')+(detalle||'')
+    }).then(function(r){if(r.error)console.warn('audit_log insert error:',r.error);});
+  }catch(e){console.warn('audit_log write failed:',e);}
 }
 // Local audit log (localStorage)
 var auditHistory=(function(){try{return JSON.parse(localStorage.getItem('audit_log')||'[]');}catch(e){return [];}})();
