@@ -980,7 +980,7 @@ function initSupa(){
 // Supabase helper functions
 async function sbGet(table, filters){
   if(!supa) return [];
-  var q = supa.from(table).select('*').limit(1000);
+  var q = supa.from(table).select('*').limit(10000);
   if(filters) Object.keys(filters).forEach(function(k){ q = q.eq(k, filters[k]); });
   var res = await q;
   if(res.error){ console.warn('sbGet error:', res.error); return []; }
@@ -1067,10 +1067,12 @@ const MAY_RECORDS = [
 ];
 
 //=== ESTADO =================================================================
+var supaReady = false; // Flag: Supabase data loaded
 var records = (function(){
   var stored = null;
   try { stored = JSON.parse(localStorage.getItem('horas_records')); } catch(e){}
-  var base = stored || MAY_RECORDS.map(function(r){ return Object.assign({},r); });
+  // Never fall back to hardcoded data - start empty if nothing in localStorage
+  var base = stored || [];
   return base.map(function(r){ return Object.assign({},r,{negocio:NOMBRE_MAP[r.negocio]||r.negocio}); });
 })();
 var apiKey = localStorage.getItem('horas_apikey')||'';
@@ -1079,8 +1081,9 @@ var apiKey = localStorage.getItem('horas_apikey')||'';
 async function loadFromSupabase(){
   if(!supa) return;
   try {
-    // Load records
+    // Load records — filter out soft-deleted (accion='null')
     var recs = await sbGet('registros');
+    recs = recs.filter(function(r){ return r.accion!=='null' && r.accion!=='deleted'; });
     if(recs.length > 0){
       records = recs.map(function(r){
         return {
@@ -1092,6 +1095,8 @@ async function loadFromSupabase(){
       });
       try{localStorage.setItem('horas_records',JSON.stringify(records));}catch(e){}
     }
+    supaReady = true;
+    console.log('Supabase: '+records.length+' registros activos cargados');
     // Load config
     var cfgRows = await sbGet('config');
     if(cfgRows.length > 0){
@@ -1145,27 +1150,24 @@ async function loadFromSupabase(){
   }
 }
 
-// ID consecutivo (6 digitos desde 111111)
+// Unique ID: timestamp + random suffix (avoids collisions across sessions)
 function getNextId(){
-  var n=111111;
-  try{
-    var stored=localStorage.getItem('rec_next_id');
-    if(stored) n=Math.max(parseInt(stored)||111111, 111111);
-  }catch(e){}
-  try{ localStorage.setItem('rec_next_id', String(n+1)); }catch(e){}
-  return n;
+  return Date.now()*100 + Math.floor(Math.random()*100);
 }
-records = records.map(function(r,i){ if(!r.id) r.id=111111+i; return r; });
+records = records.filter(function(r){ return r.accion!=='null'; });
+records.forEach(function(r,i){ if(!r.id) r.id=getNextId()+i; });
 var pendingPreview = null;
 var chartS = null;
 var waMessages = [];
 
 //=== PERSISTENCIA ===========================================================
 function saveRec(){
+  if(!supaReady){ console.warn('saveRec bloqueado: Supabase aún no cargó'); return; }
   try{localStorage.setItem('horas_records',JSON.stringify(records));}catch(e){}
 }
 async function saveRecToSupa(rec){
   if(!supa) return;
+  if(!supaReady){ console.warn('saveRecToSupa bloqueado: Supabase aún no cargó'); return; }
   try {
     await sbUpsert('registros', {
       id: rec.id, fecha: rec.date, user_name: rec.user, negocio: rec.negocio,
@@ -1178,8 +1180,9 @@ async function saveRecToSupa(rec){
 async function deleteRecFromSupa(rec){
   if(!supa) return;
   try {
-    // Mark as deleted with accion='null'
-    await sbUpdate('registros', rec.id, {accion:'null'});
+    // Actually delete from Supabase (not soft-delete)
+    await sbDelete('registros', rec.id);
+    logAudit('eliminar_registro', rec.id, rec.date+' '+rec.user+' '+rec.negocio+' '+rec.hrs+'hrs');
   } catch(err){ console.warn('Supabase deleteRec error:', err); }
 }
 function getCfg(){
@@ -3792,11 +3795,24 @@ function renderPlanning(){
   }
   // Show login first
   document.getElementById('login-overlay').style.display='flex';
-  // Load from Supabase in background
+  // Show loading state
+  var loadingMsg = document.createElement('div');
+  loadingMsg.id='supa-loading';
+  loadingMsg.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#F9E2AF;color:#1E1E2E;padding:8px 20px;border-radius:6px;font-size:12px;font-weight:700;z-index:9999;font-family:DM Mono,monospace';
+  loadingMsg.textContent='⟳ Sincronizando con Supabase...';
+  document.body.appendChild(loadingMsg);
+  // Load from Supabase — MUST complete before user can interact
   loadFromSupabase().then(function(){
     console.log('Datos sincronizados con Supabase');
+    var lm=document.getElementById('supa-loading');
+    if(lm){ lm.style.background='#A6E3A1'; lm.textContent='✓ Datos sincronizados'; setTimeout(function(){lm.remove();},2000); }
+    buildSelects();
+    setPendBadge();
   }).catch(function(e){
     console.warn('Error sincronizando con Supabase, usando datos locales:', e);
+    supaReady = true; // Allow local operation as fallback
+    var lm=document.getElementById('supa-loading');
+    if(lm){ lm.style.background='#F38BA8'; lm.textContent='⚠ Sin conexión Supabase — modo local'; setTimeout(function(){lm.remove();},4000); }
     buildSelects();
     setPendBadge();
   });
