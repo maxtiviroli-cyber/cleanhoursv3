@@ -247,6 +247,7 @@ tbody tr:hover{background:#F8F9FC}
       <button class="sb-item" id="tab-dashboard" onclick="showTab('dashboard')"><span class="sb-icon">&#128202;</span> Dashboard</button>
       <button class="sb-item" id="tab-calendario" onclick="showTab('calendario')"><span class="sb-icon">&#128336;</span> Calendario</button>
       <button class="sb-item" id="tab-informe" onclick="showTab('informe')"><span class="sb-icon">&#128196;</span> Informes</button>
+      <button class="sb-item" id="tab-importwa" onclick="showTab('importwa')"><span class="sb-icon">&#128172;</span> Importar WA <span class="sb-badge" id="wa-import-badge" style="display:none;background:#F9E2AF;color:#1E1E2E">!</span></button>
     </div>
   </div>
 
@@ -797,6 +798,70 @@ tbody tr:hover{background:#F8F9FC}
     <div id="informe-output"></div>
   </div>
 
+  <!-- ══ PANEL: IMPORTAR WHATSAPP ════════════════════════ -->
+  <div class="panel" id="panel-importwa">
+    <div style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h2 style="font-size:20px;font-weight:700">Importar WhatsApp</h2>
+          <div style="font-size:13px;color:var(--text2)">Importa horas desde el chat de WhatsApp del equipo</div>
+        </div>
+        <button class="btn btn-sm" style="background:var(--primary);color:#fff;font-size:11px" onclick="requestWANotification()">&#128276; Activar recordatorio</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">&#128172; Paso 1: Sube el chat exportado</div><div class="card-sub">WhatsApp → Grupo → ⋮ → Más → Exportar chat → Sin archivos</div></div></div>
+      <div class="card-body">
+        <div id="wa-dropzone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:border-color 0.2s"
+          onclick="document.getElementById('wa-file-input').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
+          ondragleave="this.style.borderColor='var(--border)'"
+          ondrop="event.preventDefault();this.style.borderColor='var(--border)';handleWAFile(event.dataTransfer.files[0])">
+          <div style="font-size:32px;margin-bottom:8px">&#128206;</div>
+          <div style="font-size:13px;color:var(--text2)">Arrastra el archivo .txt aquí o haz clic para seleccionar</div>
+          <input type="file" id="wa-file-input" accept=".txt" style="display:none" onchange="handleWAFile(this.files[0])">
+        </div>
+        <div id="wa-file-info" style="display:none;margin-top:12px;padding:10px;background:var(--card);border-radius:var(--radius);font-size:12px;font-family:'DM Mono',monospace"></div>
+      </div>
+    </div>
+
+    <div class="card" id="wa-step2" style="display:none">
+      <div class="card-header">
+        <div><div class="card-title">&#129302; Paso 2: Interpretación IA</div><div class="card-sub">La IA analiza los mensajes y extrae las horas</div></div>
+        <button class="btn btn-sm" style="background:var(--primary);color:#fff" onclick="processWAChat()" id="wa-process-btn">&#9654; Procesar</button>
+      </div>
+      <div class="card-body">
+        <div id="wa-processing" style="display:none;text-align:center;padding:20px">
+          <div style="font-size:14px;color:var(--primary)">&#9203; Procesando mensajes con IA...</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px">Esto puede tardar unos segundos</div>
+        </div>
+        <div id="wa-error" style="display:none;padding:12px;background:#F38BA833;border:1px solid #F38BA8;border-radius:var(--radius);color:#F38BA8;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+
+    <div class="card" id="wa-step3" style="display:none">
+      <div class="card-header">
+        <div><div class="card-title">&#9989; Paso 3: Revisa y confirma</div><div class="card-sub">Verifica los registros antes de importar</div></div>
+        <div>
+          <button class="btn btn-sm" style="background:#A6E3A1;color:#1E1E2E;font-weight:700" onclick="confirmWAImport()">&#10004; Confirmar e importar</button>
+          <button class="btn btn-sm btn-light" onclick="cancelWAImport()">Cancelar</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="wa-results-table" style="overflow-x:auto"></div>
+        <div id="wa-summary" style="margin-top:12px;padding:10px;background:var(--card);border-radius:var(--radius);font-size:12px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">&#128214; Historial de importaciones</div></div></div>
+      <div class="card-body">
+        <div id="wa-import-history" style="font-size:12px;color:var(--text2)">Sin importaciones recientes</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ PANEL: CONFIG ══════════════════════════════════ -->
   <div class="panel" id="panel-config">
     <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Configuracion</h2><div style="font-size:13px;color:var(--text2)">Gestiona trabajadores, pisos, admins y usuarios</div></div>
@@ -1303,7 +1368,7 @@ function showTab(name){
     var p=document.getElementById('panel-'+t); if(p) p.className='panel'+(t===name?' active':'');
     var b=document.getElementById('tab-'+t);   if(b) b.className='sidebar-item'+(t===name?' active':'');
   });
-  var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion',calendario:'Calendario',informe:'Informes',planning:'Planning','reservas-lista':'Reservas','reservas-inf':'Informes Reservas','facturas-emit':'Facturas Emitidas','facturas-rec':'Facturas Recibidas','nueva-factura':'Nueva Factura'};
+  var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion',calendario:'Calendario',informe:'Informes',planning:'Planning','reservas-lista':'Reservas','reservas-inf':'Informes Reservas','facturas-emit':'Facturas Emitidas','facturas-rec':'Facturas Recibidas','nueva-factura':'Nueva Factura',importwa:'Importar WhatsApp'};
   document.getElementById('page-title').textContent=titles[name]||name;
   var crumb=document.getElementById('page-crumb'); if(crumb) crumb.textContent=titles[name]||name;
   if(name==='auditoria') renderAudit();
@@ -3126,7 +3191,20 @@ function calcFinancials(total, adelanto){
   return { total:total, eghut:eghut, igi:igi, neto:neto, gastos:gastos, inrn:inrn, propiet:propiet, adelanto:adelanto, pendiente:pendiente };
 }
 
-function fmt2(n){ return Number(n||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+function fmt2(n){
+  var v=Number(n||0).toFixed(2);
+  var parts=v.split('.');
+  var int=parts[0];
+  var dec=parts[1];
+  var neg=int.charAt(0)==='-';
+  if(neg) int=int.substring(1);
+  var out='';
+  for(var i=int.length-1,c=0;i>=0;i--,c++){
+    if(c>0&&c%3===0) out='.'+out;
+    out=int.charAt(i)+out;
+  }
+  return (neg?'-':'')+out+','+dec+' €';
+}
 
 function renderInformeReservas(){
   var data = getInfResData();
@@ -3181,7 +3259,7 @@ function renderInformeReservas(){
     // Detail table
     var TH='padding:3px 8px;font-size:9px;font-family:\'DM Mono\',monospace;letter-spacing:.06em;white-space:nowrap';
     h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px;font-family:\'DM Mono\',monospace"><thead><tr>';
-    h += '<th style="'+TH+'">LLEGADA</th><th style="'+TH+'">SALIDA</th><th style="'+TH+'">PLATAFORMA</th><th style="'+TH+'">HUESPED</th><th style="'+TH+'">PAIS</th><th style="'+TH+';text-align:center">N</th><th style="'+TH+';text-align:center">PERS</th><th style="'+TH+';text-align:right">TOTAL</th>';
+    h += '<th style="'+TH+'">LLEGADA</th><th style="'+TH+'">SALIDA</th><th style="'+TH+'">PLATAFORMA</th><th style="'+TH+'">HUESPED</th><th style="'+TH+';text-align:center">N</th><th style="'+TH+';text-align:center">PERS</th><th style="'+TH+';text-align:right">TOTAL</th>';
     h += '</tr></thead><tbody>';
     pData.forEach(function(r){
       var col = PLAT_COLORS[r.plataforma]||'#6B7280';
@@ -3191,7 +3269,6 @@ function renderInformeReservas(){
       h += '<td style="'+td+';white-space:nowrap;font-family:\'DM Mono\',monospace">'+fmtDate(r.fecha_salida)+'</td>';
       h += '<td style="'+td+'"><span style="background:'+col+'22;color:'+col+';padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;font-family:\'DM Mono\',monospace">'+r.plataforma.toUpperCase()+'</span></td>';
       h += '<td style="'+td+'">'+r.nombre_huesped+'</td>';
-      h += '<td style="'+td+';color:var(--text2)">'+(r.pais||'—')+'</td>';
       h += '<td style="'+td+';text-align:center;font-family:\'DM Mono\',monospace">'+r.noches+'</td>';
       h += '<td style="'+td+';text-align:center;font-family:\'DM Mono\',monospace">'+((r.personas&&r.personas>0)?r.personas:'—')+'</td>';
       h += '<td style="'+td+';text-align:right;font-weight:700;font-family:\'DM Mono\',monospace">'+fmt2(r.precio)+'</td>';
@@ -3199,16 +3276,16 @@ function renderInformeReservas(){
     });
     // Total row
     h += '<tr style="background:#F8F9FC;border-top:2px solid #E2E5ED">';
-    h += '<td colspan="7" style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px">Total periodo</td>';
+    h += '<td colspan="6" style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px">Total periodo</td>';
     h += '<td style="text-align:right;font-weight:700;font-size:14px;font-family:\'DM Mono\',monospace">'+fmt2(totalPeriodo)+'</td>';
     h += '</tr>';
     h += '</tbody></table></div>';
 
     // Financial summary
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid var(--border)">';
-    // Left: por plataforma
+    // Left: por plataforma + facturas
     h += '<div style="padding:16px;border-right:1px solid var(--border)">';
-    h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:10px">Por plataforma</div>';
+    h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:10px">Reservas por plataforma</div>';
     Object.keys(plats).forEach(function(pl){
       var col = PLAT_COLORS[pl]||'#6B7280';
       var pct = totalPeriodo>0?Math.round(plats[pl]/totalPeriodo*100):0;
@@ -3218,6 +3295,15 @@ function renderInformeReservas(){
       h += '<span style="font-size:12px;font-weight:600;font-family:\'DM Mono\',monospace;min-width:80px;text-align:right">'+fmt2(plats[pl])+'</span>';
       h += '</div>';
     });
+    // Facturas section
+    h += '<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">';
+    h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:8px">Facturas</div>';
+    h += '<div id="inf-facturas-list-'+p.replace(/\s/g,'_')+'"></div>';
+    h += '<div style="display:flex;gap:6px;align-items:center;margin-top:6px">';
+    h += '<input type="text" placeholder="N° Factura" id="inf-fact-num-'+p.replace(/\s/g,'_')+'" style="flex:1;font-size:11px;padding:4px 8px;border:1px solid #E2E5ED;border-radius:var(--radius)">';
+    h += '<input type="number" step="0.01" placeholder="Monto" id="inf-fact-monto-'+p.replace(/\s/g,'_')+'" style="width:100px;font-size:11px;padding:4px 8px;border:1px solid #E2E5ED;border-radius:var(--radius);font-family:\'DM Mono\',monospace">';
+    h += '<button class="btn btn-sm" style="background:var(--primary);color:#fff;font-size:10px;padding:4px 10px" onclick="addInfFactura(\''+p.replace(/'/g,"\\'")+'\')">+</button>';
+    h += '</div></div>';
     h += '</div>';
     // Right: financial breakdown
     h += '<div style="padding:16px">';
@@ -3229,11 +3315,13 @@ function renderInformeReservas(){
       {label:'Monto neto',val:fin.neto,sign:1,bold:true,bg:'#F0FDF4'},
       {label:'Gastos 20%',val:fin.gastos,sign:1,bold:false,bg:'#FFFBEB',note:true},
       {label:'INRN 10% — RETENCION',val:fin.inrn,sign:-1,bold:false,bg:'#FFFBEB'},
-      {label:'TOTAL PROPIETARIO',val:fin.propiet,sign:1,bold:true,bg:'#EEF3FF'},
     ];
     if(adelanto>0){
+      rows2.push({label:'TOTAL PROPIETARIO',val:fin.propiet,sign:1,bold:true,bg:'#EEF3FF'});
       rows2.push({label:'Adelanto pagado',val:adelanto,sign:-1,bold:false,bg:'#F3F4F6'});
       rows2.push({label:'PENDIENTE TRANSFERENCIA',val:fin.pendiente,sign:1,bold:true,bg:'#ECFDF5'});
+    } else {
+      rows2.push({label:'TOTAL PROPIETARIO',val:fin.propiet,sign:1,bold:true,bg:'#EEF3FF'});
     }
     rows2.forEach(function(row){
       var isNeg=row.sign<0;
@@ -3256,6 +3344,8 @@ function exportInformeReservasExcel(){
 
   var piso   = document.getElementById('inf-res-piso').value;
   var periodo= document.getElementById('inf-res-periodo').value;
+  var adelantoEl = document.getElementById('inf-res-adelanto');
+  var adelanto = adelantoEl ? parseFloat(adelantoEl.value)||0 : 0;
 
   // Group by piso
   var pisos = piso==='all' ? [...new Set(data.map(function(r){return r.piso;}))] : [piso];
@@ -3265,25 +3355,40 @@ function exportInformeReservasExcel(){
     var pData = data.filter(function(r){return r.piso===p;});
     if(!pData.length) return;
     var total = pData.reduce(function(s,r){return s+(r.precio||0);},0);
-    var fin = calcFinancials(total);
+    var fin = calcFinancials(total, adelanto);
 
     // Header block
-    rows.push(['APARTAMENTO',p,'','','','','','']);
-    rows.push(['PERIODO',periodo==='all'?'Todos':periodo,'','','','','','']);
+    rows.push(['APARTAMENTO',p,'','','','','']);
+    rows.push(['PERIODO',periodo==='all'?'Todos':periodo,'','','','','']);
     rows.push([]);
-    rows.push(['LLEGADA','SALIDA','PLATAFORMA','NOMBRE','NOCHES','PERSONAS','PAIS','TOTAL']);
+    rows.push(['LLEGADA','SALIDA','PLATAFORMA','HUESPED','NOCHES','PERS','TOTAL']);
     pData.forEach(function(r){
-      rows.push([r.fecha_entrada,r.fecha_salida,r.plataforma,r.nombre_huesped,r.noches,r.personas||'',r.pais||'',r.precio]);
+      rows.push([fmtDate(r.fecha_entrada),fmtDate(r.fecha_salida),r.plataforma,r.nombre_huesped,r.noches,r.personas||'',fmt2(r.precio)]);
     });
-    rows.push(['TOTAL PERIODO','','','','','','',total]);
+    rows.push(['TOTAL PERIODO','','','','','',fmt2(total)]);
     rows.push([]);
-    rows.push(['','','','','','MONTO PERIODO','',total]);
-    rows.push(['','','','','','EGHUT 35%','FACTURAR',fin.eghut]);
-    rows.push(['','','','','','I.G.I. 4,5%','FACTURAR',fin.igi]);
-    rows.push(['','','','','','MONTO NETO','',fin.neto]);
-    rows.push(['','','','','','GASTOS 20%','',fin.gastos]);
-    rows.push(['','','','','','INRN 10%','RETENCION',fin.inrn]);
-    rows.push(['','','','','','TOTAL PROPIETARIO','TRANSFERENCIA',fin.propiet]);
+    rows.push(['','','','','MONTO PERIODO','',fmt2(total)]);
+    rows.push(['','','','','EGHUT 35%','FACTURAR',fmt2(fin.eghut)]);
+    rows.push(['','','','','I.G.I. 4,5%','FACTURAR',fmt2(fin.igi)]);
+    rows.push(['','','','','MONTO NETO','',fmt2(fin.neto)]);
+    rows.push(['','','','','GASTOS 20%','',fmt2(fin.gastos)]);
+    rows.push(['','','','','INRN 10%','RETENCION',fmt2(fin.inrn)]);
+    if(adelanto>0){
+      rows.push(['','','','','TOTAL PROPIETARIO','TRANSFERENCIA',fmt2(fin.propiet)]);
+      rows.push(['','','','','ADELANTO PAGADO','',fmt2(adelanto)]);
+      rows.push(['','','','','PENDIENTE TRANSFERENCIA','',fmt2(fin.pendiente)]);
+    } else {
+      rows.push(['','','','','TOTAL PROPIETARIO','TRANSFERENCIA',fmt2(fin.propiet)]);
+    }
+    // Facturas
+    var pisoKey=p.replace(/\s/g,'_');
+    if(infFacturas[pisoKey]&&infFacturas[pisoKey].length>0){
+      rows.push([]);
+      rows.push(['','','','','FACTURAS','','']);
+      infFacturas[pisoKey].forEach(function(f){
+        rows.push(['','','','','Factura N° '+f.num,'',fmt2(f.monto)]);
+      });
+    }
     rows.push([]);
     rows.push([]);
   });
@@ -3361,25 +3466,35 @@ function exportInformeReservasPDF(){
     html += '<div class="kpi"><div class="kpi-val">'+(noches>0?fmt2(total/noches):'—')+'</div><div class="kpi-lbl">Precio/noche</div></div>';
     html += '</div>';
 
-    html += '<table><thead><tr><th>Llegada</th><th>Salida</th><th>Plataforma</th><th>Huesped</th><th>Pais</th><th>Noches</th><th style="text-align:right">Total</th></tr></thead><tbody>';
+    html += '<table><thead><tr><th>Llegada</th><th>Salida</th><th>Plataforma</th><th>Huesped</th><th style="text-align:center">Noches</th><th style="text-align:center">Pers</th><th style="text-align:right">Total</th></tr></thead><tbody>';
     pData.forEach(function(r){
       html += '<tr><td>'+fmtDate(r.fecha_entrada)+'</td><td>'+fmtDate(r.fecha_salida)+'</td>';
       html += '<td>'+r.plataforma+'</td>';
       html += '<td>'+r.nombre_huesped+'</td>';
-      html += '<td>'+(r.pais||'')+'</td>';
       html += '<td style="text-align:center">'+r.noches+'</td>';
+      html += '<td style="text-align:center">'+((r.personas&&r.personas>0)?r.personas:'—')+'</td>';
       html += '<td style="text-align:right;font-weight:600">'+fmt2(r.precio)+'</td></tr>';
     });
     html += '<tr class="total-row"><td colspan="6">TOTAL PERIODO</td><td style="text-align:right">'+fmt2(total)+'</td></tr>';
     html += '</tbody></table>';
 
     html += '<div class="fin-grid">';
-    // Plataformas
+    // Plataformas + Facturas
     html += '<div>';
-    html += '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:8px">Por plataforma</div>';
+    html += '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:8px">Reservas por plataforma</div>';
     Object.keys(plats).forEach(function(pl){
       html += '<div class="fin-row"><span>'+pl+'</span><span style="font-weight:600">'+fmt2(plats[pl])+'</span></div>';
     });
+    // Facturas in PDF
+    var pisoKey=p.replace(/\s/g,'_');
+    if(infFacturas[pisoKey]&&infFacturas[pisoKey].length>0){
+      html += '<div style="margin-top:12px;border-top:1px solid #EEE;padding-top:8px">';
+      html += '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:6px">Facturas</div>';
+      infFacturas[pisoKey].forEach(function(f){
+        html += '<div class="fin-row"><span>Factura N° '+f.num+'</span><span style="font-weight:600">'+fmt2(f.monto)+'</span></div>';
+      });
+      html += '</div>';
+    }
     html += '</div>';
     // Financiero
     html += '<div>';
@@ -3391,11 +3506,13 @@ function exportInformeReservasPDF(){
       {label:'Monto neto',val:fin.neto,cls:'fin-bold'},
       {label:'Gastos 20% (referencia)',val:fin.gastos,cls:''},
       {label:'INRN 10% — Retención',val:fin.inrn,cls:'fin-neg'},
-      {label:'TOTAL PROPIETARIO',val:fin.propiet,cls:'fin-bold fin-pos'},
     ];
     if(adelanto>0){
+      finRows.push({label:'TOTAL PROPIETARIO',val:fin.propiet,cls:'fin-bold fin-pos'});
       finRows.push({label:'Adelanto pagado',val:adelanto,cls:'fin-neg'});
       finRows.push({label:'PENDIENTE TRANSFERENCIA',val:fin.pendiente,cls:'fin-bold fin-pos'});
+    } else {
+      finRows.push({label:'TOTAL PROPIETARIO',val:fin.propiet,cls:'fin-bold fin-pos'});
     }
     finRows.forEach(function(row){
       html += '<div class="fin-row '+row.cls+'" style="'+(row.cls.indexOf('bold')>=0?'background:#F0EEFF;border-radius:4px':'')+'"><span>'+row.label+'</span><span>'+fmt2(row.val)+'</span></div>';
@@ -3819,6 +3936,286 @@ function renderPlanning(){
   buildSelects();
   setPendBadge();
 })();
+
+//=== FACTURAS INFORME ========================================================
+var infFacturas = (function(){try{return JSON.parse(localStorage.getItem('inf_facturas')||'{}');}catch(e){return {};}})();
+
+function addInfFactura(piso){
+  var pisoKey=piso.replace(/\s/g,'_');
+  var numEl=document.getElementById('inf-fact-num-'+pisoKey);
+  var montoEl=document.getElementById('inf-fact-monto-'+pisoKey);
+  if(!numEl||!montoEl) return;
+  var num=numEl.value.trim();
+  var monto=parseFloat(montoEl.value)||0;
+  if(!num){ toast('Ingresa el número de factura'); return; }
+  if(monto<=0){ toast('Ingresa el monto de la factura'); return; }
+  if(!infFacturas[pisoKey]) infFacturas[pisoKey]=[];
+  infFacturas[pisoKey].push({num:num,monto:monto});
+  try{localStorage.setItem('inf_facturas',JSON.stringify(infFacturas));}catch(e){}
+  numEl.value='';montoEl.value='';
+  renderInfFacturas(pisoKey);
+}
+
+function removeInfFactura(pisoKey,idx){
+  if(!infFacturas[pisoKey]) return;
+  infFacturas[pisoKey].splice(idx,1);
+  try{localStorage.setItem('inf_facturas',JSON.stringify(infFacturas));}catch(e){}
+  renderInfFacturas(pisoKey);
+}
+
+function renderInfFacturas(pisoKey){
+  var el=document.getElementById('inf-facturas-list-'+pisoKey);
+  if(!el) return;
+  if(!infFacturas[pisoKey]||!infFacturas[pisoKey].length){el.innerHTML='';return;}
+  var h='';
+  infFacturas[pisoKey].forEach(function(f,i){
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:var(--surface);border-radius:4px;margin-bottom:4px;font-size:11px">';
+    h+='<span>Factura N° <strong>'+f.num+'</strong></span>';
+    h+='<span style="display:flex;align-items:center;gap:8px"><span style="font-family:\'DM Mono\',monospace;font-weight:600">'+fmt2(f.monto)+'</span>';
+    h+='<button onclick="removeInfFactura(\''+pisoKey+'\','+i+')" style="background:none;border:none;color:#F38BA8;cursor:pointer;font-size:12px">✕</button></span>';
+    h+='</div>';
+  });
+  el.innerHTML=h;
+}
+
+//=== IMPORTAR WHATSAPP ======================================================
+var waRawText = '';
+var waParsedRecords = [];
+var waImportHistory = (function(){try{return JSON.parse(localStorage.getItem('wa_import_history')||'[]');}catch(e){return [];}})();
+
+function handleWAFile(file){
+  if(!file) return;
+  if(!file.name.endsWith('.txt')){ toast('Solo archivos .txt (exportación WhatsApp)'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    waRawText = e.target.result;
+    var lines = waRawText.split('\n').filter(function(l){return l.trim().length>0;});
+    var msgCount = lines.filter(function(l){return /^\d{1,2}\/\d{1,2}\/\d{2,4},?\s*\d{1,2}:\d{2}/.test(l);}).length;
+    document.getElementById('wa-file-info').style.display='block';
+    document.getElementById('wa-file-info').innerHTML='<strong>'+file.name+'</strong> — '+lines.length+' líneas, ~'+msgCount+' mensajes detectados';
+    document.getElementById('wa-step2').style.display='block';
+    document.getElementById('wa-step3').style.display='none';
+    document.getElementById('wa-error').style.display='none';
+  };
+  reader.readAsText(file);
+}
+
+async function processWAChat(){
+  if(!waRawText){ toast('Sube un archivo primero'); return; }
+  if(!apiKey){ toast('Necesitas la API key de Anthropic en Configuración'); return; }
+
+  var btn=document.getElementById('wa-process-btn');
+  btn.disabled=true;
+  document.getElementById('wa-processing').style.display='block';
+  document.getElementById('wa-error').style.display='none';
+  document.getElementById('wa-step3').style.display='none';
+
+  // Get list of workers and negocios for context
+  var wList = workers.filter(function(w){return w.activo!==false;}).map(function(w){return w.name;}).join(', ');
+  var nList = negocios.map(function(n){return n.name;}).join(', ');
+
+  var systemPrompt = 'Eres un asistente que interpreta mensajes de WhatsApp para extraer registros de horas de trabajo de limpieza.'
+    +'\nTrabajadores registrados: '+wList
+    +'\nNegocios/pisos registrados: '+nList
+    +'\n\nReglas:'
+    +'\n- Cada mensaje de WhatsApp tiene formato: "DD/MM/YYYY, HH:MM - NombreContacto: texto"'
+    +'\n- Identifica el trabajador por el nombre del contacto de WhatsApp (puede ser diferente al nombre registrado, usa el más cercano)'
+    +'\n- Extrae: fecha, trabajador, negocio/piso, hora_inicio, hora_fin'
+    +'\n- Los trabajadores pueden escribir informalmente, con abreviaciones, errores, etc.'
+    +'\n- Ignora mensajes que no sean registros de horas (saludos, conversaciones, etc.)'
+    +'\n- Si un mensaje tiene múltiples trabajos, crea un registro por cada uno'
+    +'\n\nResponde SOLO con un JSON array (sin markdown, sin backticks, sin texto extra). Cada objeto:'
+    +'\n[{"fecha":"YYYY-MM-DD","trabajador":"NombreExacto","negocio":"NombreExacto","inicio":"HH:MM","fin":"HH:MM","obs":"observaciones si hay"}]'
+    +'\nSi no hay registros válidos, responde: []';
+
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:4000,
+        system:systemPrompt,
+        messages:[{role:'user',content:'Analiza estos mensajes de WhatsApp y extrae los registros de horas:\n\n'+waRawText.substring(0,12000)}]
+      })
+    });
+    var data = await resp.json();
+    if(data.error){ throw new Error(data.error.message); }
+
+    var text = data.content.map(function(c){return c.text||'';}).join('');
+    text = text.replace(/```json|```/g,'').trim();
+    waParsedRecords = JSON.parse(text);
+
+    if(!Array.isArray(waParsedRecords)||waParsedRecords.length===0){
+      document.getElementById('wa-error').style.display='block';
+      document.getElementById('wa-error').textContent='No se encontraron registros de horas en el chat. Verifica que los trabajadores hayan enviado sus horarios.';
+      document.getElementById('wa-processing').style.display='none';
+      btn.disabled=false;
+      return;
+    }
+
+    // Render results table
+    var th='padding:6px 10px;text-align:left;background:var(--surface);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text2)';
+    var td='padding:6px 10px;font-size:12px;border-bottom:1px solid var(--border)';
+    var h='<table style="width:100%;border-collapse:collapse"><thead><tr>';
+    h+='<th style="'+th+'">Fecha</th><th style="'+th+'">Trabajador</th><th style="'+th+'">Negocio</th>';
+    h+='<th style="'+th+'">Inicio</th><th style="'+th+'">Fin</th><th style="'+th+'">Hrs</th><th style="'+th+'">Obs</th>';
+    h+='<th style="'+th+'">Quitar</th></tr></thead><tbody>';
+
+    var totalHrs=0;
+    waParsedRecords.forEach(function(r,i){
+      var hrs=calcHrs(r.inicio,r.fin);
+      totalHrs+=hrs;
+      h+='<tr id="wa-row-'+i+'">';
+      h+='<td style="'+td+'">'+r.fecha+'</td>';
+      h+='<td style="'+td+';color:var(--primary)">'+r.trabajador+'</td>';
+      h+='<td style="'+td+';color:#CBA6F7">'+r.negocio+'</td>';
+      h+='<td style="'+td+'">'+r.inicio+'</td>';
+      h+='<td style="'+td+'">'+r.fin+'</td>';
+      h+='<td style="'+td+';color:#FAB387;font-weight:700">'+hrs.toFixed(1)+'</td>';
+      h+='<td style="'+td+';color:var(--text2);font-size:10px">'+(r.obs||'')+'</td>';
+      h+='<td style="'+td+'"><button class="btn btn-sm" style="background:#F38BA833;color:#F38BA8;font-size:10px" onclick="removeWARow('+i+')">&#10005;</button></td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table>';
+    document.getElementById('wa-results-table').innerHTML=h;
+    document.getElementById('wa-summary').innerHTML='<strong>'+waParsedRecords.length+'</strong> registros detectados — <strong>'+totalHrs.toFixed(1)+' hrs</strong> totales';
+    document.getElementById('wa-step3').style.display='block';
+
+  } catch(err){
+    document.getElementById('wa-error').style.display='block';
+    document.getElementById('wa-error').textContent='Error: '+err.message;
+  }
+  document.getElementById('wa-processing').style.display='none';
+  btn.disabled=false;
+}
+
+function removeWARow(idx){
+  waParsedRecords.splice(idx,1);
+  // Re-render
+  processWAChat.__rendered=true;
+  var row=document.getElementById('wa-row-'+idx);
+  if(row) row.style.display='none';
+  var totalHrs=0;
+  waParsedRecords.forEach(function(r){totalHrs+=calcHrs(r.inicio,r.fin);});
+  document.getElementById('wa-summary').innerHTML='<strong>'+waParsedRecords.length+'</strong> registros — <strong>'+totalHrs.toFixed(1)+' hrs</strong> totales';
+}
+
+async function confirmWAImport(){
+  if(!waParsedRecords.length){ toast('No hay registros para importar'); return; }
+  if(!supaReady){ toast('Espera a que Supabase sincronice'); return; }
+
+  var imported=0;
+  for(var i=0;i<waParsedRecords.length;i++){
+    var r=waParsedRecords[i];
+    var hrs=calcHrs(r.inicio,r.fin);
+    if(hrs<=0) continue;
+    var rec={
+      id:getNextId(),
+      date:r.fecha,
+      user:r.trabajador,
+      negocio:r.negocio,
+      start:r.inicio,
+      end:r.fin,
+      hrs:hrs,
+      obs:r.obs||'(importado WA)',
+      admin:currentUser?currentUser.name:'',
+      adminHrs:null,
+      status:'pending',
+      accion:'importar_wa'
+    };
+    records.push(rec);
+    await saveRecToSupa(rec);
+    sheetPost({tipo:'registro',fecha:rec.date,trabajador:rec.user,negocio:rec.negocio,
+      inicio:rec.start,termino:rec.end,horas:rec.hrs,observaciones:rec.obs||'',
+      admin:rec.admin,admin_hrs:'',estado:rec.status,registrado:new Date().toLocaleString('es-ES'),id:rec.id});
+    imported++;
+  }
+  saveRec();
+  logAudit('importar_whatsapp','',imported+' registros importados desde WhatsApp');
+
+  // Save to import history
+  waImportHistory.unshift({fecha:new Date().toLocaleString('es-ES'),registros:imported,usuario:currentUser?currentUser.name:'Sistema'});
+  if(waImportHistory.length>20) waImportHistory=waImportHistory.slice(0,20);
+  try{localStorage.setItem('wa_import_history',JSON.stringify(waImportHistory));}catch(e){}
+  renderWAHistory();
+
+  toast(imported+' registros importados como PENDIENTES');
+  waParsedRecords=[];
+  waRawText='';
+  document.getElementById('wa-step2').style.display='none';
+  document.getElementById('wa-step3').style.display='none';
+  document.getElementById('wa-file-info').style.display='none';
+  document.getElementById('wa-file-input').value='';
+  setPendBadge();
+}
+
+function cancelWAImport(){
+  waParsedRecords=[];
+  document.getElementById('wa-step3').style.display='none';
+  toast('Importación cancelada');
+}
+
+function renderWAHistory(){
+  var el=document.getElementById('wa-import-history');
+  if(!waImportHistory.length){el.innerHTML='Sin importaciones recientes';return;}
+  var h='';
+  waImportHistory.forEach(function(e){
+    h+='<div style="padding:6px 0;border-bottom:1px solid var(--border)">'+e.fecha+' — <strong>'+e.registros+'</strong> registros — por '+e.usuario+'</div>';
+  });
+  el.innerHTML=h;
+}
+
+// Daily notification reminder
+function requestWANotification(){
+  if(!('Notification' in window)){
+    toast('Tu navegador no soporta notificaciones');
+    return;
+  }
+  Notification.requestPermission().then(function(perm){
+    if(perm==='granted'){
+      localStorage.setItem('wa_notify','1');
+      localStorage.setItem('wa_notify_hour','20');
+      toast('Recordatorio activado — recibirás notificación diaria a las 20:00');
+      scheduleWANotification();
+    } else {
+      toast('Permiso de notificación denegado');
+    }
+  });
+}
+
+function scheduleWANotification(){
+  if(localStorage.getItem('wa_notify')!=='1') return;
+  var hour=parseInt(localStorage.getItem('wa_notify_hour')||'20');
+  var now=new Date();
+  var target=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hour,0,0);
+  if(now>target) target.setDate(target.getDate()+1);
+  var ms=target-now;
+  setTimeout(function(){
+    if(Notification.permission==='granted'){
+      new Notification('Servap Turístics',{
+        body:'Recuerda importar las horas de WhatsApp de hoy',
+        icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" stroke="%23C5A55A" fill="%230A0A0A"/></svg>'
+      });
+    }
+    // Re-schedule for tomorrow
+    scheduleWANotification();
+  },ms);
+}
+
+// Check daily badge
+(function checkWABadge(){
+  var lastImport=localStorage.getItem('wa_last_import_date');
+  var today=new Date().toISOString().slice(0,10);
+  if(lastImport!==today){
+    var badge=document.getElementById('wa-import-badge');
+    if(badge) badge.style.display='inline-block';
+  }
+})();
+
+// Init
+renderWAHistory();
+scheduleWANotification();
 
 </script>
 </body>
