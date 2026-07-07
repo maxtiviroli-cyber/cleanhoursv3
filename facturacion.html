@@ -339,7 +339,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
           <select id="emit-filter-estado" onchange="renderEmitidas()"><option value="">Todos los estados</option><option>borrador</option><option>enviada</option><option>pagada</option><option>declarada</option><option>vencida</option></select>
           <select id="emit-filter-cat" onchange="renderEmitidas()"><option value="">Todas las categorías</option></select>
           <select id="emit-filter-cliente" onchange="renderEmitidas()"><option value="">Todos los clientes</option></select>
-          <input type="month" id="emit-filter-mes" onchange="renderEmitidas()">
+          <input type="date" id="emit-filter-desde" onchange="renderEmitidas()" title="Desde" style="width:130px">
+          <span style="font-size:11px;color:var(--text2)">a</span>
+          <input type="date" id="emit-filter-hasta" onchange="renderEmitidas()" title="Hasta" style="width:130px">
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-sm btn-outline" onclick="exportEmitidasExcel()">&#128196; Excel</button>
@@ -729,7 +731,7 @@ function renderClientes(){
   var q=(document.getElementById('cli-search').value||'').toLowerCase();
   var data=clientes.filter(function(c){return !q||c.nombre.toLowerCase().indexOf(q)>=0;});
   if(!data.length){document.getElementById('clientes-list').innerHTML='<div class="empty"><div class="empty-icon">&#128101;</div><div class="empty-title">Sin clientes</div><div class="empty-sub">Añade tu primer cliente para empezar a facturar</div></div>';return;}
-  var h='<table class="tbl"><thead><tr><th>Nombre</th><th>Ref. interna</th><th>NRT</th><th>Email</th><th>Teléfono</th><th>Facturas</th><th></th></tr></thead><tbody>';
+  var h='<table class="tbl"><thead><tr><th>Nombre</th><th>Ref. interna</th><th>NRT</th><th>Email</th><th>Teléfono</th><th>Facturas</th><th>Acciones</th></tr></thead><tbody>';
   data.forEach(function(c){
     var nf=facturasEmit.filter(function(f){return f.cliente_id==c.id;}).length;
     h+='<tr><td style="font-weight:600">'+c.nombre+'</td><td style="color:var(--text2);font-size:11px;font-style:italic">'+(c.nombre_fantasia||'—')+'</td><td class="mono">'+(c.nrt||'—')+'</td><td>'+(c.email||'—')+'</td><td>'+(c.telefono||'—')+'</td><td class="mono">'+nf+'</td>';
@@ -742,7 +744,8 @@ async function saveCliente(editId){
   var obj={nombre:document.getElementById('m-cli-name').value.trim(),nrt:document.getElementById('m-cli-nrt').value.trim(),nombre_fantasia:document.getElementById('m-cli-fantasia').value.trim(),email:document.getElementById('m-cli-email').value.trim(),telefono:document.getElementById('m-cli-tel').value.trim(),direccion:document.getElementById('m-cli-dir').value.trim(),notas:document.getElementById('m-cli-notas').value.trim()};
   if(!obj.nombre){toast('Nombre es obligatorio');return;}
   if(editId){obj.id=editId;}else{obj.id=uid();}
-  await sbSave('inv_clientes',obj);
+  var r=await sbSave('inv_clientes',obj);
+  if(!r){return;}
   var idx=clientes.findIndex(function(c){return c.id==obj.id;});
   if(idx>=0)clientes[idx]=obj;else clientes.push(obj);
   closeModal();populateSelects();renderClientes();toast('Cliente guardado');
@@ -767,7 +770,8 @@ async function saveProveedor(editId){
   var obj={nombre:document.getElementById('m-prov-name').value.trim(),nrt:document.getElementById('m-prov-nrt').value.trim(),email:document.getElementById('m-prov-email').value.trim(),categoria:document.getElementById('m-prov-cat').value,telefono:document.getElementById('m-prov-tel').value.trim(),notas:document.getElementById('m-prov-notas').value.trim()};
   if(!obj.nombre){toast('Nombre es obligatorio');return;}
   if(editId){obj.id=editId;}else{obj.id=uid();}
-  await sbSave('inv_proveedores',obj);
+  var r=await sbSave('inv_proveedores',obj);
+  if(!r){return;}
   var idx=proveedores.findIndex(function(p){return p.id==obj.id;});
   if(idx>=0)proveedores[idx]=obj;else proveedores.push(obj);
   closeModal();populateSelects();renderProveedores();toast('Proveedor guardado');
@@ -792,7 +796,8 @@ async function saveServicio(editId){
   var obj={nombre:document.getElementById('m-svc-name').value.trim(),categoria:document.getElementById('m-svc-cat').value,precio:parseFloat(document.getElementById('m-svc-precio').value)||0,unidad:document.getElementById('m-svc-unidad').value,descripcion:document.getElementById('m-svc-desc').value.trim()};
   if(!obj.nombre){toast('Nombre es obligatorio');return;}
   if(editId){obj.id=editId;}else{obj.id=uid();}
-  await sbSave('inv_servicios',obj);
+  var r=await sbSave('inv_servicios',obj);
+  if(!r){return;}
   var idx=servicios.findIndex(function(s){return s.id==obj.id;});
   if(idx>=0)servicios[idx]=obj;else servicios.push(obj);
   closeModal();renderServicios();toast('Servicio guardado');
@@ -902,12 +907,14 @@ function renderEmitidas(){
   var estado=document.getElementById('emit-filter-estado').value;
   var cat=document.getElementById('emit-filter-cat').value;
   var cliId=document.getElementById('emit-filter-cliente').value;
-  var mes=document.getElementById('emit-filter-mes').value;
   var data=facturasEmit.filter(function(f){
     if(estado&&f.estado!==estado)return false;
     if(cat&&f.categoria!==cat)return false;
     if(cliId&&f.cliente_id!=cliId)return false;
-    if(mes&&f.fecha&&f.fecha.slice(0,7)!==mes)return false;
+    var desde=document.getElementById('emit-filter-desde').value;
+    var hasta=document.getElementById('emit-filter-hasta').value;
+    if(desde&&f.fecha&&f.fecha<desde)return false;
+    if(hasta&&f.fecha&&f.fecha>hasta)return false;
     return true;
   });
   // Check overdue
@@ -915,8 +922,10 @@ function renderEmitidas(){
   data.forEach(function(f){if(f.estado==='enviada'&&f.vencimiento&&f.vencimiento<hoy)f.estado='vencida';});
   // Sort
   data.sort(function(a,b){
-    var va=a[emitSort.field]||'',vb=b[emitSort.field]||'';
-    if(typeof va==='number'){return (va-vb)*emitSort.dir;}
+    var va=a[emitSort.field],vb=b[emitSort.field];
+    if(va==null)va='';if(vb==null)vb='';
+    if(emitSort.field==='total'||emitSort.field==='base'||emitSort.field==='igi'){return((parseFloat(va)||0)-(parseFloat(vb)||0))*emitSort.dir;}
+    va=String(va).toLowerCase();vb=String(vb).toLowerCase();
     if(va<vb)return -1*emitSort.dir;if(va>vb)return 1*emitSort.dir;return 0;
   });
   if(!data.length){document.getElementById('emitidas-list').innerHTML='<div class="empty"><div class="empty-icon">&#128196;</div><div class="empty-title">Sin facturas</div><div class="empty-sub">Emite tu primera factura</div></div>';return;}
@@ -928,7 +937,7 @@ function renderEmitidas(){
   h+='<th onclick="sortEmit(&quot;categoria&quot;)">Categoría'+arrow('categoria')+'</th>';
   h+='<th onclick="sortEmit(&quot;total&quot;)">Total'+arrow('total')+'</th>';
   h+='<th onclick="sortEmit(&quot;estado&quot;)">Estado'+arrow('estado')+'</th>';
-  h+='<th>Controles</th><th></th></tr></thead><tbody>';
+  h+='<th style="text-align:center">Controles</th><th>Acciones</th></tr></thead><tbody>';
   data.forEach(function(f){
     var bc='badge-'+f.estado;
     h+='<tr>';
@@ -939,14 +948,15 @@ function renderEmitidas(){
     h+='<td class="mono" style="font-weight:700">'+fmt(f.total)+'</td>';
     h+='<td><span class="badge-status '+bc+'">'+f.estado.toUpperCase()+'</span></td>';
     // Status controls
-    h+='<td style="white-space:nowrap">';
+    h+='<td style="white-space:nowrap;text-align:center">';
     var numDocs=adjuntos.filter(function(a){return a.factura_id==f.id;}).length;
-    if(numDocs>0) h+='<button class="btn-ghost" title="Ver documentos ('+numDocs+')" onclick="viewFacturaDocs('+f.id+')">&#128206;'+numDocs+'</button>';
-    if(f.estado!=='pagada'&&f.estado!=='declarada') h+='<button class="btn-ghost" title="Marcar pagada" onclick="setEstado('+f.id+',&quot;pagada&quot;)">&#128176;</button>';
-    if(f.estado==='pagada') h+='<button class="btn-ghost" title="Marcar declarada" onclick="setEstado('+f.id+',&quot;declarada&quot;)">&#9745;</button>';
-    h+='<button class="btn-ghost" title="Generar PDF" onclick="generateFacturaPDF(facturasEmit.find(function(x){return x.id=='+f.id+';}))">&#128424;</button>';
+    if(numDocs>0) h+='<button class="btn-ghost" title="Ver documentos ('+numDocs+')" onclick="viewFacturaDocs('+f.id+')" style="font-size:18px">&#128206;<sup style="font-size:9px;color:var(--primary)">'+numDocs+'</sup></button>';
+    if(f.estado!=='pagada'&&f.estado!=='declarada') h+='<button class="btn-ghost" title="Marcar pagada" onclick="setEstado('+f.id+',&quot;pagada&quot;)" style="font-size:18px">&#9744;</button>';
+    if(f.estado==='pagada') h+='<button class="btn-ghost" title="Marcar declarada" onclick="setEstado('+f.id+',&quot;declarada&quot;)" style="font-size:18px">&#9745;</button>';
+    if(f.estado==='declarada') h+='<span style="font-size:18px;opacity:0.3">&#9745;</span>';
+    h+='<button class="btn-ghost" title="Generar PDF" onclick="generateFacturaPDF(facturasEmit.find(function(x){return x.id=='+f.id+';}))" style="font-size:18px">&#128438;</button>';
     h+='</td>';
-    h+='<td><button class="btn-ghost" onclick="editFactura('+f.id+')">&#9998;</button></td>';
+    h+='<td><button class="btn-ghost" onclick="editFactura('+f.id+')" style="font-size:16px" title="Editar">&#9998;</button></td>';
     h+='</tr>';
   });
   h+='</tbody></table>';
@@ -1123,7 +1133,10 @@ function renderRecibidas(){
   var data=facturasRec.filter(function(f){
     if(prov&&f.proveedor_id!=prov)return false;
     if(cat&&f.categoria!==cat)return false;
-    if(mes&&f.fecha&&f.fecha.slice(0,7)!==mes)return false;
+    var desde=document.getElementById('emit-filter-desde').value;
+    var hasta=document.getElementById('emit-filter-hasta').value;
+    if(desde&&f.fecha&&f.fecha<desde)return false;
+    if(hasta&&f.fecha&&f.fecha>hasta)return false;
     return true;
   });
   if(!data.length){document.getElementById('recibidas-list').innerHTML='<div class="empty"><div class="empty-icon">&#128229;</div><div class="empty-title">Sin facturas recibidas</div><div class="empty-sub">Registra facturas de proveedores</div></div>';return;}
@@ -1463,7 +1476,7 @@ async function confirmImportEmit(){
   document.getElementById('login-overlay').style.display='flex';
   // Set today's date on filters
   var now=new Date().toISOString().slice(0,7);
-  var mf=document.getElementById('emit-filter-mes');if(mf)mf.value=now;
+  // Date range filters initialized empty
   // Load config from localStorage
   var lk=localStorage.getItem('servap_apikey');
   if(lk){config.apiKey=lk;var ki=document.getElementById('cfg-apikey');if(ki)ki.value=lk;}
