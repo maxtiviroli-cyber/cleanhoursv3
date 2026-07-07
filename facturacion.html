@@ -599,6 +599,8 @@ function showPanel(id){
 }
 
 //=== MODAL =================================================================
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;');}
+
 function openModal(type,data){
   var m=document.getElementById('modal-overlay');
   var title=document.getElementById('modal-title');
@@ -607,27 +609,30 @@ function openModal(type,data){
   if(type==='cli'){
     title.textContent=data?'Editar cliente':'Nuevo cliente';
     var d=data||{};
-    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre / Razón social</label><input class="form-input" id="m-cli-name" value="'+(d.nombre||'')+'"></div><div class="form-group"><label class="form-label">NRT / CIF</label><input class="form-input" id="m-cli-nrt" value="'+(d.nrt||'')+'"></div></div>'
-      +'<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="m-cli-email" value="'+(d.email||'')+'"></div><div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="m-cli-tel" value="'+(d.telefono||'')+'"></div></div>'
-      +'<div class="form-group"><label class="form-label">Dirección</label><input class="form-input" id="m-cli-dir" value="'+(d.direccion||'')+'"></div>'
-      +'<div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="m-cli-notas">'+(d.notas||'')+'</textarea></div>';
+    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre / Razón social</label><input class="form-input" id="m-cli-name" value="'+esc(d.nombre)+'"></div><div class="form-group"><label class="form-label">NRT / CIF</label><input class="form-input" id="m-cli-nrt" value="'+esc(d.nrt)+'"></div></div>'
+      +'<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="m-cli-email" value="'+esc(d.email)+'"></div><div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="m-cli-tel" value="'+esc(d.telefono)+'"></div></div>'
+      +'<div class="form-group"><label class="form-label">Dirección</label><input class="form-input" id="m-cli-dir" value="'+esc(d.direccion)+'"></div>'
+      +'<div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="m-cli-notas">'+esc(d.notas)+'</textarea></div>';
     footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveCliente('+(d.id||'null')+')">Guardar</button>';
   }
   if(type==='prov'){
     title.textContent=data?'Editar proveedor':'Nuevo proveedor';
     var d=data||{};
-    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre / Razón social</label><input class="form-input" id="m-prov-name" value="'+(d.nombre||'')+'"></div><div class="form-group"><label class="form-label">NRT / CIF</label><input class="form-input" id="m-prov-nrt" value="'+(d.nrt||'')+'"></div></div>'
-      +'<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="m-prov-email" value="'+(d.email||'')+'"></div><div class="form-group"><label class="form-label">Categoría gasto</label><select class="form-select" id="m-prov-cat"><option>Suministros</option><option>Servicios</option><option>Material</option><option>Alquiler</option><option>Otros</option></select></div></div>'
-      +'<div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="m-prov-tel" value="'+(d.telefono||'')+'"></div>'
-      +'<div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="m-prov-notas">'+(d.notas||'')+'</textarea></div>';
+    var catOpts=['Suministros','Servicios','Material','Alquiler','Otros'].map(function(c){return'<option'+(c===(d.categoria||'')?' selected':'')+'>'+c+'</option>';}).join('');
+    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre / Razón social</label><input class="form-input" id="m-prov-name" value="'+esc(d.nombre)+'"></div><div class="form-group"><label class="form-label">NRT / CIF</label><input class="form-input" id="m-prov-nrt" value="'+esc(d.nrt)+'"></div></div>'
+      +'<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="m-prov-email" value="'+esc(d.email)+'"></div><div class="form-group"><label class="form-label">Categoría gasto</label><select class="form-select" id="m-prov-cat">'+catOpts+'</select></div></div>'
+      +'<div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="m-prov-tel" value="'+esc(d.telefono)+'"></div>'
+      +'<div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="m-prov-notas">'+esc(d.notas)+'</textarea></div>';
     footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProveedor('+(d.id||'null')+')">Guardar</button>';
   }
   if(type==='svc'){
     title.textContent=data?'Editar servicio':'Nuevo servicio';
     var d=data||{};
-    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre del servicio</label><input class="form-input" id="m-svc-name" value="'+(d.nombre||'')+'"></div><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="m-svc-cat"><option>Housekeeping</option><option>Consergeria</option><option>Amenities</option><option>Eventos</option><option>Otros</option></select></div></div>'
-      +'<div class="form-row"><div class="form-group"><label class="form-label">Precio unitario (€)</label><input type="number" step="0.01" class="form-input" id="m-svc-precio" value="'+(d.precio||'')+'"></div><div class="form-group"><label class="form-label">Unidad</label><select class="form-select" id="m-svc-unidad"><option>servicio</option><option>hora</option><option>noche</option><option>unidad</option><option>mes</option></select></div></div>'
-      +'<div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="m-svc-desc">'+(d.descripcion||'')+'</textarea></div>';
+    var catOpts=['Housekeeping','Consergeria','Amenities','Eventos','Otros'].map(function(c){return'<option'+(c===(d.categoria||'')?' selected':'')+'>'+c+'</option>';}).join('');
+    var uniOpts=['servicio','hora','noche','unidad','mes'].map(function(u){return'<option'+(u===(d.unidad||'servicio')?' selected':'')+'>'+u+'</option>';}).join('');
+    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre del servicio</label><input class="form-input" id="m-svc-name" value="'+esc(d.nombre)+'"></div><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="m-svc-cat">'+catOpts+'</select></div></div>'
+      +'<div class="form-row"><div class="form-group"><label class="form-label">Precio unitario (€)</label><input type="number" step="0.01" class="form-input" id="m-svc-precio" value="'+(d.precio||'')+'"></div><div class="form-group"><label class="form-label">Unidad</label><select class="form-select" id="m-svc-unidad">'+uniOpts+'</select></div></div>'
+      +'<div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="m-svc-desc">'+esc(d.descripcion)+'</textarea></div>';
     footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveServicio('+(d.id||'null')+')">Guardar</button>';
   }
   if(type==='rec'){
@@ -662,7 +667,7 @@ async function loadAll(){
     var cfgRows=await sbLoad('inv_config');
     if(cfgRows.length){var c=cfgRows[0];Object.assign(config,c);}
     // Load API key from localStorage
-    var lk=localStorage.getItem('inv_apikey');
+    var lk=localStorage.getItem('servap_apikey');
     if(lk)config.apiKey=lk;
     populateSelects();
     renderDashboard();
@@ -918,8 +923,96 @@ async function setEstado(id,estado){
   if(f){f.estado=estado;await sbSave('inv_facturas_emit',f);renderEmitidas();toast('Estado actualizado: '+estado);}
 }
 function editFactura(id){
-  // TODO: load factura into emitir form for editing
-  toast('Edición en desarrollo');
+  var f=facturasEmit.find(function(x){return x.id==id;});
+  if(!f){toast('Factura no encontrada');return;}
+  var lineas=[];try{lineas=JSON.parse(f.lineas||'[]');}catch(e){}
+  var cli=clientes.find(function(c){return c.id==f.cliente_id;});
+
+  var m=document.getElementById('modal-overlay');
+  var title=document.getElementById('modal-title');
+  var body=document.getElementById('modal-body');
+  var footer=document.getElementById('modal-footer');
+
+  title.textContent='Editar factura '+f.numero;
+
+  var cliOpts='<option value="">Seleccionar...</option>'+clientes.map(function(c){return'<option value="'+c.id+'"'+(c.id==f.cliente_id?' selected':'')+'>'+c.nombre+'</option>';}).join('');
+  var catOpts=['Housekeeping','Consergeria','Amenities','Eventos','Otros'].map(function(c){return'<option'+(c===f.categoria?' selected':'')+'>'+c+'</option>';}).join('');
+  var estOpts=['borrador','enviada','pagada','declarada'].map(function(e){return'<option'+(e===f.estado?' selected':'')+'>'+e+'</option>';}).join('');
+
+  var lineasHtml='';
+  if(lineas.length){
+    lineasHtml='<table class="tbl" style="font-size:11px;margin-bottom:8px"><thead><tr><th>Descripción</th><th>Cant</th><th>Precio</th><th>Total</th></tr></thead><tbody>';
+    lineas.forEach(function(l){
+      lineasHtml+='<tr><td>'+esc(l.desc)+'</td><td class="mono" style="text-align:center">'+l.qty+'</td><td class="mono" style="text-align:right">'+fmt(l.price)+'</td><td class="mono" style="text-align:right;font-weight:600">'+fmt(l.total)+'</td></tr>';
+    });
+    lineasHtml+='</tbody></table>';
+  }
+
+  body.innerHTML='<div class="form-row-3">'
+    +'<div class="form-group"><label class="form-label">N° Factura</label><input class="form-input mono" id="ed-numero" value="'+esc(f.numero)+'"></div>'
+    +'<div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="ed-fecha" value="'+(f.fecha||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label">Vencimiento</label><input type="date" class="form-input" id="ed-vencimiento" value="'+(f.vencimiento||'')+'"></div>'
+    +'</div>'
+    +'<div class="form-row">'
+    +'<div class="form-group"><label class="form-label">Cliente</label><select class="form-select" id="ed-cliente">'+cliOpts+'</select></div>'
+    +'<div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="ed-categoria">'+catOpts+'</select></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Conceptos</label>'+lineasHtml+'</div>'
+    +'<div class="form-row-3">'
+    +'<div class="form-group"><label class="form-label">Base imponible</label><input type="number" step="0.01" class="form-input mono" id="ed-base" value="'+f.base+'" oninput="calcEdTotal()"></div>'
+    +'<div class="form-group"><label class="form-label">I.G.I.</label><input type="number" step="0.01" class="form-input mono" id="ed-igi" value="'+f.igi+'" oninput="calcEdTotal()"></div>'
+    +'<div class="form-group"><label class="form-label">Total</label><input type="number" step="0.01" class="form-input mono" id="ed-total" value="'+f.total+'" style="font-weight:700;font-size:16px"></div>'
+    +'</div>'
+    +'<div class="form-row">'
+    +'<div class="form-group"><label class="form-label">Estado</label><select class="form-select" id="ed-estado">'+estOpts+'</select></div>'
+    +'<div class="form-group"><label class="form-label">Notas</label><input class="form-input" id="ed-notas" value="'+esc(f.notas)+'"></div>'
+    +'</div>';
+
+  footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button>'
+    +'<button class="btn btn-danger btn-sm" onclick="deleteFacturaEmit('+f.id+')" style="margin-right:auto">&#128465; Eliminar</button>'
+    +'<button class="btn btn-primary" onclick="saveEditFactura('+f.id+')">Guardar cambios</button>';
+
+  m.classList.add('active');
+}
+
+function calcEdTotal(){
+  var base=parseFloat(document.getElementById('ed-base').value)||0;
+  var igi=parseFloat(document.getElementById('ed-igi').value)||0;
+  document.getElementById('ed-total').value=(base+igi).toFixed(2);
+}
+
+async function saveEditFactura(id){
+  var f=facturasEmit.find(function(x){return x.id==id;});
+  if(!f){toast('Error');return;}
+  var cliId=document.getElementById('ed-cliente').value;
+  var cli=cliId?clientes.find(function(c){return c.id==cliId;}):null;
+
+  f.numero=document.getElementById('ed-numero').value.trim();
+  f.fecha=document.getElementById('ed-fecha').value;
+  f.vencimiento=document.getElementById('ed-vencimiento').value;
+  f.cliente_id=cliId?parseInt(cliId):f.cliente_id;
+  f.cliente_nombre=cli?cli.nombre:f.cliente_nombre;
+  f.cliente_nrt=cli?cli.nrt:f.cliente_nrt;
+  f.categoria=document.getElementById('ed-categoria').value;
+  f.base=parseFloat(document.getElementById('ed-base').value)||0;
+  f.igi=parseFloat(document.getElementById('ed-igi').value)||0;
+  f.total=parseFloat(document.getElementById('ed-total').value)||0;
+  f.estado=document.getElementById('ed-estado').value;
+  f.notas=document.getElementById('ed-notas').value.trim();
+
+  await sbSave('inv_facturas_emit',f);
+  closeModal();
+  renderEmitidas();
+  toast('Factura '+f.numero+' actualizada');
+}
+
+async function deleteFacturaEmit(id){
+  if(!confirm('¿Eliminar esta factura? Esta acción no se puede deshacer.'))return;
+  await sbDel('inv_facturas_emit',id);
+  facturasEmit=facturasEmit.filter(function(f){return f.id!=id;});
+  closeModal();
+  renderEmitidas();
+  toast('Factura eliminada');
 }
 
 //=== FACTURAS RECIBIDAS ====================================================
@@ -1020,7 +1113,7 @@ async function saveConfig(){
   config.prefijo=document.getElementById('cfg-prefijo').value;
   config.nextNum=parseInt(document.getElementById('cfg-next-num').value)||1;
   var ak=document.getElementById('cfg-apikey').value;
-  if(ak){config.apiKey=ak;localStorage.setItem('inv_apikey',ak);}
+  if(ak){config.apiKey=ak;localStorage.setItem('servap_apikey',ak);}
   await sbSave('inv_config',Object.assign({id:1},config));
   toast('Configuración guardada');
 }
@@ -1103,7 +1196,7 @@ function handleImportPDF(input){
 
 async function processImportPDF(){
   if(!impPdfData){toast('Sube un archivo primero');return;}
-  var ak=config.apiKey||localStorage.getItem('inv_apikey');
+  var ak=config.apiKey||localStorage.getItem('servap_apikey');
   if(!ak){toast('Configura la API key de Anthropic en Configuración');return;}
 
   document.getElementById('import-processing').style.display='block';
@@ -1251,7 +1344,7 @@ async function confirmImportEmit(){
   var now=new Date().toISOString().slice(0,7);
   var mf=document.getElementById('emit-filter-mes');if(mf)mf.value=now;
   // Load config from localStorage
-  var lk=localStorage.getItem('inv_apikey');
+  var lk=localStorage.getItem('servap_apikey');
   if(lk){config.apiKey=lk;var ki=document.getElementById('cfg-apikey');if(ki)ki.value=lk;}
   // Load all data
   loadAll();
