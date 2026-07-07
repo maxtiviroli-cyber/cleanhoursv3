@@ -251,20 +251,6 @@ tbody tr:hover{background:#F8F9FC}
     </div>
   </div>
 
-  <!-- MÓDULO 3: FACTURACIÓN -->
-  <div class="sb-module" id="mod-facturacion">
-    <div class="sb-module-header" onclick="toggleModule('facturacion')">
-      <div class="sb-module-dot" style="background:#D4A853"></div>
-      <div class="sb-module-name">Facturación</div>
-      <div class="sb-module-arrow">&#9654;</div>
-    </div>
-    <div class="sb-module-items">
-      <button class="sb-item" id="tab-facturas-emit" onclick="showTab('facturas-emit')"><span class="sb-icon">&#128196;</span> Facturas emitidas</button>
-      <button class="sb-item" id="tab-facturas-rec" onclick="showTab('facturas-rec')"><span class="sb-icon">&#128230;</span> Facturas recibidas</button>
-      <button class="sb-item" id="tab-nueva-factura" onclick="showTab('nueva-factura')"><span class="sb-icon">&#43;</span> Nueva factura</button>
-    </div>
-  </div>
-
   <!-- CONFIG -->
   <div style="padding:6px 8px">
     <button class="sb-item" id="tab-config" onclick="showTab('config')"><span class="sb-icon">&#9881;</span> Configuracion</button>
@@ -502,33 +488,6 @@ tbody tr:hover{background:#F8F9FC}
       <div style="font-size:11px;color:var(--text2)">Se descontará del total a transferir al propietario</div>
     </div>
     <div id="informe-reservas-output"></div>
-  </div>
-
-  <!-- ══ PANEL: FACTURAS EMITIDAS (próximamente) ═════════ -->
-  <div class="panel" id="panel-facturas-emit">
-    <div class="module-welcome">
-      <div class="module-welcome-icon">&#128196;</div>
-      <div class="module-welcome-title">Facturas Emitidas</div>
-      <div class="module-welcome-sub">Control y seguimiento de facturas emitidas a clientes. En construcción.</div>
-    </div>
-  </div>
-
-  <!-- ══ PANEL: FACTURAS RECIBIDAS (próximamente) ════════ -->
-  <div class="panel" id="panel-facturas-rec">
-    <div class="module-welcome">
-      <div class="module-welcome-icon">&#128230;</div>
-      <div class="module-welcome-title">Facturas Recibidas</div>
-      <div class="module-welcome-sub">Control de facturas recibidas de proveedores. En construcción.</div>
-    </div>
-  </div>
-
-  <!-- ══ PANEL: NUEVA FACTURA (próximamente) ═════════════ -->
-  <div class="panel" id="panel-nueva-factura">
-    <div class="module-welcome">
-      <div class="module-welcome-icon">&#43;</div>
-      <div class="module-welcome-title">Nueva Factura</div>
-      <div class="module-welcome-sub">Emisión de facturas según formato Servap Turistics con IGI 4.5%. En construcción.</div>
-    </div>
   </div>
 
 
@@ -1144,7 +1103,7 @@ var records = (function(){
   var base = stored || [];
   return base.map(function(r){ return Object.assign({},r,{negocio:NOMBRE_MAP[r.negocio]||r.negocio}); });
 })();
-var apiKey = localStorage.getItem('horas_apikey')||'';
+var apiKey = localStorage.getItem('servap_apikey')||'';
 
 // Load data from Supabase on startup
 async function loadFromSupabase(){
@@ -1430,7 +1389,7 @@ function calcPill(p){
 function saveApiKey(){
   var k=document.getElementById('api-key-input').value.trim();
   if(!k.startsWith('sk-ant')) return toast('La key debe empezar con sk-ant...');
-  apiKey=k; localStorage.setItem('horas_apikey',k);
+  apiKey=k; localStorage.setItem('servap_apikey',k);
   document.getElementById('apikey-section').style.display='none';
   toast('API key guardada');
 }
