@@ -617,6 +617,7 @@ function openModal(type,data){
     title.textContent=data?'Editar cliente':'Nuevo cliente';
     var d=data||{};
     body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre / Razón social</label><input class="form-input" id="m-cli-name" value="'+esc(d.nombre)+'"></div><div class="form-group"><label class="form-label">NRT / CIF</label><input class="form-input" id="m-cli-nrt" value="'+esc(d.nrt)+'"></div></div>'
+      +'<div class="form-group"><label class="form-label">Nombre fantasía <span style="font-weight:400;color:var(--text3)">(solo referencia interna, no aparece en facturas)</span></label><input class="form-input" id="m-cli-fantasia" value="'+esc(d.nombre_fantasia)+'" placeholder="Ej: Piso Rosa, Cliente Andbank..."></div>'
       +'<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="m-cli-email" value="'+esc(d.email)+'"></div><div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="m-cli-tel" value="'+esc(d.telefono)+'"></div></div>'
       +'<div class="form-group"><label class="form-label">Dirección</label><input class="form-input" id="m-cli-dir" value="'+esc(d.direccion)+'"></div>'
       +'<div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="m-cli-notas">'+esc(d.notas)+'</textarea></div>';
@@ -726,17 +727,17 @@ function renderClientes(){
   var q=(document.getElementById('cli-search').value||'').toLowerCase();
   var data=clientes.filter(function(c){return !q||c.nombre.toLowerCase().indexOf(q)>=0;});
   if(!data.length){document.getElementById('clientes-list').innerHTML='<div class="empty"><div class="empty-icon">&#128101;</div><div class="empty-title">Sin clientes</div><div class="empty-sub">Añade tu primer cliente para empezar a facturar</div></div>';return;}
-  var h='<table class="tbl"><thead><tr><th>Nombre</th><th>NRT</th><th>Email</th><th>Teléfono</th><th>Facturas</th><th></th></tr></thead><tbody>';
+  var h='<table class="tbl"><thead><tr><th>Nombre</th><th>Ref. interna</th><th>NRT</th><th>Email</th><th>Teléfono</th><th>Facturas</th><th></th></tr></thead><tbody>';
   data.forEach(function(c){
     var nf=facturasEmit.filter(function(f){return f.cliente_id==c.id;}).length;
-    h+='<tr><td style="font-weight:600">'+c.nombre+'</td><td class="mono">'+(c.nrt||'—')+'</td><td>'+(c.email||'—')+'</td><td>'+(c.telefono||'—')+'</td><td class="mono">'+nf+'</td>';
+    h+='<tr><td style="font-weight:600">'+c.nombre+'</td><td style="color:var(--text2);font-size:11px;font-style:italic">'+(c.nombre_fantasia||'—')+'</td><td class="mono">'+(c.nrt||'—')+'</td><td>'+(c.email||'—')+'</td><td>'+(c.telefono||'—')+'</td><td class="mono">'+nf+'</td>';
     h+='<td><button class="btn-ghost" onclick="editCliente('+c.id+')">&#9998;</button> <button class="btn-ghost" onclick="deleteCliente('+c.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('clientes-list').innerHTML=h;
 }
 async function saveCliente(editId){
-  var obj={nombre:document.getElementById('m-cli-name').value.trim(),nrt:document.getElementById('m-cli-nrt').value.trim(),email:document.getElementById('m-cli-email').value.trim(),telefono:document.getElementById('m-cli-tel').value.trim(),direccion:document.getElementById('m-cli-dir').value.trim(),notas:document.getElementById('m-cli-notas').value.trim()};
+  var obj={nombre:document.getElementById('m-cli-name').value.trim(),nrt:document.getElementById('m-cli-nrt').value.trim(),nombre_fantasia:document.getElementById('m-cli-fantasia').value.trim(),email:document.getElementById('m-cli-email').value.trim(),telefono:document.getElementById('m-cli-tel').value.trim(),direccion:document.getElementById('m-cli-dir').value.trim(),notas:document.getElementById('m-cli-notas').value.trim()};
   if(!obj.nombre){toast('Nombre es obligatorio');return;}
   if(editId){obj.id=editId;}else{obj.id=uid();}
   await sbSave('inv_clientes',obj);
