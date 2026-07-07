@@ -602,6 +602,7 @@ function showPanel(id){
   if(id==='pagos')renderPagos();
   if(id==='emitir')initEmitir();
   if(id==='informes')renderInforme();
+  if(id==='config')loadConfigToForm();
   if(id==='adjuntos')renderDocumentos();
 }
 
@@ -700,6 +701,7 @@ async function loadAll(){
     var lk=localStorage.getItem('servap_apikey');
     if(lk)config.apiKey=lk;
     populateSelects();
+    loadConfigToForm();
     if(currentPanel==='dashboard')renderDashboard();
     console.log('Datos cargados: '+clientes.length+' clientes, '+facturasEmit.length+' facturas emitidas');
     toast('Datos sincronizados');
@@ -1212,8 +1214,21 @@ async function saveConfig(){
   config.nextNum=parseInt(document.getElementById('cfg-next-num').value)||1;
   var ak=document.getElementById('cfg-apikey').value;
   if(ak){config.apiKey=ak;localStorage.setItem('servap_apikey',ak);}
-  await sbSave('inv_config',Object.assign({id:1},config));
-  toast('Configuración guardada');
+  // Only send valid table columns (not apiKey)
+  var dbData={id:1,empresa:config.empresa,nrt:config.nrt,direccion:config.direccion,telefono:config.telefono,email:config.email,igi:config.igi,prefijo:config.prefijo,nextNum:config.nextNum};
+  var r=await sbSave('inv_config',dbData);
+  if(r) toast('Configuración guardada');
+}
+
+function loadConfigToForm(){
+  var fields={empresa:'cfg-empresa',nrt:'cfg-nrt',direccion:'cfg-direccion',telefono:'cfg-telefono',email:'cfg-email',igi:'cfg-igi',prefijo:'cfg-prefijo',nextNum:'cfg-next-num'};
+  Object.keys(fields).forEach(function(k){
+    var el=document.getElementById(fields[k]);
+    if(el&&config[k]!=null) el.value=config[k];
+  });
+  var ak=config.apiKey||localStorage.getItem('servap_apikey')||'';
+  var ki=document.getElementById('cfg-apikey');
+  if(ki&&ak) ki.value=ak;
 }
 
 //=== PDF GENERATION ========================================================
