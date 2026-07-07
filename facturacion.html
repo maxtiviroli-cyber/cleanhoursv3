@@ -907,9 +907,11 @@ function renderEmitidas(){
     h+='<td><span class="badge-status '+bc+'">'+f.estado.toUpperCase()+'</span></td>';
     // Status controls
     h+='<td style="white-space:nowrap">';
+    var numDocs=adjuntos.filter(function(a){return a.factura_id==f.id;}).length;
+    if(numDocs>0) h+='<button class="btn-ghost" title="Ver documentos ('+numDocs+')" onclick="viewFacturaDocs('+f.id+')">&#128206;'+numDocs+'</button>';
     if(f.estado!=='pagada'&&f.estado!=='declarada') h+='<button class="btn-ghost" title="Marcar pagada" onclick="setEstado('+f.id+',&quot;pagada&quot;)">&#128176;</button>';
     if(f.estado==='pagada') h+='<button class="btn-ghost" title="Marcar declarada" onclick="setEstado('+f.id+',&quot;declarada&quot;)">&#9745;</button>';
-    h+='<button class="btn-ghost" title="Descargar PDF" onclick="generateFacturaPDF(facturasEmit.find(function(x){return x.id=='+f.id+';}))">&#128196;</button>';
+    h+='<button class="btn-ghost" title="Generar PDF" onclick="generateFacturaPDF(facturasEmit.find(function(x){return x.id=='+f.id+';}))">&#128424;</button>';
     h+='</td>';
     h+='<td><button class="btn-ghost" onclick="editFactura('+f.id+')">&#9998;</button></td>';
     h+='</tr>';
@@ -968,8 +970,10 @@ function editFactura(id){
     +'<div class="form-group"><label class="form-label">Notas</label><input class="form-input" id="ed-notas" value="'+esc(f.notas)+'"></div>'
     +'</div>';
 
+  var numDocs=adjuntos.filter(function(a){return a.factura_id==f.id;}).length;
   footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button>'
     +'<button class="btn btn-danger btn-sm" onclick="deleteFacturaEmit('+f.id+')" style="margin-right:auto">&#128465; Eliminar</button>'
+    +(numDocs>0?'<button class="btn btn-outline btn-sm" onclick="closeModal();viewFacturaDocs('+f.id+')">&#128206; Ver docs ('+numDocs+')</button>':'')
     +'<button class="btn btn-primary" onclick="saveEditFactura('+f.id+')">Guardar cambios</button>';
 
   m.classList.add('active');
@@ -1013,6 +1017,69 @@ async function deleteFacturaEmit(id){
   closeModal();
   renderEmitidas();
   toast('Factura eliminada');
+}
+
+function viewFacturaDocs(id){
+  var docs=adjuntos.filter(function(a){return a.factura_id==id;});
+  var f=facturasEmit.find(function(x){return x.id==id;});
+  var m=document.getElementById('modal-overlay');
+  var title=document.getElementById('modal-title');
+  var body=document.getElementById('modal-body');
+  var footer=document.getElementById('modal-footer');
+
+  title.textContent='Documentos — '+(f?f.numero:'');
+
+  if(!docs.length){
+    body.innerHTML='<div class="empty"><div class="empty-icon">&#128196;</div><div class="empty-title">Sin documentos adjuntos</div><div class="empty-sub">Esta factura no tiene PDFs ni respaldos vinculados</div></div>';
+  } else {
+    var h='<div style="display:flex;flex-direction:column;gap:12px">';
+    docs.forEach(function(d,i){
+      var isPdf=(d.media_type||'').indexOf('pdf')>=0||(d.nombre||'').indexOf('.pdf')>=0;
+      var isImg=(d.media_type||'').indexOf('image')>=0;
+      var mediaType=d.media_type||'application/pdf';
+      h+='<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      h+='<div><strong style="font-size:12px">'+esc(d.nombre||'Documento '+(i+1))+'</strong>';
+      h+='<div style="font-size:10px;color:var(--text2)">'+(d.tipo==='factura_pdf'?'PDF original de la factura':'Documento de respaldo')+'</div></div>';
+      h+='<div style="display:flex;gap:6px">';
+      h+='<button class="btn btn-sm btn-primary" onclick="openDocView('+d.id+')">&#128065; Ver</button>';
+      h+='<button class="btn btn-sm btn-outline" onclick="downloadDoc('+d.id+')">&#11015; Descargar</button>';
+      h+='</div></div>';
+      if(isImg&&d.data){
+        h+='<img src="data:'+mediaType+';base64,'+d.data+'" style="max-width:100%;max-height:200px;border-radius:4px;border:1px solid var(--border)">';
+      }
+      h+='</div>';
+    });
+    h+='</div>';
+    body.innerHTML=h;
+  }
+  footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cerrar</button>';
+  m.classList.add('active');
+}
+
+function openDocView(docId){
+  var d=adjuntos.find(function(a){return a.id==docId;});
+  if(!d||!d.data){toast('Documento sin datos');return;}
+  var mediaType=d.media_type||'application/pdf';
+  var dataUri='data:'+mediaType+';base64,'+d.data;
+  var w=window.open('');
+  if(!w){toast('Permite popups para ver el documento');return;}
+  if(mediaType.indexOf('pdf')>=0){
+    w.document.write('<html><head><title>'+esc(d.nombre)+'</title></head><body style="margin:0"><iframe src="'+dataUri+'" style="width:100%;height:100vh;border:none"></iframe></body></html>');
+  } else {
+    w.document.write('<html><head><title>'+esc(d.nombre)+'</title></head><body style="margin:0;display:flex;align-items:center;justify-content:center;background:#333"><img src="'+dataUri+'" style="max-width:100%;max-height:100vh"></body></html>');
+  }
+  w.document.close();
+}
+
+function downloadDoc(docId){
+  var d=adjuntos.find(function(a){return a.id==docId;});
+  if(!d||!d.data){toast('Documento sin datos');return;}
+  var mediaType=d.media_type||'application/pdf';
+  var link=document.createElement('a');
+  link.href='data:'+mediaType+';base64,'+d.data;
+  link.download=d.nombre||'documento';
+  link.click();
 }
 
 //=== FACTURAS RECIBIDAS ====================================================
@@ -1303,16 +1370,17 @@ async function confirmImportEmit(){
   else if(document.getElementById('imp-enviada').checked)estado='enviada';
   else estado='borrador';
 
+  var factId=uid();
   var factura={
-    id:uid(),
+    id:factId,
     numero:numero,
     fecha:document.getElementById('imp-fecha').value,
     vencimiento:document.getElementById('imp-vencimiento').value||null,
     cliente_id:cliId?parseInt(cliId):null,
-    cliente_nombre:cli?cli.nombre:(document.getElementById('imp-cliente').options[document.getElementById('imp-cliente').selectedIndex].text||''),
+    cliente_nombre:cli?cli.nombre:'',
     cliente_nrt:cli?cli.nrt:'',
     categoria:document.getElementById('imp-categoria').value,
-    lineas:document.getElementById('imp-lineas-list').innerHTML?'[]':'[]',
+    lineas:'[]',
     base:parseFloat(document.getElementById('imp-base').value)||0,
     igi:parseFloat(document.getElementById('imp-igi').value)||0,
     total:parseFloat(document.getElementById('imp-total').value)||0,
@@ -1324,9 +1392,16 @@ async function confirmImportEmit(){
   await sbSave('inv_facturas_emit',factura);
   facturasEmit.push(factura);
 
-  // Save attached docs
+  // Save the original imported PDF as attachment
+  if(impPdfData){
+    var pdfDoc={id:uid(),factura_id:factId,cliente_id:factura.cliente_id,tipo:'factura_pdf',nombre:impPdfData.name,data:impPdfData.data,media_type:impPdfData.type,nota:'PDF original factura '+numero,created_at:new Date().toISOString()};
+    await sbSave('inv_adjuntos',pdfDoc);
+    adjuntos.push(pdfDoc);
+  }
+
+  // Save additional backup docs
   for(var i=0;i<impDocs.length;i++){
-    var doc={id:uid(),factura_id:factura.id,cliente_id:factura.cliente_id,tipo:'respaldo',nombre:impDocs[i].name,data:impDocs[i].data.substring(0,500),nota:'Respaldo factura '+numero,created_at:new Date().toISOString()};
+    var doc={id:uid(),factura_id:factId,cliente_id:factura.cliente_id,tipo:'respaldo',nombre:impDocs[i].name,data:impDocs[i].data.split(',')[1]||impDocs[i].data,media_type:impDocs[i].type,nota:'Respaldo factura '+numero,created_at:new Date().toISOString()};
     await sbSave('inv_adjuntos',doc);
     adjuntos.push(doc);
   }
