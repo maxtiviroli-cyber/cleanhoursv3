@@ -250,6 +250,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
 
     <!-- ═══ DASHBOARD ═══ -->
     <div class="panel active" id="panel-dashboard">
+      <div class="filters" style="margin-bottom:16px;gap:6px">
+        <select id="dash-filter-anio" onchange="renderDashboard()" style="font-size:11px;width:80px"><option value="">Año</option></select>
+        <select id="dash-filter-mes" onchange="renderDashboard()" style="font-size:11px;width:80px"><option value="">Mes</option><option value="01">Ene</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option></select>
+        <span style="font-size:10px;color:var(--text2)">|</span>
+        <input type="date" id="dash-filter-desde" onchange="renderDashboard()" title="Desde" style="font-size:11px;width:125px">
+        <span style="font-size:10px;color:var(--text2)">a</span>
+        <input type="date" id="dash-filter-hasta" onchange="renderDashboard()" title="Hasta" style="font-size:11px;width:125px">
+      </div>
       <div class="kpi-grid" id="dash-kpis"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="dash-grid">
         <div class="card"><div class="card-header"><div class="card-title">Últimas facturas emitidas</div></div><div class="card-body" id="dash-recent-emit" style="font-size:12px"></div></div>
@@ -335,13 +343,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     <!-- ═══ FACTURAS EMITIDAS ═══ -->
     <div class="panel" id="panel-emitidas">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <div class="filters">
-          <select id="emit-filter-estado" onchange="renderEmitidas()"><option value="">Todos los estados</option><option>borrador</option><option>enviada</option><option>pagada</option><option>declarada</option><option>vencida</option></select>
-          <select id="emit-filter-cat" onchange="renderEmitidas()"><option value="">Todas las categorías</option></select>
-          <select id="emit-filter-cliente" onchange="renderEmitidas()"><option value="">Todos los clientes</option></select>
-          <input type="date" id="emit-filter-desde" onchange="renderEmitidas()" title="Desde" style="width:130px">
-          <span style="font-size:11px;color:var(--text2)">a</span>
-          <input type="date" id="emit-filter-hasta" onchange="renderEmitidas()" title="Hasta" style="width:130px">
+        <div class="filters" style="gap:6px">
+          <select id="emit-filter-estado" onchange="renderEmitidas()" style="font-size:11px"><option value="">Estado</option><option>borrador</option><option>enviada</option><option>pagada</option><option>declarada</option><option>vencida</option></select>
+          <select id="emit-filter-cat" onchange="renderEmitidas()" style="font-size:11px"><option value="">Categoría</option></select>
+          <select id="emit-filter-cliente" onchange="renderEmitidas()" style="font-size:11px"><option value="">Cliente</option></select>
+          <span style="font-size:10px;color:var(--text2);border-left:1px solid var(--border);padding-left:8px">|</span>
+          <select id="emit-filter-anio" onchange="renderEmitidas()" style="font-size:11px;width:80px"><option value="">Año</option></select>
+          <select id="emit-filter-mes" onchange="renderEmitidas()" style="font-size:11px;width:80px"><option value="">Mes</option><option value="01">Ene</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option></select>
+          <span style="font-size:10px;color:var(--text2)">|</span>
+          <input type="date" id="emit-filter-desde" onchange="renderEmitidas()" title="Desde" style="font-size:11px;width:125px">
+          <span style="font-size:10px;color:var(--text2)">a</span>
+          <input type="date" id="emit-filter-hasta" onchange="renderEmitidas()" title="Hasta" style="font-size:11px;width:125px">
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-sm btn-outline" onclick="exportEmitidasExcel()">&#128196; Excel</button>
@@ -437,8 +449,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     <div class="panel" id="panel-informes">
       <div class="filters" style="margin-bottom:16px">
         <select id="inf-tipo" onchange="renderInforme()"><option value="resumen">Resumen general</option><option value="por-cliente">Por cliente</option><option value="por-categoria">Por categoría</option><option value="por-proveedor">Por proveedor</option><option value="igi">IGI Repercutido / Soportado</option></select>
-        <input type="month" id="inf-desde" onchange="renderInforme()">
-        <input type="month" id="inf-hasta" onchange="renderInforme()">
+        <select id="inf-filter-anio" onchange="renderInforme()" style="font-size:11px;width:80px"><option value="">Año</option></select>
+        <select id="inf-filter-mes" onchange="renderInforme()" style="font-size:11px;width:80px"><option value="">Mes</option><option value="01">Ene</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option></select>
+        <span style="font-size:10px;color:var(--text2)">|</span>
+        <input type="date" id="inf-filter-desde" onchange="renderInforme()" title="Desde" style="font-size:11px;width:125px">
+        <span style="font-size:10px;color:var(--text2)">a</span>
+        <input type="date" id="inf-filter-hasta" onchange="renderInforme()" title="Hasta" style="font-size:11px;width:125px">
         <button class="btn btn-sm btn-outline" onclick="exportInformePDF()">&#128196; PDF</button>
       </div>
       <div id="informe-output"></div>
@@ -703,6 +719,7 @@ async function loadAll(){
     var lk=localStorage.getItem('servap_apikey');
     if(lk)config.apiKey=lk;
     populateSelects();
+    populateYearFilters();
     loadConfigToForm();
     if(currentPanel==='dashboard')renderDashboard();
     console.log('Datos cargados: '+clientes.length+' clientes, '+facturasEmit.length+' facturas emitidas');
@@ -711,6 +728,16 @@ async function loadAll(){
     console.error('Error cargando datos:',e);
     toast('Error de conexión con Supabase');
   }
+}
+
+function populateYearFilters(){
+  var years={};
+  facturasEmit.forEach(function(f){if(f.fecha)years[f.fecha.slice(0,4)]=1;});
+  facturasRec.forEach(function(f){if(f.fecha)years[f.fecha.slice(0,4)]=1;});
+  var yOpts='<option value="">Año</option>'+Object.keys(years).sort().reverse().map(function(y){return'<option>'+y+'</option>';}).join('');
+  ['emit-filter-anio','dash-filter-anio','inf-filter-anio'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.innerHTML=yOpts;
+  });
 }
 
 function populateSelects(){
@@ -911,8 +938,12 @@ function renderEmitidas(){
     if(estado&&f.estado!==estado)return false;
     if(cat&&f.categoria!==cat)return false;
     if(cliId&&f.cliente_id!=cliId)return false;
+    var anio=document.getElementById('emit-filter-anio').value;
+    var mes=document.getElementById('emit-filter-mes').value;
     var desde=document.getElementById('emit-filter-desde').value;
     var hasta=document.getElementById('emit-filter-hasta').value;
+    if(anio&&f.fecha&&f.fecha.slice(0,4)!==anio)return false;
+    if(mes&&f.fecha&&f.fecha.slice(5,7)!==mes)return false;
     if(desde&&f.fecha&&f.fecha<desde)return false;
     if(hasta&&f.fecha&&f.fecha>hasta)return false;
     return true;
@@ -925,6 +956,7 @@ function renderEmitidas(){
     var va=a[emitSort.field],vb=b[emitSort.field];
     if(va==null)va='';if(vb==null)vb='';
     if(emitSort.field==='total'||emitSort.field==='base'||emitSort.field==='igi'){return((parseFloat(va)||0)-(parseFloat(vb)||0))*emitSort.dir;}
+    if(emitSort.field==='numero'){var na=parseInt(String(va).replace(/[^0-9]/g,''))||0,nb=parseInt(String(vb).replace(/[^0-9]/g,''))||0;return(na-nb)*emitSort.dir;}
     va=String(va).toLowerCase();vb=String(vb).toLowerCase();
     if(va<vb)return -1*emitSort.dir;if(va>vb)return 1*emitSort.dir;return 0;
   });
@@ -1133,8 +1165,12 @@ function renderRecibidas(){
   var data=facturasRec.filter(function(f){
     if(prov&&f.proveedor_id!=prov)return false;
     if(cat&&f.categoria!==cat)return false;
+    var anio=document.getElementById('emit-filter-anio').value;
+    var mes=document.getElementById('emit-filter-mes').value;
     var desde=document.getElementById('emit-filter-desde').value;
     var hasta=document.getElementById('emit-filter-hasta').value;
+    if(anio&&f.fecha&&f.fecha.slice(0,4)!==anio)return false;
+    if(mes&&f.fecha&&f.fecha.slice(5,7)!==mes)return false;
     if(desde&&f.fecha&&f.fecha<desde)return false;
     if(hasta&&f.fecha&&f.fecha>hasta)return false;
     return true;
@@ -1170,21 +1206,34 @@ function renderPagos(){
 }
 
 //=== DASHBOARD =============================================================
+function dashFilter(list){
+  var anio=(document.getElementById('dash-filter-anio')||{}).value||'';
+  var mes=(document.getElementById('dash-filter-mes')||{}).value||'';
+  var desde=(document.getElementById('dash-filter-desde')||{}).value||'';
+  var hasta=(document.getElementById('dash-filter-hasta')||{}).value||'';
+  return list.filter(function(f){
+    if(!f.fecha)return false;
+    if(anio&&f.fecha.slice(0,4)!==anio)return false;
+    if(mes&&f.fecha.slice(5,7)!==mes)return false;
+    if(desde&&f.fecha<desde)return false;
+    if(hasta&&f.fecha>hasta)return false;
+    return true;
+  });
+}
 function renderDashboard(){
-  var mesActual=new Date().toISOString().slice(0,7);
-  var emitMes=facturasEmit.filter(function(f){return f.fecha&&f.fecha.slice(0,7)===mesActual;});
-  var totalEmit=emitMes.reduce(function(s,f){return s+(f.total||0);},0);
-  var pendientes=facturasEmit.filter(function(f){return f.estado==='enviada'||f.estado==='vencida';});
+  var emitFilt=dashFilter(facturasEmit);
+  var totalEmit=emitFilt.reduce(function(s,f){return s+(f.total||0);},0);
+  var pendientes=emitFilt.filter(function(f){return f.estado==='enviada'||f.estado==='vencida';});
   var totalPend=pendientes.reduce(function(s,f){return s+(f.total||0);},0);
-  var pagadas=facturasEmit.filter(function(f){return f.estado==='pagada'||f.estado==='declarada';});
+  var pagadas=emitFilt.filter(function(f){return f.estado==='pagada'||f.estado==='declarada';});
   var totalPagado=pagadas.reduce(function(s,f){return s+(f.total||0);},0);
-  var totalRec=facturasRec.filter(function(f){return f.fecha&&f.fecha.slice(0,7)===mesActual;}).reduce(function(s,f){return s+(f.total||0);},0);
+  var totalRec=dashFilter(facturasRec).reduce(function(s,f){return s+(f.total||0);},0);
 
   document.getElementById('dash-kpis').innerHTML=
-    '<div class="kpi"><div class="kpi-val" style="color:var(--primary)">'+fmt(totalEmit)+'</div><div class="kpi-label">Facturado este mes</div><div class="kpi-sub">'+emitMes.length+' facturas</div></div>'
+    '<div class="kpi"><div class="kpi-val" style="color:var(--primary)">'+fmt(totalEmit)+'</div><div class="kpi-label">Facturado periodo</div><div class="kpi-sub">'+emitMes.length+' facturas</div></div>'
     +'<div class="kpi"><div class="kpi-val" style="color:var(--warning)">'+fmt(totalPend)+'</div><div class="kpi-label">Por cobrar</div><div class="kpi-sub">'+pendientes.length+' facturas</div></div>'
     +'<div class="kpi"><div class="kpi-val" style="color:var(--success)">'+fmt(totalPagado)+'</div><div class="kpi-label">Cobrado total</div><div class="kpi-sub">'+pagadas.length+' facturas</div></div>'
-    +'<div class="kpi"><div class="kpi-val" style="color:var(--danger)">'+fmt(totalRec)+'</div><div class="kpi-label">Gastos este mes</div><div class="kpi-sub">'+facturasRec.length+' facturas</div></div>';
+    +'<div class="kpi"><div class="kpi-val" style="color:var(--danger)">'+fmt(totalRec)+'</div><div class="kpi-label">Gastos periodo</div><div class="kpi-sub">'+facturasRec.length+' facturas</div></div>';
 
   // Recent emitidas
   var recent=facturasEmit.slice().sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');}).slice(0,5);
