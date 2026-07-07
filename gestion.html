@@ -1801,11 +1801,32 @@ function renderDashboard(){
 
   // Horas por negocio — siempre usar GRUPOS_BASE para garantizar cuadratura
   // Ademas capturar negocios "sin clasificar" para que el total siempre cuadre
+  // Normalize function: lowercase, remove extra spaces, trim
+  function normNeg(s){return (s||'').toLowerCase().replace(/\s+/g,'').trim();}
+  // Build lookup: normalized name → group name as stored
+  var negToGroup={};
+  Object.keys(GRUPOS_BASE).forEach(function(g){
+    GRUPOS_BASE[g].forEach(function(p){ negToGroup[normNeg(p)]=p; });
+  });
+  // Map record negocios to their canonical group name
+  function matchNeg(recNeg){
+    if(negToGroup[normNeg(recNeg)]) return negToGroup[normNeg(recNeg)];
+    // Try partial match
+    var rn=normNeg(recNeg);
+    var keys=Object.keys(negToGroup);
+    for(var i=0;i<keys.length;i++){
+      if(keys[i].indexOf(rn)>=0||rn.indexOf(keys[i])>=0) return negToGroup[keys[i]];
+    }
+    return null;
+  }
+
   var ph='';
-  var hsAcum=0; // acumulador para verificar cuadratura
+  var hsAcum=0;
   Object.keys(GRUPOS_BASE).forEach(function(grupo){
     var ps=GRUPOS_BASE[grupo], c=GC[grupo]||'#888';
-    var gt=ps.reduce(function(s,p){return s+data.filter(function(r){return r.negocio===p;}).reduce(function(ss,r){return ss+(r.hrs||0);},0);},0);
+    var gt=ps.reduce(function(s,p){
+      return s+data.filter(function(r){return matchNeg(r.negocio)===p;}).reduce(function(ss,r){return ss+(r.hrs||0);},0);
+    },0);
     hsAcum+=gt;
     if(!gt) return;
     ph+='<div style="margin-bottom:20px">';
@@ -1816,7 +1837,7 @@ function renderDashboard(){
     ph+='</div>';
     ph+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px">';
     ps.forEach(function(p){
-      var h=data.filter(function(r){return r.negocio===p;}).reduce(function(s,r){return s+(r.hrs||0);},0);
+      var h=data.filter(function(r){return matchNeg(r.negocio)===p;}).reduce(function(s,r){return s+(r.hrs||0);},0);
       if(!h) return;
       ph+='<div style="background:white;border:1px solid #E8E8E8;border-top:3px solid '+c+';border-radius:10px;padding:12px 14px">';
       ph+='<div style="font-size:22px;font-weight:700;color:'+c+';line-height:1">'+h.toFixed(1)+'</div>';
@@ -1826,9 +1847,8 @@ function renderDashboard(){
     ph+='</div></div>';
   });
   // Negocios sin clasificar (no estan en ningun grupo) — garantiza cuadratura
-  var allKnown=[];Object.keys(GRUPOS_BASE).forEach(function(g){allKnown=allKnown.concat(GRUPOS_BASE[g]);});
   var unclassified={};
-  data.forEach(function(r){if(allKnown.indexOf(r.negocio)<0&&r.hrs>0) unclassified[r.negocio]=(unclassified[r.negocio]||0)+r.hrs;});
+  data.forEach(function(r){if(!matchNeg(r.negocio)&&r.hrs>0) unclassified[r.negocio]=(unclassified[r.negocio]||0)+r.hrs;});
   if(Object.keys(unclassified).length>0){
     var uc=Object.keys(unclassified).reduce(function(s,n){return s+unclassified[n];},0);
     ph+='<div style="margin-bottom:20px">';

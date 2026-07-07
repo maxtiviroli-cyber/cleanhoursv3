@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Servap Turístics — Facturación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --bg:#F5F5F0;--surface:#FFFFFF;--card:#FFFFFF;--border:#E8E5DF;
+  --text:#1A1A1A;--text2:#6B6B6B;--text3:#999;
+  --primary:#2C5F2D;--primary-light:#E8F0E8;--primary-dark:#1A3D1A;
+  --accent:#D4A853;--accent-light:#FFF8EB;
+  --danger:#C53030;--danger-light:#FFF5F5;
+  --success:#2C5F2D;--success-light:#F0FFF4;
+  --warning:#D4A853;--warning-light:#FFFBEB;
+  --info:#2B6CB0;--info-light:#EBF8FF;
+  --sidebar-bg:#1A1A1A;--sidebar-text:#E8E5DF;--sidebar-active:#2C5F2D;
+  --radius:8px;--shadow:0 1px 3px rgba(0,0,0,0.08);
+  --mono:'DM Mono',monospace;--sans:'Inter',-apple-system,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#CCC;border-radius:3px}
+
+/* SIDEBAR */
+.sidebar{width:240px;background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:transform .3s}
+.sb-brand{padding:20px 18px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.sb-brand-name{font-size:14px;font-weight:700;color:#FFF;letter-spacing:.02em}
+.sb-brand-sub{font-size:10px;color:var(--accent);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.sb-nav{flex:1;overflow-y:auto;padding:12px 0}
+.sb-section{padding:0 12px;margin-bottom:16px}
+.sb-section-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#666;padding:0 8px;margin-bottom:6px}
+.sb-item{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;color:var(--sidebar-text);font-size:12px;font-weight:500;padding:8px 12px;border-radius:6px;cursor:pointer;text-align:left;transition:all .15s;font-family:var(--sans)}
+.sb-item:hover{background:rgba(255,255,255,0.06)}
+.sb-item.active{background:var(--sidebar-active);color:#FFF;font-weight:600}
+.sb-item .icon{font-size:16px;width:20px;text-align:center}
+.sb-item .badge{margin-left:auto;background:var(--danger);color:#FFF;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sb-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;color:#666}
+.sb-user{display:flex;align-items:center;gap:10px}
+.sb-avatar{width:30px;height:30px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#FFF}
+
+/* MAIN */
+.main{flex:1;margin-left:240px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:30}
+.topbar-title{font-size:18px;font-weight:700}
+.topbar-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.topbar-actions{display:flex;gap:8px}
+.content{padding:24px 28px}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;box-shadow:var(--shadow)}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:13px;font-weight:700}
+.card-sub{font-size:11px;color:var(--text2)}
+.card-body{padding:16px 18px}
+
+/* BUTTONS */
+.btn{border:none;border-radius:6px;font-family:var(--sans);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s;font-size:12px;padding:8px 16px}
+.btn-primary{background:var(--primary);color:#FFF}.btn-primary:hover{background:var(--primary-dark)}
+.btn-accent{background:var(--accent);color:#FFF}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text)}.btn-outline:hover{background:var(--bg)}
+.btn-danger{background:var(--danger);color:#FFF}
+.btn-sm{font-size:11px;padding:5px 12px}
+.btn-ghost{background:none;border:none;color:var(--text2);padding:4px 8px}.btn-ghost:hover{color:var(--text);background:var(--bg)}
+
+/* FORMS */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.form-input,.form-select,.form-textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--sans);background:var(--surface);color:var(--text);transition:border .15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(44,95,45,0.1)}
+.form-textarea{resize:vertical;min-height:60px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);background:var(--bg);border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none}
+.tbl th:hover{color:var(--text)}
+.tbl td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:hover{background:#FAFAF7}
+.tbl .mono{font-family:var(--mono);font-size:11px}
+
+/* BADGES */
+.badge-status{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.02em}
+.badge-borrador{background:#F3F4F6;color:#6B7280}
+.badge-enviada{background:var(--info-light);color:var(--info)}
+.badge-pagada{background:var(--success-light);color:var(--success)}
+.badge-declarada{background:#F3E8FF;color:#7C3AED}
+.badge-pendiente{background:var(--warning-light);color:#92400E}
+.badge-vencida{background:var(--danger-light);color:var(--danger)}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.kpi-val{font-size:24px;font-weight:800;font-family:var(--mono);line-height:1.1}
+.kpi-label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:var(--surface);border-radius:12px;width:90%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:16px;font-weight:700}
+.modal-body{padding:22px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--sidebar-bg);color:#FFF;padding:10px 20px;border-radius:8px;font-size:12px;font-weight:600;z-index:200;opacity:0;transform:translateY(10px);transition:all .3s}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* PANELS */
+.panel{display:none}.panel.active{display:block}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:48px 20px;color:var(--text2)}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:0.4}
+.empty-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.empty-sub{font-size:12px;margin-bottom:16px}
+
+/* FILTERS */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.filters select,.filters input{font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);font-family:var(--sans)}
+
+/* LINE ITEMS */
+.line-items{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px}
+.line-item{display:grid;grid-template-columns:2fr 80px 100px 100px 40px;gap:8px;padding:8px 12px;align-items:center;border-bottom:1px solid var(--border);font-size:12px}
+.line-item:last-child{border-bottom:none}
+.line-item input,.line-item select{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:var(--sans);width:100%}
+.line-header{background:var(--bg);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2)}
+
+/* DOC CAPTURE */
+.doc-capture{border:2px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:all .2s}
+.doc-capture:hover,.doc-capture.dragover{border-color:var(--primary);background:var(--primary-light)}
+.doc-thumb{width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--border)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .topbar{padding:12px 16px}
+  .content{padding:16px}
+  .form-row,.form-row-3{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .line-item{grid-template-columns:1fr;gap:4px}
+  .line-header{display:none}
+  .mobile-menu{display:block !important}
+}
+
+/* PRINT */
+@media print{.sidebar,.topbar{display:none}.main{margin-left:0}}
+
+.mobile-menu{display:none;background:none;border:none;font-size:22px;cursor:pointer;padding:4px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-name">Servap Turístics</div>
+    <div class="sb-brand-sub">Facturación</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-label">General</div>
+      <button class="sb-item active" onclick="showPanel('dashboard')"><span class="icon">&#128200;</span> Dashboard</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Directorio</div>
+      <button class="sb-item" onclick="showPanel('clientes')"><span class="icon">&#128101;</span> Clientes</button>
+      <button class="sb-item" onclick="showPanel('proveedores')"><span class="icon">&#127970;</span> Proveedores</button>
+      <button class="sb-item" onclick="showPanel('servicios')"><span class="icon">&#128230;</span> Servicios y tarifas</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Facturación</div>
+      <button class="sb-item" onclick="showPanel('emitir')"><span class="icon">&#10133;</span> Emitir factura</button>
+      <button class="sb-item" onclick="showPanel('emitidas')"><span class="icon">&#128196;</span> Facturas emitidas</button>
+      <button class="sb-item" onclick="showPanel('recibidas')"><span class="icon">&#128229;</span> Facturas recibidas</button>
+      <button class="sb-item" onclick="showPanel('pagos')"><span class="icon">&#128176;</span> Pagos</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Análisis</div>
+      <button class="sb-item" onclick="showPanel('informes')"><span class="icon">&#128202;</span> Informes</button>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Sistema</div>
+      <button class="sb-item" onclick="showPanel('config')"><span class="icon">&#9881;</span> Configuración</button>
+      <button class="sb-item" onclick="showPanel('adjuntos')"><span class="icon">&#128247;</span> Documentos</button>
+    </div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar">A</div>
+      <div><div style="font-size:12px;font-weight:600;color:#FFF">Admin</div><div style="font-size:10px;color:#888">Servap Turístics</div></div>
+    </div>
+  </div>
+  <div style="padding:10px 18px;border-top:1px solid rgba(255,255,255,0.06)">
+    <a href="gestion.html" style="color:var(--accent);font-size:11px;text-decoration:none;display:flex;align-items:center;gap:6px">&#8592; Panel de Gestión</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <button class="mobile-menu" onclick="document.getElementById('sidebar').classList.toggle('open')">&#9776;</button>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-sub">Servap Turístics — Facturación</div>
+    </div>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </div>
+  <div class="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="kpi-grid" id="dash-kpis"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="dash-grid">
+        <div class="card"><div class="card-header"><div class="card-title">Últimas facturas emitidas</div></div><div class="card-body" id="dash-recent-emit" style="font-size:12px"></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">Facturas por cobrar</div></div><div class="card-body" id="dash-pendientes" style="font-size:12px"></div></div>
+      </div>
+    </div>
+
+    <!-- ═══ CLIENTES ═══ -->
+    <div class="panel" id="panel-clientes">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="filters"><input type="text" placeholder="Buscar cliente..." id="cli-search" oninput="renderClientes()" style="width:220px"></div>
+        <button class="btn btn-primary" onclick="openModal('cli')">&#10133; Nuevo cliente</button>
+      </div>
+      <div class="card"><div class="card-body" id="clientes-list"></div></div>
+    </div>
+
+    <!-- ═══ PROVEEDORES ═══ -->
+    <div class="panel" id="panel-proveedores">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="filters"><input type="text" placeholder="Buscar proveedor..." id="prov-search" oninput="renderProveedores()" style="width:220px"></div>
+        <button class="btn btn-primary" onclick="openModal('prov')">&#10133; Nuevo proveedor</button>
+      </div>
+      <div class="card"><div class="card-body" id="proveedores-list"></div></div>
+    </div>
+
+    <!-- ═══ SERVICIOS ═══ -->
+    <div class="panel" id="panel-servicios">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="filters"><input type="text" placeholder="Buscar servicio..." id="svc-search" oninput="renderServicios()" style="width:220px"></div>
+        <button class="btn btn-primary" onclick="openModal('svc')">&#10133; Nuevo servicio</button>
+      </div>
+      <div class="card"><div class="card-body" id="servicios-list"></div></div>
+    </div>
+
+    <!-- ═══ EMITIR FACTURA ═══ -->
+    <div class="panel" id="panel-emitir">
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">Nueva factura</div><div class="card-sub">Completa los datos y añade conceptos</div></div></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Cliente</label><select class="form-select" id="emit-cliente"><option value="">Seleccionar...</option></select></div>
+            <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="emit-fecha"></div>
+          </div>
+          <div class="form-row-3">
+            <div class="form-group"><label class="form-label">N° Factura</label><input type="text" class="form-input mono" id="emit-numero" placeholder="Auto"></div>
+            <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="emit-categoria"><option>Housekeeping</option><option>Consergeria</option><option>Amenities</option><option>Eventos</option><option>Otros</option></select></div>
+            <div class="form-group"><label class="form-label">Vencimiento</label><input type="date" class="form-input" id="emit-vencimiento"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Conceptos</label>
+            <div class="line-items" id="emit-lines">
+              <div class="line-item line-header"><span>Descripción</span><span>Cantidad</span><span>Precio unit.</span><span>Total</span><span></span></div>
+            </div>
+            <button class="btn btn-sm btn-outline" onclick="addEmitLine()" style="margin-top:6px">&#10133; Añadir línea</button>
+          </div>
+          <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="emit-notas" placeholder="Notas adicionales..."></textarea></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border)">
+            <div>
+              <div style="font-size:12px;color:var(--text2)">Base imponible: <strong class="mono" id="emit-base">0,00 €</strong></div>
+              <div style="font-size:12px;color:var(--text2)">I.G.I. 4,5%: <strong class="mono" id="emit-igi">0,00 €</strong></div>
+              <div style="font-size:16px;font-weight:800;margin-top:4px">Total: <span class="mono" id="emit-total">0,00 €</span></div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline" onclick="saveFactura('borrador')">Guardar borrador</button>
+              <button class="btn btn-primary" onclick="saveFactura('enviada')">&#128196; Guardar y generar PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Adjuntos -->
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">&#128206; Documentos de respaldo</div><div class="card-sub">Adjunta tickets, boletas o comprobantes</div></div></div>
+        <div class="card-body">
+          <div class="doc-capture" onclick="document.getElementById('emit-doc-input').click()">
+            <div style="font-size:28px;margin-bottom:6px">&#128247;</div>
+            <div style="font-size:12px;color:var(--text2)">Toca para capturar o seleccionar documento</div>
+            <input type="file" id="emit-doc-input" accept="image/*,application/pdf" capture="environment" style="display:none" onchange="handleDocCapture(this,'emit')" multiple>
+          </div>
+          <div id="emit-docs-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FACTURAS EMITIDAS ═══ -->
+    <div class="panel" id="panel-emitidas">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div class="filters">
+          <select id="emit-filter-estado" onchange="renderEmitidas()"><option value="">Todos los estados</option><option>borrador</option><option>enviada</option><option>pagada</option><option>declarada</option><option>vencida</option></select>
+          <select id="emit-filter-cat" onchange="renderEmitidas()"><option value="">Todas las categorías</option></select>
+          <select id="emit-filter-cliente" onchange="renderEmitidas()"><option value="">Todos los clientes</option></select>
+          <input type="month" id="emit-filter-mes" onchange="renderEmitidas()">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-outline" onclick="exportEmitidasExcel()">&#128196; Excel</button>
+          <button class="btn btn-sm btn-primary" onclick="showPanel('emitir')">&#10133; Nueva factura</button>
+        </div>
+      </div>
+      <div class="card"><div class="card-body" id="emitidas-list"></div></div>
+    </div>
+
+    <!-- ═══ FACTURAS RECIBIDAS ═══ -->
+    <div class="panel" id="panel-recibidas">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <div class="filters">
+          <select id="rec-filter-prov" onchange="renderRecibidas()"><option value="">Todos los proveedores</option></select>
+          <select id="rec-filter-cat" onchange="renderRecibidas()"><option value="">Todas las categorías</option><option>Suministros</option><option>Servicios</option><option>Material</option><option>Alquiler</option><option>Otros</option></select>
+          <input type="month" id="rec-filter-mes" onchange="renderRecibidas()">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-accent" onclick="openModal('rec-ai')">&#129302; Importar con IA</button>
+          <button class="btn btn-sm btn-primary" onclick="openModal('rec')">&#10133; Registrar factura</button>
+        </div>
+      </div>
+      <div class="card"><div class="card-body" id="recibidas-list"></div></div>
+    </div>
+
+    <!-- ═══ PAGOS ═══ -->
+    <div class="panel" id="panel-pagos">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="filters"><input type="month" id="pago-filter-mes" onchange="renderPagos()"></div>
+        <button class="btn btn-primary" onclick="openModal('pago')">&#10133; Registrar pago</button>
+      </div>
+      <div class="card"><div class="card-body" id="pagos-list"></div></div>
+    </div>
+
+    <!-- ═══ INFORMES ═══ -->
+    <div class="panel" id="panel-informes">
+      <div class="filters" style="margin-bottom:16px">
+        <select id="inf-tipo" onchange="renderInforme()"><option value="resumen">Resumen general</option><option value="por-cliente">Por cliente</option><option value="por-categoria">Por categoría</option><option value="por-proveedor">Por proveedor</option><option value="igi">IGI Repercutido / Soportado</option></select>
+        <input type="month" id="inf-desde" onchange="renderInforme()">
+        <input type="month" id="inf-hasta" onchange="renderInforme()">
+        <button class="btn btn-sm btn-outline" onclick="exportInformePDF()">&#128196; PDF</button>
+      </div>
+      <div id="informe-output"></div>
+    </div>
+
+    <!-- ═══ CONFIGURACIÓN ═══ -->
+    <div class="panel" id="panel-config">
+      <div class="card">
+        <div class="card-header"><div><div class="card-title">Datos de la empresa</div><div class="card-sub">Aparecen en las facturas emitidas</div></div></div>
+        <div class="card-body">
+          <div class="form-row"><div class="form-group"><label class="form-label">Nombre empresa</label><input type="text" class="form-input" id="cfg-empresa" value="Servap Turístics"></div><div class="form-group"><label class="form-label">NRT / CIF</label><input type="text" class="form-input" id="cfg-nrt"></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Dirección</label><input type="text" class="form-input" id="cfg-direccion"></div><div class="form-group"><label class="form-label">Teléfono</label><input type="text" class="form-input" id="cfg-telefono" value="+376 679 669"></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Email</label><input type="text" class="form-input" id="cfg-email" value="paitosr@hotmail.com"></div><div class="form-group"><label class="form-label">% I.G.I.</label><input type="number" class="form-input" id="cfg-igi" value="4.5" step="0.1"></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Prefijo factura</label><input type="text" class="form-input" id="cfg-prefijo" value="SRV"></div><div class="form-group"><label class="form-label">Siguiente N°</label><input type="number" class="form-input" id="cfg-next-num" value="1"></div></div>
+          <div class="form-group"><label class="form-label">API Key Anthropic</label><input type="password" class="form-input" id="cfg-apikey" placeholder="sk-ant-..."></div>
+          <button class="btn btn-primary" onclick="saveConfig()">Guardar configuración</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DOCUMENTOS (mobile capture) ═══ -->
+    <div class="panel" id="panel-adjuntos">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="filters">
+          <select id="doc-filter-cli" onchange="renderDocumentos()"><option value="">Todos los clientes</option></select>
+          <select id="doc-filter-asig" onchange="renderDocumentos()"><option value="">Todos</option><option value="sin">Sin asignar</option><option value="con">Asignados</option></select>
+        </div>
+        <button class="btn btn-primary" onclick="document.getElementById('quick-doc-input').click()">&#128247; Capturar documento</button>
+        <input type="file" id="quick-doc-input" accept="image/*,application/pdf" capture="environment" style="display:none" onchange="quickDocCapture(this)" multiple>
+      </div>
+      <div id="quick-doc-cliente" style="display:none;margin-bottom:16px">
+        <div class="card"><div class="card-body">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Asignar a cliente</label><select class="form-select" id="doc-cli-select"></select></div>
+            <div class="form-group"><label class="form-label">Nota</label><input type="text" class="form-input" id="doc-nota" placeholder="Opcional"></div>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="saveQuickDoc()">Guardar</button>
+        </div></div>
+      </div>
+      <div class="card"><div class="card-body" id="documentos-list"></div></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header"><h3 id="modal-title">Modal</h3><button class="btn-ghost" onclick="closeModal()" style="font-size:18px">&times;</button></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+//=== CONFIG ================================================================
+var SUPA_URL='https://kellhcuvbvgofgiwbeka.supabase.co';
+var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlbGxoY3V2YnZnb2ZnaXdiZWthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzODI4NDcsImV4cCI6MjA2NDk1ODg0N30.sb_publishable_XybZM-ibMJr_rE2fxWKhnA_6XgnZnH9';
+var supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+
+//=== STATE =================================================================
+var clientes=[], proveedores=[], servicios=[], facturasEmit=[], facturasRec=[], pagos=[], adjuntos=[];
+var config={empresa:'Servap Turístics',nrt:'',direccion:'',telefono:'+376 679 669',email:'paitosr@hotmail.com',igi:4.5,prefijo:'SRV',nextNum:1,apiKey:''};
+var currentPanel='dashboard';
+var emitDocs=[]; // temp docs for current invoice being created
+
+//=== UTILS =================================================================
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+function fmt(n){var v=Number(n||0).toFixed(2);var p=v.split('.');var i=p[0];var d=p[1];var neg=i.charAt(0)==='-';if(neg)i=i.substring(1);var o='';for(var x=i.length-1,c=0;x>=0;x--,c++){if(c>0&&c%3===0)o='.'+o;o=i.charAt(x)+o;}return(neg?'-':'')+o+','+d+' €';}
+function fmtDate(iso){if(!iso)return'—';var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function uid(){return Date.now()*100+Math.floor(Math.random()*100);}
+function today(){return new Date().toISOString().slice(0,10);}
+
+//=== NAV ===================================================================
+function showPanel(id){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+  var el=document.getElementById('panel-'+id);if(el)el.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(function(b){b.classList.remove('active');});
+  var btns=document.querySelectorAll('.sb-item');
+  btns.forEach(function(b){if(b.textContent.trim().toLowerCase().indexOf(id)>=0||b.getAttribute('onclick').indexOf("'"+id+"'")>=0)b.classList.add('active');});
+  var titles={dashboard:'Dashboard',clientes:'Clientes',proveedores:'Proveedores',servicios:'Servicios y Tarifas',emitir:'Emitir Factura',emitidas:'Facturas Emitidas',recibidas:'Facturas Recibidas',pagos:'Pagos',informes:'Informes',config:'Configuración',adjuntos:'Documentos'};
+  document.getElementById('topbar-title').textContent=titles[id]||id;
+  currentPanel=id;
+  document.getElementById('sidebar').classList.remove('open');
+  if(id==='dashboard')renderDashboard();
+  if(id==='clientes')renderClientes();
+  if(id==='proveedores')renderProveedores();
+  if(id==='servicios')renderServicios();
+  if(id==='emitidas')renderEmitidas();
+  if(id==='recibidas')renderRecibidas();
+  if(id==='pagos')renderPagos();
+  if(id==='emitir')initEmitir();
+  if(id==='informes')renderInforme();
+  if(id==='adjuntos')renderDocumentos();
+}
+
+//=== MODAL =================================================================
+function openModal(type,data){
+  var m=document.getElementById('modal-overlay');
+  var title=document.getElementById('modal-title');
+  var body=document.getElementById('modal-body');
+  var footer=document.getElementById('modal-footer');
+  if(type==='cli'){
+    title.textContent=data?'Editar cliente':'Nuevo cliente';
+    var d=data||{};
+    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre / Razón social</label><input class="form-input" id="m-cli-name" value="'+(d.nombre||'')+'"></div><div class="form-group"><label class="form-label">NRT / CIF</label><input class="form-input" id="m-cli-nrt" value="'+(d.nrt||'')+'"></div></div>'
+      +'<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="m-cli-email" value="'+(d.email||'')+'"></div><div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="m-cli-tel" value="'+(d.telefono||'')+'"></div></div>'
+      +'<div class="form-group"><label class="form-label">Dirección</label><input class="form-input" id="m-cli-dir" value="'+(d.direccion||'')+'"></div>'
+      +'<div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="m-cli-notas">'+(d.notas||'')+'</textarea></div>';
+    footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveCliente('+(d.id||'null')+')">Guardar</button>';
+  }
+  if(type==='prov'){
+    title.textContent=data?'Editar proveedor':'Nuevo proveedor';
+    var d=data||{};
+    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre / Razón social</label><input class="form-input" id="m-prov-name" value="'+(d.nombre||'')+'"></div><div class="form-group"><label class="form-label">NRT / CIF</label><input class="form-input" id="m-prov-nrt" value="'+(d.nrt||'')+'"></div></div>'
+      +'<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input class="form-input" id="m-prov-email" value="'+(d.email||'')+'"></div><div class="form-group"><label class="form-label">Categoría gasto</label><select class="form-select" id="m-prov-cat"><option>Suministros</option><option>Servicios</option><option>Material</option><option>Alquiler</option><option>Otros</option></select></div></div>'
+      +'<div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="m-prov-tel" value="'+(d.telefono||'')+'"></div>'
+      +'<div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="m-prov-notas">'+(d.notas||'')+'</textarea></div>';
+    footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProveedor('+(d.id||'null')+')">Guardar</button>';
+  }
+  if(type==='svc'){
+    title.textContent=data?'Editar servicio':'Nuevo servicio';
+    var d=data||{};
+    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Nombre del servicio</label><input class="form-input" id="m-svc-name" value="'+(d.nombre||'')+'"></div><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="m-svc-cat"><option>Housekeeping</option><option>Consergeria</option><option>Amenities</option><option>Eventos</option><option>Otros</option></select></div></div>'
+      +'<div class="form-row"><div class="form-group"><label class="form-label">Precio unitario (€)</label><input type="number" step="0.01" class="form-input" id="m-svc-precio" value="'+(d.precio||'')+'"></div><div class="form-group"><label class="form-label">Unidad</label><select class="form-select" id="m-svc-unidad"><option>servicio</option><option>hora</option><option>noche</option><option>unidad</option><option>mes</option></select></div></div>'
+      +'<div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="m-svc-desc">'+(d.descripcion||'')+'</textarea></div>';
+    footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveServicio('+(d.id||'null')+')">Guardar</button>';
+  }
+  if(type==='rec'){
+    title.textContent='Registrar factura recibida';
+    body.innerHTML='<div class="form-row"><div class="form-group"><label class="form-label">Proveedor</label><select class="form-select" id="m-rec-prov"><option value="">Seleccionar...</option>'+proveedores.map(function(p){return'<option value="'+p.id+'">'+p.nombre+'</option>';}).join('')+'</select></div><div class="form-group"><label class="form-label">N° Factura</label><input class="form-input" id="m-rec-num"></div></div>'
+      +'<div class="form-row"><div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="m-rec-fecha" value="'+today()+'"></div><div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="m-rec-cat"><option>Suministros</option><option>Servicios</option><option>Material</option><option>Alquiler</option><option>Otros</option></select></div></div>'
+      +'<div class="form-row"><div class="form-group"><label class="form-label">Base imponible (€)</label><input type="number" step="0.01" class="form-input" id="m-rec-base" oninput="calcRecTotal()"></div><div class="form-group"><label class="form-label">I.G.I. (€)</label><input type="number" step="0.01" class="form-input" id="m-rec-igi" oninput="calcRecTotal()"></div></div>'
+      +'<div class="form-group"><label class="form-label">Total</label><input type="number" step="0.01" class="form-input" id="m-rec-total" style="font-weight:700;font-size:16px"></div>'
+      +'<div class="form-group"><label class="form-label">Concepto</label><input class="form-input" id="m-rec-concepto"></div>'
+      +'<div class="form-group"><label class="form-label">Documento adjunto</label><div class="doc-capture" style="padding:12px" onclick="document.getElementById('m-rec-doc').click()"><span style="font-size:18px">&#128247;</span> Capturar o seleccionar<input type="file" id="m-rec-doc" accept="image/*,application/pdf" capture="environment" style="display:none"></div></div>';
+    footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveRecibida()">Guardar</button>';
+  }
+  m.classList.add('active');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('active');}
+
+//=== SUPABASE HELPERS ======================================================
+async function sbLoad(table){try{var r=await supa.from(table).select('*').limit(10000);return r.data||[];}catch(e){console.warn(e);return[];}}
+async function sbSave(table,data){try{var r=await supa.from(table).upsert(data);if(r.error)console.warn(r.error);return r;}catch(e){console.warn(e);}}
+async function sbDel(table,id){try{await supa.from(table).delete().eq('id',id);}catch(e){console.warn(e);}}
+
+//=== DATA LOAD =============================================================
+async function loadAll(){
+  try{
+    clientes=await sbLoad('inv_clientes');
+    proveedores=await sbLoad('inv_proveedores');
+    servicios=await sbLoad('inv_servicios');
+    facturasEmit=await sbLoad('inv_facturas_emit');
+    facturasRec=await sbLoad('inv_facturas_rec');
+    pagos=await sbLoad('inv_pagos');
+    adjuntos=await sbLoad('inv_adjuntos');
+    var cfgRows=await sbLoad('inv_config');
+    if(cfgRows.length){var c=cfgRows[0];Object.assign(config,c);}
+    // Load API key from localStorage
+    var lk=localStorage.getItem('inv_apikey');
+    if(lk)config.apiKey=lk;
+    populateSelects();
+    renderDashboard();
+    toast('Datos cargados');
+  }catch(e){
+    console.warn('Error cargando datos:',e);
+    toast('Error de conexión');
+  }
+}
+
+function populateSelects(){
+  // Emit cliente select
+  var cs=document.getElementById('emit-cliente');
+  if(cs){cs.innerHTML='<option value="">Seleccionar...</option>'+clientes.map(function(c){return'<option value="'+c.id+'">'+c.nombre+'</option>';}).join('');}
+  // Filter selects
+  var fcs=document.getElementById('emit-filter-cliente');
+  if(fcs){fcs.innerHTML='<option value="">Todos los clientes</option>'+clientes.map(function(c){return'<option value="'+c.id+'">'+c.nombre+'</option>';}).join('');}
+  var fps=document.getElementById('rec-filter-prov');
+  if(fps){fps.innerHTML='<option value="">Todos los proveedores</option>'+proveedores.map(function(p){return'<option value="'+p.id+'">'+p.nombre+'</option>';}).join('');}
+  var dcs=document.getElementById('doc-cli-select');
+  if(dcs){dcs.innerHTML='<option value="">Seleccionar cliente...</option>'+clientes.map(function(c){return'<option value="'+c.id+'">'+c.nombre+'</option>';}).join('');}
+}
+
+//=== CLIENTES ==============================================================
+function renderClientes(){
+  var q=(document.getElementById('cli-search').value||'').toLowerCase();
+  var data=clientes.filter(function(c){return !q||c.nombre.toLowerCase().indexOf(q)>=0;});
+  if(!data.length){document.getElementById('clientes-list').innerHTML='<div class="empty"><div class="empty-icon">&#128101;</div><div class="empty-title">Sin clientes</div><div class="empty-sub">Añade tu primer cliente para empezar a facturar</div></div>';return;}
+  var h='<table class="tbl"><thead><tr><th>Nombre</th><th>NRT</th><th>Email</th><th>Teléfono</th><th>Facturas</th><th></th></tr></thead><tbody>';
+  data.forEach(function(c){
+    var nf=facturasEmit.filter(function(f){return f.cliente_id==c.id;}).length;
+    h+='<tr><td style="font-weight:600">'+c.nombre+'</td><td class="mono">'+(c.nrt||'—')+'</td><td>'+(c.email||'—')+'</td><td>'+(c.telefono||'—')+'</td><td class="mono">'+nf+'</td>';
+    h+='<td><button class="btn-ghost" onclick="openModal('cli','+JSON.stringify(c).replace(/"/g,'&quot;')+')">&#9998;</button> <button class="btn-ghost" onclick="deleteCliente('+c.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('clientes-list').innerHTML=h;
+}
+async function saveCliente(editId){
+  var obj={nombre:document.getElementById('m-cli-name').value.trim(),nrt:document.getElementById('m-cli-nrt').value.trim(),email:document.getElementById('m-cli-email').value.trim(),telefono:document.getElementById('m-cli-tel').value.trim(),direccion:document.getElementById('m-cli-dir').value.trim(),notas:document.getElementById('m-cli-notas').value.trim()};
+  if(!obj.nombre){toast('Nombre es obligatorio');return;}
+  if(editId){obj.id=editId;}else{obj.id=uid();}
+  await sbSave('inv_clientes',obj);
+  var idx=clientes.findIndex(function(c){return c.id==obj.id;});
+  if(idx>=0)clientes[idx]=obj;else clientes.push(obj);
+  closeModal();populateSelects();renderClientes();toast('Cliente guardado');
+}
+async function deleteCliente(id){if(!confirm('¿Eliminar cliente?'))return;await sbDel('inv_clientes',id);clientes=clientes.filter(function(c){return c.id!=id;});populateSelects();renderClientes();toast('Cliente eliminado');}
+
+//=== PROVEEDORES ===========================================================
+function renderProveedores(){
+  var q=(document.getElementById('prov-search').value||'').toLowerCase();
+  var data=proveedores.filter(function(p){return !q||p.nombre.toLowerCase().indexOf(q)>=0;});
+  if(!data.length){document.getElementById('proveedores-list').innerHTML='<div class="empty"><div class="empty-icon">&#127970;</div><div class="empty-title">Sin proveedores</div><div class="empty-sub">Registra proveedores para gestionar facturas recibidas</div></div>';return;}
+  var h='<table class="tbl"><thead><tr><th>Nombre</th><th>NRT</th><th>Categoría</th><th>Email</th><th></th></tr></thead><tbody>';
+  data.forEach(function(p){
+    h+='<tr><td style="font-weight:600">'+p.nombre+'</td><td class="mono">'+(p.nrt||'—')+'</td><td><span class="badge-status badge-borrador">'+(p.categoria||'—')+'</span></td><td>'+(p.email||'—')+'</td>';
+    h+='<td><button class="btn-ghost" onclick="openModal('prov','+JSON.stringify(p).replace(/"/g,'&quot;')+')">&#9998;</button> <button class="btn-ghost" onclick="deleteProveedor('+p.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('proveedores-list').innerHTML=h;
+}
+async function saveProveedor(editId){
+  var obj={nombre:document.getElementById('m-prov-name').value.trim(),nrt:document.getElementById('m-prov-nrt').value.trim(),email:document.getElementById('m-prov-email').value.trim(),categoria:document.getElementById('m-prov-cat').value,telefono:document.getElementById('m-prov-tel').value.trim(),notas:document.getElementById('m-prov-notas').value.trim()};
+  if(!obj.nombre){toast('Nombre es obligatorio');return;}
+  if(editId){obj.id=editId;}else{obj.id=uid();}
+  await sbSave('inv_proveedores',obj);
+  var idx=proveedores.findIndex(function(p){return p.id==obj.id;});
+  if(idx>=0)proveedores[idx]=obj;else proveedores.push(obj);
+  closeModal();populateSelects();renderProveedores();toast('Proveedor guardado');
+}
+async function deleteProveedor(id){if(!confirm('¿Eliminar proveedor?'))return;await sbDel('inv_proveedores',id);proveedores=proveedores.filter(function(p){return p.id!=id;});populateSelects();renderProveedores();toast('Proveedor eliminado');}
+
+//=== SERVICIOS =============================================================
+function renderServicios(){
+  var q=(document.getElementById('svc-search').value||'').toLowerCase();
+  var data=servicios.filter(function(s){return !q||s.nombre.toLowerCase().indexOf(q)>=0;});
+  if(!data.length){document.getElementById('servicios-list').innerHTML='<div class="empty"><div class="empty-icon">&#128230;</div><div class="empty-title">Sin servicios</div><div class="empty-sub">Define tus servicios y tarifas para facturar más rápido</div></div>';return;}
+  var h='<table class="tbl"><thead><tr><th>Servicio</th><th>Categoría</th><th>Precio</th><th>Unidad</th><th></th></tr></thead><tbody>';
+  data.forEach(function(s){
+    h+='<tr><td style="font-weight:600">'+s.nombre+'</td><td><span class="badge-status badge-borrador">'+(s.categoria||'')+'</span></td><td class="mono" style="font-weight:600">'+fmt(s.precio)+'</td><td>'+(s.unidad||'servicio')+'</td>';
+    h+='<td><button class="btn-ghost" onclick="openModal('svc','+JSON.stringify(s).replace(/"/g,'&quot;')+')">&#9998;</button> <button class="btn-ghost" onclick="deleteServicio('+s.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('servicios-list').innerHTML=h;
+}
+async function saveServicio(editId){
+  var obj={nombre:document.getElementById('m-svc-name').value.trim(),categoria:document.getElementById('m-svc-cat').value,precio:parseFloat(document.getElementById('m-svc-precio').value)||0,unidad:document.getElementById('m-svc-unidad').value,descripcion:document.getElementById('m-svc-desc').value.trim()};
+  if(!obj.nombre){toast('Nombre es obligatorio');return;}
+  if(editId){obj.id=editId;}else{obj.id=uid();}
+  await sbSave('inv_servicios',obj);
+  var idx=servicios.findIndex(function(s){return s.id==obj.id;});
+  if(idx>=0)servicios[idx]=obj;else servicios.push(obj);
+  closeModal();renderServicios();toast('Servicio guardado');
+}
+async function deleteServicio(id){if(!confirm('¿Eliminar servicio?'))return;await sbDel('inv_servicios',id);servicios=servicios.filter(function(s){return s.id!=id;});renderServicios();toast('Servicio eliminado');}
+
+//=== EMITIR FACTURA ========================================================
+function initEmitir(){
+  document.getElementById('emit-fecha').value=today();
+  var nextNum=config.prefijo+'-'+String(config.nextNum||1).padStart(4,'0');
+  document.getElementById('emit-numero').value=nextNum;
+  var ven=new Date();ven.setDate(ven.getDate()+30);
+  document.getElementById('emit-vencimiento').value=ven.toISOString().slice(0,10);
+  emitDocs=[];
+  document.getElementById('emit-docs-preview').innerHTML='';
+  // Start with one empty line
+  var el=document.getElementById('emit-lines');
+  el.innerHTML='<div class="line-item line-header"><span>Descripción</span><span>Cantidad</span><span>Precio unit.</span><span>Total</span><span></span></div>';
+  addEmitLine();
+  populateSelects();
+}
+var emitLineCount=0;
+function addEmitLine(){
+  emitLineCount++;
+  var n=emitLineCount;
+  var svcOpts='<option value="">Escribir...</option>'+servicios.map(function(s){return'<option value="'+s.id+'" data-precio="'+s.precio+'">'+s.nombre+'</option>';}).join('');
+  var li=document.createElement('div');
+  li.className='line-item';li.id='emit-line-'+n;
+  li.innerHTML='<select onchange="emitLineSelect(this,'+n+')" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:4px">'+svcOpts+'</select>'
+    +'<input type="number" id="emit-qty-'+n+'" value="1" min="0" step="0.5" oninput="calcEmitTotals()">'
+    +'<input type="number" id="emit-price-'+n+'" value="" step="0.01" placeholder="0.00" oninput="calcEmitTotals()">'
+    +'<span class="mono" id="emit-linetot-'+n+'" style="font-weight:600;text-align:right">0,00 €</span>'
+    +'<button class="btn-ghost" onclick="document.getElementById('emit-line-'+n+'').remove();calcEmitTotals()" style="color:var(--danger)">&#10005;</button>';
+  document.getElementById('emit-lines').appendChild(li);
+}
+function emitLineSelect(sel,n){
+  var opt=sel.options[sel.selectedIndex];
+  var precio=opt.getAttribute('data-precio');
+  if(precio) document.getElementById('emit-price-'+n).value=precio;
+  calcEmitTotals();
+}
+function calcEmitTotals(){
+  var lines=document.querySelectorAll('[id^="emit-line-"]');
+  var base=0;
+  lines.forEach(function(li){
+    var n=li.id.split('-').pop();
+    var qty=parseFloat(document.getElementById('emit-qty-'+n).value)||0;
+    var price=parseFloat(document.getElementById('emit-price-'+n).value)||0;
+    var tot=qty*price;
+    base+=tot;
+    var totEl=document.getElementById('emit-linetot-'+n);
+    if(totEl)totEl.textContent=fmt(tot);
+  });
+  var igiPct=config.igi||4.5;
+  var igi=base*igiPct/100;
+  document.getElementById('emit-base').textContent=fmt(base);
+  document.getElementById('emit-igi').textContent=fmt(igi);
+  document.getElementById('emit-total').textContent=fmt(base+igi);
+}
+async function saveFactura(estado){
+  var cliId=document.getElementById('emit-cliente').value;
+  if(!cliId){toast('Selecciona un cliente');return;}
+  var cli=clientes.find(function(c){return c.id==cliId;});
+  var lineas=[];
+  document.querySelectorAll('[id^="emit-line-"]').forEach(function(li){
+    var n=li.id.split('-').pop();
+    var sel=li.querySelector('select');
+    var desc=sel?sel.options[sel.selectedIndex].text:'';
+    if(desc==='Escribir...')desc='';
+    var qty=parseFloat(document.getElementById('emit-qty-'+n).value)||0;
+    var price=parseFloat(document.getElementById('emit-price-'+n).value)||0;
+    if(qty>0&&price>0) lineas.push({desc:desc,qty:qty,price:price,total:qty*price});
+  });
+  if(!lineas.length){toast('Añade al menos un concepto');return;}
+  var base=lineas.reduce(function(s,l){return s+l.total;},0);
+  var igi=base*(config.igi||4.5)/100;
+  var factura={
+    id:uid(),
+    numero:document.getElementById('emit-numero').value,
+    fecha:document.getElementById('emit-fecha').value,
+    vencimiento:document.getElementById('emit-vencimiento').value,
+    cliente_id:parseInt(cliId),
+    cliente_nombre:cli?cli.nombre:'',
+    cliente_nrt:cli?cli.nrt:'',
+    categoria:document.getElementById('emit-categoria').value,
+    lineas:JSON.stringify(lineas),
+    base:base,igi:igi,total:base+igi,
+    notas:document.getElementById('emit-notas').value.trim(),
+    estado:estado,
+    created:new Date().toISOString()
+  };
+  await sbSave('inv_facturas_emit',factura);
+  facturasEmit.push(factura);
+  // Update next number
+  config.nextNum=(config.nextNum||1)+1;
+  await sbSave('inv_config',{id:1,nextNum:config.nextNum,prefijo:config.prefijo});
+  toast('Factura '+factura.numero+' guardada como '+estado);
+  if(estado==='enviada') generateFacturaPDF(factura);
+  showPanel('emitidas');
+}
+
+//=== FACTURAS EMITIDAS =====================================================
+var emitSort={field:'fecha',dir:-1};
+function renderEmitidas(){
+  var estado=document.getElementById('emit-filter-estado').value;
+  var cat=document.getElementById('emit-filter-cat').value;
+  var cliId=document.getElementById('emit-filter-cliente').value;
+  var mes=document.getElementById('emit-filter-mes').value;
+  var data=facturasEmit.filter(function(f){
+    if(estado&&f.estado!==estado)return false;
+    if(cat&&f.categoria!==cat)return false;
+    if(cliId&&f.cliente_id!=cliId)return false;
+    if(mes&&f.fecha&&f.fecha.slice(0,7)!==mes)return false;
+    return true;
+  });
+  // Check overdue
+  var hoy=today();
+  data.forEach(function(f){if(f.estado==='enviada'&&f.vencimiento&&f.vencimiento<hoy)f.estado='vencida';});
+  // Sort
+  data.sort(function(a,b){
+    var va=a[emitSort.field]||'',vb=b[emitSort.field]||'';
+    if(typeof va==='number'){return (va-vb)*emitSort.dir;}
+    if(va<vb)return -1*emitSort.dir;if(va>vb)return 1*emitSort.dir;return 0;
+  });
+  if(!data.length){document.getElementById('emitidas-list').innerHTML='<div class="empty"><div class="empty-icon">&#128196;</div><div class="empty-title">Sin facturas</div><div class="empty-sub">Emite tu primera factura</div></div>';return;}
+  var arrow=function(f){return emitSort.field===f?(emitSort.dir===1?' ↑':' ↓'):' ⇅';};
+  var h='<table class="tbl"><thead><tr>';
+  h+='<th onclick="sortEmit('numero')">N°'+arrow('numero')+'</th>';
+  h+='<th onclick="sortEmit('fecha')">Fecha'+arrow('fecha')+'</th>';
+  h+='<th onclick="sortEmit('cliente_nombre')">Cliente'+arrow('cliente_nombre')+'</th>';
+  h+='<th onclick="sortEmit('categoria')">Categoría'+arrow('categoria')+'</th>';
+  h+='<th onclick="sortEmit('total')">Total'+arrow('total')+'</th>';
+  h+='<th onclick="sortEmit('estado')">Estado'+arrow('estado')+'</th>';
+  h+='<th>Controles</th><th></th></tr></thead><tbody>';
+  data.forEach(function(f){
+    var bc='badge-'+f.estado;
+    h+='<tr>';
+    h+='<td class="mono" style="font-weight:600">'+f.numero+'</td>';
+    h+='<td class="mono">'+fmtDate(f.fecha)+'</td>';
+    h+='<td style="font-weight:500">'+f.cliente_nombre+'</td>';
+    h+='<td><span class="badge-status badge-borrador">'+(f.categoria||'')+'</span></td>';
+    h+='<td class="mono" style="font-weight:700">'+fmt(f.total)+'</td>';
+    h+='<td><span class="badge-status '+bc+'">'+f.estado.toUpperCase()+'</span></td>';
+    // Status controls
+    h+='<td style="white-space:nowrap">';
+    if(f.estado!=='pagada'&&f.estado!=='declarada') h+='<button class="btn-ghost" title="Marcar pagada" onclick="setEstado('+f.id+','pagada')">&#128176;</button>';
+    if(f.estado==='pagada') h+='<button class="btn-ghost" title="Marcar declarada" onclick="setEstado('+f.id+','declarada')">&#9745;</button>';
+    h+='<button class="btn-ghost" title="Descargar PDF" onclick="generateFacturaPDF(facturasEmit.find(function(x){return x.id=='+f.id+';}))">&#128196;</button>';
+    h+='</td>';
+    h+='<td><button class="btn-ghost" onclick="editFactura('+f.id+')">&#9998;</button></td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('emitidas-list').innerHTML=h;
+}
+function sortEmit(field){if(emitSort.field===field)emitSort.dir*=-1;else{emitSort.field=field;emitSort.dir=field==='fecha'?-1:1;}renderEmitidas();}
+async function setEstado(id,estado){
+  var f=facturasEmit.find(function(x){return x.id==id;});
+  if(f){f.estado=estado;await sbSave('inv_facturas_emit',f);renderEmitidas();toast('Estado actualizado: '+estado);}
+}
+function editFactura(id){
+  // TODO: load factura into emitir form for editing
+  toast('Edición en desarrollo');
+}
+
+//=== FACTURAS RECIBIDAS ====================================================
+function renderRecibidas(){
+  var prov=document.getElementById('rec-filter-prov').value;
+  var cat=document.getElementById('rec-filter-cat').value;
+  var mes=document.getElementById('rec-filter-mes').value;
+  var data=facturasRec.filter(function(f){
+    if(prov&&f.proveedor_id!=prov)return false;
+    if(cat&&f.categoria!==cat)return false;
+    if(mes&&f.fecha&&f.fecha.slice(0,7)!==mes)return false;
+    return true;
+  });
+  if(!data.length){document.getElementById('recibidas-list').innerHTML='<div class="empty"><div class="empty-icon">&#128229;</div><div class="empty-title">Sin facturas recibidas</div><div class="empty-sub">Registra facturas de proveedores</div></div>';return;}
+  var h='<table class="tbl"><thead><tr><th>N°</th><th>Fecha</th><th>Proveedor</th><th>Categoría</th><th>Base</th><th>IGI</th><th>Total</th><th></th></tr></thead><tbody>';
+  data.forEach(function(f){
+    h+='<tr><td class="mono">'+(f.numero||'—')+'</td><td class="mono">'+fmtDate(f.fecha)+'</td><td style="font-weight:500">'+(f.proveedor_nombre||'—')+'</td><td><span class="badge-status badge-borrador">'+(f.categoria||'')+'</span></td><td class="mono">'+fmt(f.base)+'</td><td class="mono">'+fmt(f.igi)+'</td><td class="mono" style="font-weight:700">'+fmt(f.total)+'</td>';
+    h+='<td><button class="btn-ghost" onclick="deleteRecibida('+f.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('recibidas-list').innerHTML=h;
+}
+function calcRecTotal(){
+  var base=parseFloat(document.getElementById('m-rec-base').value)||0;
+  var igi=parseFloat(document.getElementById('m-rec-igi').value)||0;
+  document.getElementById('m-rec-total').value=(base+igi).toFixed(2);
+}
+async function saveRecibida(){
+  var provId=document.getElementById('m-rec-prov').value;
+  var prov=proveedores.find(function(p){return p.id==provId;});
+  var obj={id:uid(),numero:document.getElementById('m-rec-num').value.trim(),fecha:document.getElementById('m-rec-fecha').value,proveedor_id:provId?parseInt(provId):null,proveedor_nombre:prov?prov.nombre:'',categoria:document.getElementById('m-rec-cat').value,base:parseFloat(document.getElementById('m-rec-base').value)||0,igi:parseFloat(document.getElementById('m-rec-igi').value)||0,total:parseFloat(document.getElementById('m-rec-total').value)||0,concepto:document.getElementById('m-rec-concepto').value.trim(),created:new Date().toISOString()};
+  await sbSave('inv_facturas_rec',obj);
+  facturasRec.push(obj);
+  closeModal();renderRecibidas();toast('Factura recibida registrada');
+}
+async function deleteRecibida(id){if(!confirm('¿Eliminar?'))return;await sbDel('inv_facturas_rec',id);facturasRec=facturasRec.filter(function(f){return f.id!=id;});renderRecibidas();}
+
+//=== PAGOS =================================================================
+function renderPagos(){
+  if(!pagos.length){document.getElementById('pagos-list').innerHTML='<div class="empty"><div class="empty-icon">&#128176;</div><div class="empty-title">Sin pagos registrados</div></div>';return;}
+  document.getElementById('pagos-list').innerHTML='<p style="color:var(--text2);font-size:12px">Módulo de pagos en desarrollo</p>';
+}
+
+//=== DASHBOARD =============================================================
+function renderDashboard(){
+  var mesActual=new Date().toISOString().slice(0,7);
+  var emitMes=facturasEmit.filter(function(f){return f.fecha&&f.fecha.slice(0,7)===mesActual;});
+  var totalEmit=emitMes.reduce(function(s,f){return s+(f.total||0);},0);
+  var pendientes=facturasEmit.filter(function(f){return f.estado==='enviada'||f.estado==='vencida';});
+  var totalPend=pendientes.reduce(function(s,f){return s+(f.total||0);},0);
+  var pagadas=facturasEmit.filter(function(f){return f.estado==='pagada'||f.estado==='declarada';});
+  var totalPagado=pagadas.reduce(function(s,f){return s+(f.total||0);},0);
+  var totalRec=facturasRec.filter(function(f){return f.fecha&&f.fecha.slice(0,7)===mesActual;}).reduce(function(s,f){return s+(f.total||0);},0);
+
+  document.getElementById('dash-kpis').innerHTML=
+    '<div class="kpi"><div class="kpi-val" style="color:var(--primary)">'+fmt(totalEmit)+'</div><div class="kpi-label">Facturado este mes</div><div class="kpi-sub">'+emitMes.length+' facturas</div></div>'
+    +'<div class="kpi"><div class="kpi-val" style="color:var(--warning)">'+fmt(totalPend)+'</div><div class="kpi-label">Por cobrar</div><div class="kpi-sub">'+pendientes.length+' facturas</div></div>'
+    +'<div class="kpi"><div class="kpi-val" style="color:var(--success)">'+fmt(totalPagado)+'</div><div class="kpi-label">Cobrado total</div><div class="kpi-sub">'+pagadas.length+' facturas</div></div>'
+    +'<div class="kpi"><div class="kpi-val" style="color:var(--danger)">'+fmt(totalRec)+'</div><div class="kpi-label">Gastos este mes</div><div class="kpi-sub">'+facturasRec.length+' facturas</div></div>';
+
+  // Recent emitidas
+  var recent=facturasEmit.slice().sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');}).slice(0,5);
+  if(!recent.length){document.getElementById('dash-recent-emit').innerHTML='<span style="color:var(--text3)">Sin facturas aún</span>';
+  }else{
+    var h='';recent.forEach(function(f){
+      h+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><div><strong>'+f.numero+'</strong> — '+f.cliente_nombre+'</div><div class="mono" style="font-weight:600">'+fmt(f.total)+'</div></div>';
+    });
+    document.getElementById('dash-recent-emit').innerHTML=h;
+  }
+  // Pendientes
+  if(!pendientes.length){document.getElementById('dash-pendientes').innerHTML='<span style="color:var(--text3)">Todo al día &#10004;</span>';
+  }else{
+    var h='';pendientes.forEach(function(f){
+      var bc=f.estado==='vencida'?'badge-vencida':'badge-pendiente';
+      h+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><div><strong>'+f.numero+'</strong> — '+f.cliente_nombre+'<br><span class="badge-status '+bc+'">'+f.estado.toUpperCase()+'</span></div><div class="mono" style="font-weight:600">'+fmt(f.total)+'</div></div>';
+    });
+    document.getElementById('dash-pendientes').innerHTML=h;
+  }
+}
+
+//=== INFORMES ==============================================================
+function renderInforme(){document.getElementById('informe-output').innerHTML='<div class="empty"><div class="empty-icon">&#128202;</div><div class="empty-title">Informes</div><div class="empty-sub">Selecciona un tipo de informe y periodo</div></div>';}
+
+//=== DOCUMENTOS (quick capture) ============================================
+function handleDocCapture(input,ctx){/* TODO: handle doc upload */toast('Documento capturado');}
+function quickDocCapture(input){document.getElementById('quick-doc-cliente').style.display='block';toast('Selecciona el cliente para este documento');}
+function saveQuickDoc(){toast('Documento guardado');document.getElementById('quick-doc-cliente').style.display='none';}
+function renderDocumentos(){document.getElementById('documentos-list').innerHTML='<div class="empty"><div class="empty-icon">&#128247;</div><div class="empty-title">Sin documentos</div><div class="empty-sub">Captura documentos desde tu teléfono</div></div>';}
+
+//=== CONFIG ================================================================
+async function saveConfig(){
+  config.empresa=document.getElementById('cfg-empresa').value;
+  config.nrt=document.getElementById('cfg-nrt').value;
+  config.direccion=document.getElementById('cfg-direccion').value;
+  config.telefono=document.getElementById('cfg-telefono').value;
+  config.email=document.getElementById('cfg-email').value;
+  config.igi=parseFloat(document.getElementById('cfg-igi').value)||4.5;
+  config.prefijo=document.getElementById('cfg-prefijo').value;
+  config.nextNum=parseInt(document.getElementById('cfg-next-num').value)||1;
+  var ak=document.getElementById('cfg-apikey').value;
+  if(ak){config.apiKey=ak;localStorage.setItem('inv_apikey',ak);}
+  await sbSave('inv_config',Object.assign({id:1},config));
+  toast('Configuración guardada');
+}
+
+//=== PDF GENERATION ========================================================
+function generateFacturaPDF(f){
+  if(!f){toast('Factura no encontrada');return;}
+  var lineas=[];try{lineas=JSON.parse(f.lineas||'[]');}catch(e){}
+  var cli=clientes.find(function(c){return c.id==f.cliente_id;})||{};
+  var html='<html><head><meta charset="UTF-8"><style>'
+    +'*{box-sizing:border-box;margin:0;padding:0}@page{size:A4;margin:15mm}'
+    +'body{font-family:Inter,-apple-system,sans-serif;font-size:11px;color:#1A1A1A}'
+    +'.header{display:flex;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #2C5F2D}'
+    +'.company{font-size:10px;color:#666;line-height:1.6}.company strong{font-size:14px;color:#1A1A1A;display:block}'
+    +'.inv-info{text-align:right}.inv-num{font-size:20px;font-weight:800;color:#2C5F2D}.inv-date{font-size:10px;color:#666;margin-top:4px}'
+    +'.parties{display:flex;justify-content:space-between;margin-bottom:20px}'
+    +'.party{font-size:10px;line-height:1.6}.party-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#999;margin-bottom:4px}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:20px}'
+    +'th{background:#F5F5F0;padding:6px 10px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#666;border-bottom:2px solid #E8E5DF}'
+    +'td{padding:6px 10px;border-bottom:1px solid #E8E5DF;font-size:11px}'
+    +'.totals{text-align:right;margin-top:10px}.tot-row{display:flex;justify-content:flex-end;gap:20px;padding:3px 0;font-size:11px}'
+    +'.tot-row.grand{font-size:16px;font-weight:800;color:#2C5F2D;padding-top:8px;border-top:2px solid #2C5F2D;margin-top:4px}'
+    +'.footer{margin-top:40px;padding-top:12px;border-top:1px solid #E8E5DF;font-size:9px;color:#999;text-align:center}'
+    +'</style></head><body>';
+  html+='<div class="header"><div class="company"><strong>'+config.empresa+'</strong>'+(config.nrt?'NRT: '+config.nrt+'<br>':'')+(config.direccion||'')+'<br>'+(config.telefono||'')+' · '+(config.email||'')+'</div>';
+  html+='<div class="inv-info"><div class="inv-num">'+f.numero+'</div><div class="inv-date">Fecha: '+fmtDate(f.fecha)+'</div><div class="inv-date">Vencimiento: '+fmtDate(f.vencimiento)+'</div></div></div>';
+  html+='<div class="parties"><div class="party"><div class="party-label">Facturar a</div><strong>'+f.cliente_nombre+'</strong>'+(cli.nrt?'<br>NRT: '+cli.nrt:'')+(cli.direccion?'<br>'+cli.direccion:'')+(cli.email?'<br>'+cli.email:'')+'</div></div>';
+  html+='<table><thead><tr><th>Descripción</th><th style="text-align:center">Cantidad</th><th style="text-align:right">Precio unit.</th><th style="text-align:right">Total</th></tr></thead><tbody>';
+  lineas.forEach(function(l){
+    html+='<tr><td>'+l.desc+'</td><td style="text-align:center">'+l.qty+'</td><td style="text-align:right">'+fmt(l.price)+'</td><td style="text-align:right;font-weight:600">'+fmt(l.total)+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  html+='<div class="totals"><div class="tot-row"><span>Base imponible</span><span>'+fmt(f.base)+'</span></div>';
+  html+='<div class="tot-row"><span>I.G.I. '+config.igi+'%</span><span>'+fmt(f.igi)+'</span></div>';
+  html+='<div class="tot-row grand"><span>TOTAL</span><span>'+fmt(f.total)+'</span></div></div>';
+  if(f.notas) html+='<div style="margin-top:20px;padding:10px;background:#F5F5F0;border-radius:6px;font-size:10px;color:#666"><strong>Notas:</strong> '+f.notas+'</div>';
+  html+='<div class="footer">'+config.empresa+' · '+(config.nrt?'NRT '+config.nrt+' · ':'')+(config.telefono||'')+' · '+(config.email||'')+'</div>';
+  html+='</body></html>';
+  var w=window.open('','_blank');w.document.write(html);w.document.close();
+  setTimeout(function(){w.print();},500);
+}
+
+function exportEmitidasExcel(){toast('Exportación Excel en desarrollo');}
+function exportInformePDF(){toast('Exportación PDF en desarrollo');}
+
+//=== INIT ==================================================================
+(function(){
+  // Set today's date on filters
+  var now=new Date().toISOString().slice(0,7);
+  var mf=document.getElementById('emit-filter-mes');if(mf)mf.value=now;
+  // Load config from localStorage
+  var lk=localStorage.getItem('inv_apikey');
+  if(lk){config.apiKey=lk;var ki=document.getElementById('cfg-apikey');if(ki)ki.value=lk;}
+  // Load all data
+  loadAll();
+})();
+</script>
+</body>
+</html>
