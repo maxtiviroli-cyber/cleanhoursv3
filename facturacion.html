@@ -343,7 +343,64 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-sm btn-outline" onclick="exportEmitidasExcel()">&#128196; Excel</button>
+          <button class="btn btn-sm btn-accent" onclick="toggleImportPanel()">&#129302; Importar PDF</button>
           <button class="btn btn-sm btn-primary" onclick="showPanel('emitir')">&#10133; Nueva factura</button>
+        </div>
+      </div>
+      <!-- Import panel -->
+      <div class="card" id="import-emit-panel" style="display:none">
+        <div class="card-header"><div><div class="card-title">&#129302; Importar factura desde PDF</div><div class="card-sub">Sube el PDF y la IA extraerá los datos automáticamente</div></div><button class="btn-ghost" onclick="toggleImportPanel()" style="font-size:16px">&times;</button></div>
+        <div class="card-body">
+          <div class="doc-capture" id="import-dropzone" onclick="document.getElementById(&quot;import-pdf-input&quot;).click()">
+            <div style="font-size:32px;margin-bottom:6px">&#128196;</div>
+            <div style="font-size:12px;color:var(--text2)">Arrastra el PDF aquí o haz clic para seleccionar</div>
+            <input type="file" id="import-pdf-input" accept="application/pdf,image/*" style="display:none" onchange="handleImportPDF(this)">
+          </div>
+          <div id="import-file-info" style="display:none;margin-top:10px;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:12px;font-family:var(--mono)"></div>
+          <div id="import-processing" style="display:none;text-align:center;padding:20px"><div style="font-size:14px;color:var(--primary)">&#9203; Procesando con IA...</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Esto puede tardar unos segundos</div></div>
+          <div id="import-error" style="display:none;padding:10px;background:var(--danger-light);border:1px solid var(--danger);border-radius:6px;color:var(--danger);font-size:12px;margin-top:8px"></div>
+          <!-- Extracted data form -->
+          <div id="import-result" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
+            <div style="font-size:13px;font-weight:700;margin-bottom:12px">Datos extraídos — revisa y corrige si es necesario:</div>
+            <div class="form-row-3">
+              <div class="form-group"><label class="form-label">N° Factura</label><input class="form-input mono" id="imp-numero"></div>
+              <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="imp-fecha"></div>
+              <div class="form-group"><label class="form-label">Vencimiento</label><input type="date" class="form-input" id="imp-vencimiento"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Cliente</label><select class="form-select" id="imp-cliente"><option value="">Seleccionar...</option></select></div>
+              <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="imp-categoria"><option>Housekeeping</option><option>Consergeria</option><option>Amenities</option><option>Eventos</option><option>Otros</option></select></div>
+            </div>
+            <div class="form-group"><label class="form-label">Conceptos detectados</label><div id="imp-lineas-list"></div></div>
+            <div class="form-row-3">
+              <div class="form-group"><label class="form-label">Base imponible</label><input type="number" step="0.01" class="form-input mono" id="imp-base" oninput="calcImpTotal()"></div>
+              <div class="form-group"><label class="form-label">I.G.I.</label><input type="number" step="0.01" class="form-input mono" id="imp-igi" oninput="calcImpTotal()"></div>
+              <div class="form-group"><label class="form-label">Total</label><input type="number" step="0.01" class="form-input mono" id="imp-total" style="font-weight:700;font-size:16px"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Estado</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="imp-pagada"> Pagada</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="imp-enviada" checked> Enviada</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="checkbox" id="imp-declarada"> Declarada</label>
+              </div>
+            </div>
+            <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="imp-notas" placeholder="Notas opcionales..."></textarea></div>
+            <!-- Documentos de respaldo -->
+            <div class="form-group">
+              <label class="form-label">&#128206; Documentos de respaldo</label>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <div class="doc-capture" style="padding:10px;flex:1;min-width:200px" onclick="document.getElementById(&quot;imp-docs-input&quot;).click()">
+                  <span style="font-size:16px">&#128247;</span> <span style="font-size:11px">Añadir comprobantes, tickets...</span>
+                  <input type="file" id="imp-docs-input" accept="image/*,application/pdf" capture="environment" style="display:none" onchange="handleImpDocs(this)" multiple>
+                </div>
+              </div>
+              <div id="imp-docs-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:12px;border-top:1px solid var(--border)">
+              <button class="btn btn-outline" onclick="toggleImportPanel()">Cancelar</button>
+              <button class="btn btn-primary" onclick="confirmImportEmit()">&#10004; Guardar factura importada</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="card"><div class="card-body" id="emitidas-list"></div></div>
@@ -1008,6 +1065,183 @@ function generateFacturaPDF(f){
 
 function exportEmitidasExcel(){toast('Exportación Excel en desarrollo');}
 function exportInformePDF(){toast('Exportación PDF en desarrollo');}
+
+//=== IMPORT FACTURA PDF ====================================================
+var impDocs=[];
+var impPdfData=null;
+
+function toggleImportPanel(){
+  var p=document.getElementById('import-emit-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+  if(p.style.display==='block'){
+    // Populate client select
+    var cs=document.getElementById('imp-cliente');
+    cs.innerHTML='<option value="">Seleccionar o crear...</option>'+clientes.map(function(c){return'<option value="'+c.id+'">'+c.nombre+'</option>';}).join('');
+    impDocs=[];impPdfData=null;
+    document.getElementById('import-result').style.display='none';
+    document.getElementById('import-file-info').style.display='none';
+    document.getElementById('import-error').style.display='none';
+    document.getElementById('imp-docs-preview').innerHTML='';
+  }
+}
+
+function handleImportPDF(input){
+  var file=input.files[0];
+  if(!file)return;
+  document.getElementById('import-file-info').style.display='block';
+  document.getElementById('import-file-info').textContent=file.name+' ('+Math.round(file.size/1024)+' KB)';
+
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var base64=e.target.result.split(',')[1];
+    impPdfData={name:file.name,data:base64,type:file.type};
+    // Auto-process with AI
+    processImportPDF();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function processImportPDF(){
+  if(!impPdfData){toast('Sube un archivo primero');return;}
+  var ak=config.apiKey||localStorage.getItem('inv_apikey');
+  if(!ak){toast('Configura la API key de Anthropic en Configuración');return;}
+
+  document.getElementById('import-processing').style.display='block';
+  document.getElementById('import-error').style.display='none';
+  document.getElementById('import-result').style.display='none';
+
+  var mediaType=impPdfData.type.indexOf('pdf')>=0?'application/pdf':'image/jpeg';
+  var contentBlock=mediaType==='application/pdf'?
+    {type:'document',source:{type:'base64',media_type:mediaType,data:impPdfData.data}}:
+    {type:'image',source:{type:'base64',media_type:mediaType,data:impPdfData.data}};
+
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:2000,
+        messages:[{role:'user',content:[
+          contentBlock,
+          {type:'text',text:'Analiza esta factura y extrae los datos. Responde SOLO con JSON (sin markdown, sin backticks):\n{"numero":"","fecha":"YYYY-MM-DD","vencimiento":"YYYY-MM-DD","cliente_nombre":"","cliente_nrt":"","categoria":"Housekeeping|Consergeria|Amenities|Eventos|Otros","lineas":[{"desc":"descripcion","qty":1,"price":0,"total":0}],"base":0,"igi":0,"total":0,"notas":""}'}
+        ]}]
+      })
+    });
+    var data=await resp.json();
+    if(data.error)throw new Error(data.error.message);
+
+    var text=data.content.map(function(c){return c.text||'';}).join('');
+    text=text.replace(/```json|```/g,'').trim();
+    var parsed=JSON.parse(text);
+
+    // Fill form with extracted data
+    document.getElementById('imp-numero').value=parsed.numero||'';
+    document.getElementById('imp-fecha').value=parsed.fecha||'';
+    document.getElementById('imp-vencimiento').value=parsed.vencimiento||'';
+    document.getElementById('imp-base').value=parsed.base||0;
+    document.getElementById('imp-igi').value=parsed.igi||0;
+    document.getElementById('imp-total').value=parsed.total||0;
+    document.getElementById('imp-notas').value=parsed.notas||'';
+
+    // Try to match client
+    if(parsed.cliente_nombre){
+      var match=clientes.find(function(c){return c.nombre.toLowerCase().indexOf(parsed.cliente_nombre.toLowerCase())>=0;});
+      if(match)document.getElementById('imp-cliente').value=match.id;
+    }
+
+    // Set category
+    if(parsed.categoria){
+      var catSel=document.getElementById('imp-categoria');
+      for(var i=0;i<catSel.options.length;i++){if(catSel.options[i].value===parsed.categoria){catSel.selectedIndex=i;break;}}
+    }
+
+    // Render line items
+    var lh='';
+    if(parsed.lineas&&parsed.lineas.length){
+      lh='<table class="tbl" style="font-size:11px"><thead><tr><th>Descripción</th><th>Cant</th><th>Precio</th><th>Total</th></tr></thead><tbody>';
+      parsed.lineas.forEach(function(l){
+        lh+='<tr><td>'+l.desc+'</td><td class="mono" style="text-align:center">'+l.qty+'</td><td class="mono" style="text-align:right">'+fmt(l.price)+'</td><td class="mono" style="text-align:right;font-weight:600">'+fmt(l.total)+'</td></tr>';
+      });
+      lh+='</tbody></table>';
+    }
+    document.getElementById('imp-lineas-list').innerHTML=lh;
+    document.getElementById('import-result').style.display='block';
+
+  }catch(err){
+    document.getElementById('import-error').style.display='block';
+    document.getElementById('import-error').textContent='Error: '+err.message;
+  }
+  document.getElementById('import-processing').style.display='none';
+}
+
+function calcImpTotal(){
+  var base=parseFloat(document.getElementById('imp-base').value)||0;
+  var igi=parseFloat(document.getElementById('imp-igi').value)||0;
+  document.getElementById('imp-total').value=(base+igi).toFixed(2);
+}
+
+function handleImpDocs(input){
+  for(var i=0;i<input.files.length;i++){
+    (function(file){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        impDocs.push({name:file.name,data:e.target.result,type:file.type});
+        var prev=document.getElementById('imp-docs-preview');
+        var div=document.createElement('div');
+        div.style.cssText='display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg);border-radius:4px;font-size:11px';
+        div.innerHTML='&#128196; '+file.name+' <button class="btn-ghost" onclick="this.parentElement.remove()" style="color:var(--danger);font-size:12px">✕</button>';
+        prev.appendChild(div);
+      };
+      reader.readAsDataURL(file);
+    })(input.files[i]);
+  }
+}
+
+async function confirmImportEmit(){
+  var numero=document.getElementById('imp-numero').value.trim();
+  if(!numero){toast('Ingresa el número de factura');return;}
+  var cliId=document.getElementById('imp-cliente').value;
+  var cli=cliId?clientes.find(function(c){return c.id==cliId;}):null;
+
+  // Determine estado
+  var estado='enviada';
+  if(document.getElementById('imp-declarada').checked)estado='declarada';
+  else if(document.getElementById('imp-pagada').checked)estado='pagada';
+  else if(document.getElementById('imp-enviada').checked)estado='enviada';
+  else estado='borrador';
+
+  var factura={
+    id:uid(),
+    numero:numero,
+    fecha:document.getElementById('imp-fecha').value,
+    vencimiento:document.getElementById('imp-vencimiento').value||null,
+    cliente_id:cliId?parseInt(cliId):null,
+    cliente_nombre:cli?cli.nombre:(document.getElementById('imp-cliente').options[document.getElementById('imp-cliente').selectedIndex].text||''),
+    cliente_nrt:cli?cli.nrt:'',
+    categoria:document.getElementById('imp-categoria').value,
+    lineas:document.getElementById('imp-lineas-list').innerHTML?'[]':'[]',
+    base:parseFloat(document.getElementById('imp-base').value)||0,
+    igi:parseFloat(document.getElementById('imp-igi').value)||0,
+    total:parseFloat(document.getElementById('imp-total').value)||0,
+    notas:document.getElementById('imp-notas').value.trim(),
+    estado:estado,
+    created:new Date().toISOString()
+  };
+
+  await sbSave('inv_facturas_emit',factura);
+  facturasEmit.push(factura);
+
+  // Save attached docs
+  for(var i=0;i<impDocs.length;i++){
+    var doc={id:uid(),factura_id:factura.id,cliente_id:factura.cliente_id,tipo:'respaldo',nombre:impDocs[i].name,data:impDocs[i].data.substring(0,500),nota:'Respaldo factura '+numero,created_at:new Date().toISOString()};
+    await sbSave('inv_adjuntos',doc);
+    adjuntos.push(doc);
+  }
+
+  toast('Factura '+numero+' importada como '+estado.toUpperCase());
+  toggleImportPanel();
+  renderEmitidas();
+}
 
 //=== INIT ==================================================================
 (function(){
