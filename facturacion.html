@@ -6,7 +6,7 @@
 <title>Servap Turístics — Facturación</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --bg:#F5F5F0;--surface:#FFFFFF;--card:#FFFFFF;--border:#E8E5DF;
@@ -162,6 +162,33 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
 </head>
 <body>
 
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="display:flex;position:fixed;inset:0;background:#1A1A1A;z-index:9999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:16px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,0.4)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:52px;height:52px;background:#2C5F2D;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px">&#128196;</div>
+      <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.3px">Servap Turístics</div>
+      <div style="font-size:12px;color:#999;margin-top:4px;text-transform:uppercase;letter-spacing:.08em">Facturación</div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:12px;font-weight:600;color:#666;margin-bottom:4px">Usuario</label>
+      <input type="text" id="login-user" placeholder="nombre de usuario" autocomplete="username"
+        onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"
+        style="width:100%;padding:10px 14px;border:1px solid #E2E5ED;border-radius:8px;font-size:14px;font-family:inherit">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:12px;font-weight:600;color:#666;margin-bottom:4px">Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()"
+        style="width:100%;padding:10px 14px;border:1px solid #E2E5ED;border-radius:8px;font-size:14px;font-family:inherit">
+    </div>
+    <div id="login-error" style="display:none;background:#FEE2E2;color:#991B1B;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;text-align:center"></div>
+    <button onclick="doLogin()" style="width:100%;padding:13px;background:#2C5F2D;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">
+      Iniciar sesión
+    </button>
+  </div>
+</div>
+
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sb-brand">
@@ -197,14 +224,15 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     </div>
   </nav>
   <div class="sb-footer">
-    <div class="sb-user">
-      <div class="sb-avatar">A</div>
-      <div><div style="font-size:12px;font-weight:600;color:#FFF">Admin</div><div style="font-size:10px;color:#888">Servap Turístics</div></div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <a href="index.html" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#999;font-size:10px;font-weight:600;text-decoration:none;transition:all .2s" onmouseover="this.style.borderColor='#D4A853';this.style.color='#D4A853'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='#999'">&#127968; Home</a>
+      <a href="gestion.html" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#999;font-size:10px;font-weight:600;text-decoration:none;transition:all .2s" onmouseover="this.style.borderColor='#CBA6F7';this.style.color='#CBA6F7'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='#999'">&#9881; Gestió</a>
     </div>
-  </div>
-  <div style="padding:10px 14px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:6px">
-    <a href="index.html" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#999;font-size:10px;font-weight:600;text-decoration:none;transition:all .2s" onmouseover="this.style.borderColor='#D4A853';this.style.color='#D4A853'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='#999'">&#127968; Home</a>
-    <a href="gestion.html" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#999;font-size:10px;font-weight:600;text-decoration:none;transition:all .2s" onmouseover="this.style.borderColor='#CBA6F7';this.style.color='#CBA6F7'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)';this.style.color='#999'">&#9881; Gestió</a>
+    <div class="sb-user">
+      <div class="sb-avatar" id="sb-avatar">A</div>
+      <div><div style="font-size:12px;font-weight:600;color:#FFF" id="sb-username">Admin</div><div style="font-size:10px;color:#888" id="sb-role">admin</div></div>
+    </div>
+    <button onclick="doLogout()" style="width:100%;margin-top:8px;padding:6px;background:none;border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#888;font-size:10px;cursor:pointer;font-family:var(--sans)">&#128682; Cerrar sesión</button>
   </div>
 </aside>
 
@@ -410,6 +438,63 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
 <div class="toast" id="toast"></div>
 
 <script>
+//=== AUTH ===================================================================
+var currentUser=null;
+var appUsers=[];
+
+function getAppUsers(){
+  if(appUsers.length) return appUsers;
+  try{var s=localStorage.getItem('app_users');if(s)appUsers=JSON.parse(s);}catch(e){}
+  return appUsers;
+}
+
+function doLogin(){
+  var u=document.getElementById('login-user').value.trim().toLowerCase();
+  var p=document.getElementById('login-pass').value;
+  var err=document.getElementById('login-error');
+  var users=getAppUsers();
+  var found=null;
+  for(var i=0;i<users.length;i++){
+    if(users[i].username.toLowerCase()===u&&users[i].password===p){found=users[i];break;}
+  }
+  if(!found&&supa){
+    err.textContent='Verificando...';err.style.display='block';
+    sbLoad('app_users').then(function(supaUsers){
+      if(supaUsers&&supaUsers.length){
+        appUsers=supaUsers;
+        try{localStorage.setItem('app_users',JSON.stringify(supaUsers));}catch(e){}
+        for(var i=0;i<supaUsers.length;i++){
+          if(supaUsers[i].username.toLowerCase()===u&&supaUsers[i].password===p){found=supaUsers[i];break;}
+        }
+      }
+      if(found){doLoginSuccess(found);}
+      else{err.textContent='Usuario o contraseña incorrectos';err.style.display='block';document.getElementById('login-pass').value='';}
+    }).catch(function(){
+      err.textContent='Error de conexión';err.style.display='block';
+    });
+    return;
+  }
+  if(!found){err.textContent='Usuario o contraseña incorrectos';err.style.display='block';document.getElementById('login-pass').value='';return;}
+  doLoginSuccess(found);
+}
+
+function doLoginSuccess(found){
+  currentUser=found;
+  document.getElementById('login-error').style.display='none';
+  document.getElementById('login-overlay').style.display='none';
+  var su=document.getElementById('sb-username');if(su)su.textContent=found.name||found.username;
+  var sr=document.getElementById('sb-role');if(sr)sr.textContent=found.role||'admin';
+  var av=document.getElementById('sb-avatar');if(av)av.textContent=(found.name||found.username||'U')[0].toUpperCase();
+  renderDashboard();
+}
+
+function doLogout(){
+  currentUser=null;
+  document.getElementById('login-overlay').style.display='flex';
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+}
+
 //=== CONFIG ================================================================
 var SUPA_URL='https://kellhcuvbvgofgiwbeka.supabase.co';
 var SUPA_KEY='sb_publishable_XybZM-ibMJr_rE2fxWKhnA_6XgnZnH9';
@@ -922,6 +1007,8 @@ function exportInformePDF(){toast('Exportación PDF en desarrollo');}
 
 //=== INIT ==================================================================
 (function(){
+  // Show login
+  document.getElementById('login-overlay').style.display='flex';
   // Set today's date on filters
   var now=new Date().toISOString().slice(0,7);
   var mf=document.getElementById('emit-filter-mes');if(mf)mf.value=now;
