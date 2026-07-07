@@ -556,11 +556,18 @@ function doLogout(){
 var SUPA_URL='https://kellhcuvbvgofgiwbeka.supabase.co';
 var SUPA_KEY='sb_publishable_XybZM-ibMJr_rE2fxWKhnA_6XgnZnH9';
 var supa=null;
-try{
-  if(window.supabase && window.supabase.createClient){
-    supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
-  }
-}catch(e){console.warn('Supabase init error:',e);}
+function initSupa(){
+  try{
+    if(window.supabase && window.supabase.createClient){
+      supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+    } else if(typeof createClient !== 'undefined'){
+      supa=createClient(SUPA_URL,SUPA_KEY);
+    }
+    if(supa) console.log('Supabase inicializado OK');
+    else console.warn('Supabase no disponible');
+  }catch(e){console.error('Supabase init error:',e);}
+}
+initSupa();
 
 //=== STATE =================================================================
 var clientes=[], proveedores=[], servicios=[], facturasEmit=[], facturasRec=[], pagos=[], adjuntos=[];
@@ -650,12 +657,34 @@ function openModal(type,data){
 function closeModal(){document.getElementById('modal-overlay').classList.remove('active');}
 
 //=== SUPABASE HELPERS ======================================================
-async function sbLoad(table){try{var r=await supa.from(table).select('*').limit(10000);return r.data||[];}catch(e){console.warn(e);return[];}}
-async function sbSave(table,data){try{var r=await supa.from(table).upsert(data);if(r.error)console.warn(r.error);return r;}catch(e){console.warn(e);}}
-async function sbDel(table,id){try{await supa.from(table).delete().eq('id',id);}catch(e){console.warn(e);}}
+async function sbLoad(table){
+  if(!supa){console.warn('sbLoad: supa is null');return[];}
+  try{
+    var r=await supa.from(table).select('*').limit(10000);
+    if(r.error){console.warn('sbLoad error ['+table+']:',r.error);return[];}
+    console.log('sbLoad ['+table+']: '+((r.data||[]).length)+' rows');
+    return r.data||[];
+  }catch(e){console.warn('sbLoad exception ['+table+']:',e);return[];}
+}
+async function sbSave(table,data){
+  if(!supa){console.warn('sbSave: supa is null');return null;}
+  try{
+    var r=await supa.from(table).upsert(data,{onConflict:'id'});
+    if(r.error){console.warn('sbSave error ['+table+']:',r.error);toast('Error guardando: '+r.error.message);return null;}
+    return r;
+  }catch(e){console.warn('sbSave exception ['+table+']:',e);return null;}
+}
+async function sbDel(table,id){
+  if(!supa)return;
+  try{
+    var r=await supa.from(table).delete().eq('id',id);
+    if(r.error)console.warn('sbDel error ['+table+']:',r.error);
+  }catch(e){console.warn('sbDel exception:',e);}
+}
 
 //=== DATA LOAD =============================================================
 async function loadAll(){
+  if(!supa){toast('Sin conexión a Supabase');return;}
   try{
     clientes=await sbLoad('inv_clientes');
     proveedores=await sbLoad('inv_proveedores');
@@ -670,11 +699,12 @@ async function loadAll(){
     var lk=localStorage.getItem('servap_apikey');
     if(lk)config.apiKey=lk;
     populateSelects();
-    renderDashboard();
-    toast('Datos cargados');
+    if(currentPanel==='dashboard')renderDashboard();
+    console.log('Datos cargados: '+clientes.length+' clientes, '+facturasEmit.length+' facturas emitidas');
+    toast('Datos sincronizados');
   }catch(e){
-    console.warn('Error cargando datos:',e);
-    toast('Error de conexión');
+    console.error('Error cargando datos:',e);
+    toast('Error de conexión con Supabase');
   }
 }
 
