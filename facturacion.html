@@ -580,7 +580,7 @@ function openModal(type,data){
       +'<div class="form-row"><div class="form-group"><label class="form-label">Base imponible (€)</label><input type="number" step="0.01" class="form-input" id="m-rec-base" oninput="calcRecTotal()"></div><div class="form-group"><label class="form-label">I.G.I. (€)</label><input type="number" step="0.01" class="form-input" id="m-rec-igi" oninput="calcRecTotal()"></div></div>'
       +'<div class="form-group"><label class="form-label">Total</label><input type="number" step="0.01" class="form-input" id="m-rec-total" style="font-weight:700;font-size:16px"></div>'
       +'<div class="form-group"><label class="form-label">Concepto</label><input class="form-input" id="m-rec-concepto"></div>'
-      +'<div class="form-group"><label class="form-label">Documento adjunto</label><div class="doc-capture" style="padding:12px" onclick="document.getElementById('m-rec-doc').click()"><span style="font-size:18px">&#128247;</span> Capturar o seleccionar<input type="file" id="m-rec-doc" accept="image/*,application/pdf" capture="environment" style="display:none"></div></div>';
+      +'<div class="form-group"><label class="form-label">Documento adjunto</label><div class="doc-capture" style="padding:12px" onclick="document.getElementById(&quot;m-rec-doc&quot;).click()"><span style="font-size:18px">&#128247;</span> Capturar o seleccionar<input type="file" id="m-rec-doc" accept="image/*,application/pdf" capture="environment" style="display:none"></div></div>';
     footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveRecibida()">Guardar</button>';
   }
   m.classList.add('active');
@@ -638,7 +638,7 @@ function renderClientes(){
   data.forEach(function(c){
     var nf=facturasEmit.filter(function(f){return f.cliente_id==c.id;}).length;
     h+='<tr><td style="font-weight:600">'+c.nombre+'</td><td class="mono">'+(c.nrt||'—')+'</td><td>'+(c.email||'—')+'</td><td>'+(c.telefono||'—')+'</td><td class="mono">'+nf+'</td>';
-    h+='<td><button class="btn-ghost" onclick="openModal('cli','+JSON.stringify(c).replace(/"/g,'&quot;')+')">&#9998;</button> <button class="btn-ghost" onclick="deleteCliente('+c.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+    h+='<td><button class="btn-ghost" onclick="editCliente('+c.id+')">&#9998;</button> <button class="btn-ghost" onclick="deleteCliente('+c.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('clientes-list').innerHTML=h;
@@ -653,6 +653,7 @@ async function saveCliente(editId){
   closeModal();populateSelects();renderClientes();toast('Cliente guardado');
 }
 async function deleteCliente(id){if(!confirm('¿Eliminar cliente?'))return;await sbDel('inv_clientes',id);clientes=clientes.filter(function(c){return c.id!=id;});populateSelects();renderClientes();toast('Cliente eliminado');}
+function editCliente(id){var c=clientes.find(function(x){return x.id==id;});if(c)openModal('cli',c);}
 
 //=== PROVEEDORES ===========================================================
 function renderProveedores(){
@@ -662,7 +663,7 @@ function renderProveedores(){
   var h='<table class="tbl"><thead><tr><th>Nombre</th><th>NRT</th><th>Categoría</th><th>Email</th><th></th></tr></thead><tbody>';
   data.forEach(function(p){
     h+='<tr><td style="font-weight:600">'+p.nombre+'</td><td class="mono">'+(p.nrt||'—')+'</td><td><span class="badge-status badge-borrador">'+(p.categoria||'—')+'</span></td><td>'+(p.email||'—')+'</td>';
-    h+='<td><button class="btn-ghost" onclick="openModal('prov','+JSON.stringify(p).replace(/"/g,'&quot;')+')">&#9998;</button> <button class="btn-ghost" onclick="deleteProveedor('+p.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+    h+='<td><button class="btn-ghost" onclick="editProveedor('+p.id+')">&#9998;</button> <button class="btn-ghost" onclick="deleteProveedor('+p.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('proveedores-list').innerHTML=h;
@@ -677,6 +678,7 @@ async function saveProveedor(editId){
   closeModal();populateSelects();renderProveedores();toast('Proveedor guardado');
 }
 async function deleteProveedor(id){if(!confirm('¿Eliminar proveedor?'))return;await sbDel('inv_proveedores',id);proveedores=proveedores.filter(function(p){return p.id!=id;});populateSelects();renderProveedores();toast('Proveedor eliminado');}
+function editProveedor(id){var p=proveedores.find(function(x){return x.id==id;});if(p)openModal('prov',p);}
 
 //=== SERVICIOS =============================================================
 function renderServicios(){
@@ -686,7 +688,7 @@ function renderServicios(){
   var h='<table class="tbl"><thead><tr><th>Servicio</th><th>Categoría</th><th>Precio</th><th>Unidad</th><th></th></tr></thead><tbody>';
   data.forEach(function(s){
     h+='<tr><td style="font-weight:600">'+s.nombre+'</td><td><span class="badge-status badge-borrador">'+(s.categoria||'')+'</span></td><td class="mono" style="font-weight:600">'+fmt(s.precio)+'</td><td>'+(s.unidad||'servicio')+'</td>';
-    h+='<td><button class="btn-ghost" onclick="openModal('svc','+JSON.stringify(s).replace(/"/g,'&quot;')+')">&#9998;</button> <button class="btn-ghost" onclick="deleteServicio('+s.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+    h+='<td><button class="btn-ghost" onclick="editServicio('+s.id+')">&#9998;</button> <button class="btn-ghost" onclick="deleteServicio('+s.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('servicios-list').innerHTML=h;
@@ -701,6 +703,7 @@ async function saveServicio(editId){
   closeModal();renderServicios();toast('Servicio guardado');
 }
 async function deleteServicio(id){if(!confirm('¿Eliminar servicio?'))return;await sbDel('inv_servicios',id);servicios=servicios.filter(function(s){return s.id!=id;});renderServicios();toast('Servicio eliminado');}
+function editServicio(id){var s=servicios.find(function(x){return x.id==id;});if(s)openModal('svc',s);}
 
 //=== EMITIR FACTURA ========================================================
 function initEmitir(){
@@ -728,9 +731,10 @@ function addEmitLine(){
     +'<input type="number" id="emit-qty-'+n+'" value="1" min="0" step="0.5" oninput="calcEmitTotals()">'
     +'<input type="number" id="emit-price-'+n+'" value="" step="0.01" placeholder="0.00" oninput="calcEmitTotals()">'
     +'<span class="mono" id="emit-linetot-'+n+'" style="font-weight:600;text-align:right">0,00 €</span>'
-    +'<button class="btn-ghost" onclick="document.getElementById('emit-line-'+n+'').remove();calcEmitTotals()" style="color:var(--danger)">&#10005;</button>';
+    +'<button class="btn-ghost" onclick="removeEmitLine('+n+')" style="color:var(--danger)">&#10005;</button>';
   document.getElementById('emit-lines').appendChild(li);
 }
+function removeEmitLine(n){var el=document.getElementById('emit-line-'+n);if(el)el.remove();calcEmitTotals();}
 function emitLineSelect(sel,n){
   var opt=sel.options[sel.selectedIndex];
   var precio=opt.getAttribute('data-precio');
@@ -823,12 +827,12 @@ function renderEmitidas(){
   if(!data.length){document.getElementById('emitidas-list').innerHTML='<div class="empty"><div class="empty-icon">&#128196;</div><div class="empty-title">Sin facturas</div><div class="empty-sub">Emite tu primera factura</div></div>';return;}
   var arrow=function(f){return emitSort.field===f?(emitSort.dir===1?' ↑':' ↓'):' ⇅';};
   var h='<table class="tbl"><thead><tr>';
-  h+='<th onclick="sortEmit('numero')">N°'+arrow('numero')+'</th>';
-  h+='<th onclick="sortEmit('fecha')">Fecha'+arrow('fecha')+'</th>';
-  h+='<th onclick="sortEmit('cliente_nombre')">Cliente'+arrow('cliente_nombre')+'</th>';
-  h+='<th onclick="sortEmit('categoria')">Categoría'+arrow('categoria')+'</th>';
-  h+='<th onclick="sortEmit('total')">Total'+arrow('total')+'</th>';
-  h+='<th onclick="sortEmit('estado')">Estado'+arrow('estado')+'</th>';
+  h+='<th onclick="sortEmit(&quot;numero&quot;)">N°'+arrow('numero')+'</th>';
+  h+='<th onclick="sortEmit(&quot;fecha&quot;)">Fecha'+arrow('fecha')+'</th>';
+  h+='<th onclick="sortEmit(&quot;cliente_nombre&quot;)">Cliente'+arrow('cliente_nombre')+'</th>';
+  h+='<th onclick="sortEmit(&quot;categoria&quot;)">Categoría'+arrow('categoria')+'</th>';
+  h+='<th onclick="sortEmit(&quot;total&quot;)">Total'+arrow('total')+'</th>';
+  h+='<th onclick="sortEmit(&quot;estado&quot;)">Estado'+arrow('estado')+'</th>';
   h+='<th>Controles</th><th></th></tr></thead><tbody>';
   data.forEach(function(f){
     var bc='badge-'+f.estado;
@@ -841,8 +845,8 @@ function renderEmitidas(){
     h+='<td><span class="badge-status '+bc+'">'+f.estado.toUpperCase()+'</span></td>';
     // Status controls
     h+='<td style="white-space:nowrap">';
-    if(f.estado!=='pagada'&&f.estado!=='declarada') h+='<button class="btn-ghost" title="Marcar pagada" onclick="setEstado('+f.id+','pagada')">&#128176;</button>';
-    if(f.estado==='pagada') h+='<button class="btn-ghost" title="Marcar declarada" onclick="setEstado('+f.id+','declarada')">&#9745;</button>';
+    if(f.estado!=='pagada'&&f.estado!=='declarada') h+='<button class="btn-ghost" title="Marcar pagada" onclick="setEstado('+f.id+',&quot;pagada&quot;)">&#128176;</button>';
+    if(f.estado==='pagada') h+='<button class="btn-ghost" title="Marcar declarada" onclick="setEstado('+f.id+',&quot;declarada&quot;)">&#9745;</button>';
     h+='<button class="btn-ghost" title="Descargar PDF" onclick="generateFacturaPDF(facturasEmit.find(function(x){return x.id=='+f.id+';}))">&#128196;</button>';
     h+='</td>';
     h+='<td><button class="btn-ghost" onclick="editFactura('+f.id+')">&#9998;</button></td>';
