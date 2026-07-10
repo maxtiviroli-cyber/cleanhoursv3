@@ -58,7 +58,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
 .card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .card-title{font-size:13px;font-weight:700}
 .card-sub{font-size:11px;color:var(--text2)}
-.card-body{padding:16px 18px;max-height:70vh;overflow-y:auto}
+.card-body{padding:16px 18px}
 
 /* BUTTONS */
 .btn{border:none;border-radius:6px;font-family:var(--sans);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s;font-size:12px;padding:8px 16px}
@@ -80,7 +80,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
 
 /* TABLES */
 .tbl{width:100%;border-collapse:collapse;font-size:12px}
-.tbl th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);background:var(--bg);border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;position:sticky;top:0;z-index:5}
+.tbl th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);background:var(--surface);border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none;position:sticky;top:56px;z-index:5;box-shadow:0 2px 4px rgba(0,0,0,0.04)}
 .tbl th:hover{color:var(--text)}
 .tbl td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
 .tbl tr:hover{background:#FAFAF7}
@@ -429,6 +429,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
           <input type="month" id="rec-filter-mes" onchange="renderRecibidas()">
         </div>
         <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-outline" onclick="exportRecibidasExcel()">&#128196; Excel</button>
           <button class="btn btn-sm btn-accent" onclick="openModal('rec-ai')">&#129302; Importar con IA</button>
           <button class="btn btn-sm btn-primary" onclick="openModal('rec')">&#10133; Registrar factura</button>
         </div>
@@ -900,7 +901,7 @@ function renderClientes(){
   data.forEach(function(c){
     var nf=facturasEmit.filter(function(f){return f.cliente_id==c.id;}).length;
     h+='<tr><td style="font-weight:600">'+c.nombre+'</td><td style="color:var(--text2);font-size:11px;font-style:italic">'+(c.nombre_fantasia||'—')+'</td><td class="mono">'+(c.nrt||'—')+'</td><td>'+(c.email||'—')+'</td><td>'+(c.telefono||'—')+'</td><td class="mono">'+nf+'</td>';
-    h+='<td><button class="btn-ghost" onclick="editCliente('+c.id+')">&#9998;</button> <button class="btn-ghost" onclick="deleteCliente('+c.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+    h+='<td><button class="btn-ghost" onclick="editCliente('+c.id+')" style="font-size:16px" title="Editar">&#9998;</button> <button class="btn-ghost" onclick="deleteCliente('+c.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button></td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('clientes-list').innerHTML=h;
@@ -919,14 +920,21 @@ async function deleteCliente(id){if(!confirm('¿Eliminar cliente?'))return;var c
 function editCliente(id){var c=clientes.find(function(x){return x.id==id;});if(c)openModal('cli',c);}
 
 //=== PROVEEDORES ===========================================================
+var provSort={field:'nombre',dir:1};
+function sortProv(field){if(provSort.field===field)provSort.dir*=-1;else{provSort.field=field;provSort.dir=1;}renderProveedores();}
 function renderProveedores(){
   var q=(document.getElementById('prov-search').value||'').toLowerCase();
   var data=proveedores.filter(function(p){return !q||p.nombre.toLowerCase().indexOf(q)>=0;});
   if(!data.length){document.getElementById('proveedores-list').innerHTML='<div class="empty"><div class="empty-icon">&#127970;</div><div class="empty-title">Sin proveedores</div><div class="empty-sub">Registra proveedores para gestionar facturas recibidas</div></div>';return;}
-  var h='<table class="tbl"><thead><tr><th>Nombre</th><th>NRT</th><th>Categoría</th><th>Email</th><th></th></tr></thead><tbody>';
+  var provArrow=function(f){return provSort.field===f?(provSort.dir===1?' ↑':' ↓'):' ⇅';};
+  var h='<table class="tbl"><thead><tr><th onclick="sortProv(&quot;nombre&quot;)">Nombre'+provArrow('nombre')+'</th><th onclick="sortProv(&quot;nrt&quot;)">NRT'+provArrow('nrt')+'</th><th onclick="sortProv(&quot;categoria&quot;)">Categoría'+provArrow('categoria')+'</th><th onclick="sortProv(&quot;email&quot;)">Email'+provArrow('email')+'</th><th>Acciones</th></tr></thead><tbody>';
+  data.sort(function(a,b){
+    var va=String(a[provSort.field]||"").toLowerCase(),vb=String(b[provSort.field]||"").toLowerCase();
+    if(va<vb)return -1*provSort.dir;if(va>vb)return 1*provSort.dir;return 0;
+  });
   data.forEach(function(p){
     h+='<tr><td style="font-weight:600">'+p.nombre+'</td><td class="mono">'+(p.nrt||'—')+'</td><td><span class="badge-status badge-borrador">'+(p.categoria||'—')+'</span></td><td>'+(p.email||'—')+'</td>';
-    h+='<td><button class="btn-ghost" onclick="editProveedor('+p.id+')">&#9998;</button> <button class="btn-ghost" onclick="deleteProveedor('+p.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+    h+='<td><button class="btn-ghost" onclick="editProveedor('+p.id+')" style="font-size:16px" title="Editar">&#9998;</button> <button class="btn-ghost" onclick="deleteProveedor('+p.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button></td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('proveedores-list').innerHTML=h;
@@ -952,7 +960,7 @@ function renderServicios(){
   var h='<table class="tbl"><thead><tr><th>Servicio</th><th>Categoría</th><th>Precio</th><th>Unidad</th><th></th></tr></thead><tbody>';
   data.forEach(function(s){
     h+='<tr><td style="font-weight:600">'+s.nombre+'</td><td><span class="badge-status badge-borrador">'+(s.categoria||'')+'</span></td><td class="mono" style="font-weight:600">'+fmt(s.precio)+'</td><td>'+(s.unidad||'servicio')+'</td>';
-    h+='<td><button class="btn-ghost" onclick="editServicio('+s.id+')">&#9998;</button> <button class="btn-ghost" onclick="deleteServicio('+s.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+    h+='<td><button class="btn-ghost" onclick="editServicio('+s.id+')" style="font-size:16px" title="Editar">&#9998;</button> <button class="btn-ghost" onclick="deleteServicio('+s.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button></td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('servicios-list').innerHTML=h;
@@ -1546,8 +1554,123 @@ function generateFacturaPDF(f){
   setTimeout(function(){w.print();},500);
 }
 
-function exportEmitidasExcel(){toast('Exportación Excel en desarrollo');}
-function exportInformePDF(){toast('Exportación PDF en desarrollo');}
+// ============================================================
+// EXCEL EXPORT HELPER
+// ============================================================
+function downloadExcel(filename, headers, rows){
+  var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+  html+='<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Datos</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+  html+='<style>td,th{mso-number-format:"\\@";padding:4px 8px;border:1px solid #DDD;font-family:Calibri,sans-serif;font-size:11px}th{background:#F0F0F0;font-weight:bold;text-align:center}.num{mso-number-format:"#,##0.00";text-align:right}.date{mso-number-format:"dd/mm/yyyy"}</style></head><body>';
+  html+='<table>';
+  // Headers
+  html+='<tr>';
+  headers.forEach(function(h){html+='<th>'+h+'</th>';});
+  html+='</tr>';
+  // Rows
+  rows.forEach(function(row){
+    html+='<tr>';
+    row.forEach(function(cell){
+      if(cell&&cell.type==='num') html+='<td class="num">'+cell.val+'</td>';
+      else if(cell&&cell.type==='date') html+='<td class="date">'+cell.val+'</td>';
+      else html+='<td>'+(cell!=null?cell:'')+'</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</table></body></html>';
+  var blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  var link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download=filename+'.xls';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function exportEmitidasExcel(){
+  var estado=(document.getElementById('emit-filter-estado')||{}).value||'';
+  var cat=(document.getElementById('emit-filter-cat')||{}).value||'';
+  var cliId=(document.getElementById('emit-filter-cliente')||{}).value||'';
+  var anio=(document.getElementById('emit-filter-anio')||{}).value||'';
+  var mes=(document.getElementById('emit-filter-mes')||{}).value||'';
+  var desde=(document.getElementById('emit-filter-desde')||{}).value||'';
+  var hasta=(document.getElementById('emit-filter-hasta')||{}).value||'';
+  var data=facturasEmit.filter(function(f){
+    if(estado&&f.estado!==estado)return false;
+    if(cat&&f.categoria!==cat)return false;
+    if(cliId&&f.cliente_id!=cliId)return false;
+    if(anio&&f.fecha&&f.fecha.slice(0,4)!==anio)return false;
+    if(mes&&f.fecha&&f.fecha.slice(5,7)!==mes)return false;
+    if(desde&&f.fecha&&f.fecha<desde)return false;
+    if(hasta&&f.fecha&&f.fecha>hasta)return false;
+    return true;
+  });
+  data.sort(function(a,b){var na=parseInt(String(a.numero).replace(/[^0-9]/g,''))||0,nb=parseInt(String(b.numero).replace(/[^0-9]/g,''))||0;return na-nb;});
+  if(!data.length){toast('Sin datos para exportar');return;}
+  var headers=['N° Factura','Fecha','Cliente','NRT Cliente','Categoría','Base','IGI','Total','Estado'];
+  var rows=data.map(function(f){
+    return [
+      f.numero,
+      {type:'date',val:fmtDate(f.fecha)},
+      f.cliente_nombre||'',
+      f.cliente_nrt||'',
+      f.categoria||'',
+      {type:'num',val:(f.base||0).toFixed(2)},
+      {type:'num',val:(f.igi||0).toFixed(2)},
+      {type:'num',val:(f.total||0).toFixed(2)},
+      f.estado||''
+    ];
+  });
+  // Totals row
+  var totBase=data.reduce(function(s,f){return s+(f.base||0);},0);
+  var totIgi=data.reduce(function(s,f){return s+(f.igi||0);},0);
+  var totTotal=data.reduce(function(s,f){return s+(f.total||0);},0);
+  rows.push(['','','','','TOTALES',{type:'num',val:totBase.toFixed(2)},{type:'num',val:totIgi.toFixed(2)},{type:'num',val:totTotal.toFixed(2)},'']);
+  downloadExcel('Facturas_Emitidas_'+new Date().toISOString().slice(0,10),headers,rows);
+  toast('Excel exportado');
+}
+
+function exportRecibidasExcel(){
+  var prov=(document.getElementById('rec-filter-prov')||{}).value||'';
+  var cat=(document.getElementById('rec-filter-cat')||{}).value||'';
+  var mes=(document.getElementById('rec-filter-mes')||{}).value||'';
+  var data=facturasRec.filter(function(f){
+    if(prov&&f.proveedor_id!=prov)return false;
+    if(cat&&f.categoria!==cat)return false;
+    if(mes&&f.fecha&&f.fecha.slice(0,7)!==mes)return false;
+    return true;
+  });
+  if(!data.length){toast('Sin datos para exportar');return;}
+  var headers=['N° Factura','Fecha','Proveedor','Categoría','Concepto','Base','IGI','Total'];
+  var rows=data.map(function(f){
+    return [
+      f.numero||'',
+      {type:'date',val:fmtDate(f.fecha)},
+      f.proveedor_nombre||'',
+      f.categoria||'',
+      f.concepto||'',
+      {type:'num',val:(f.base||0).toFixed(2)},
+      {type:'num',val:(f.igi||0).toFixed(2)},
+      {type:'num',val:(f.total||0).toFixed(2)}
+    ];
+  });
+  var totBase=data.reduce(function(s,f){return s+(f.base||0);},0);
+  var totIgi=data.reduce(function(s,f){return s+(f.igi||0);},0);
+  var totTotal=data.reduce(function(s,f){return s+(f.total||0);},0);
+  rows.push(['','','','TOTALES','',{type:'num',val:totBase.toFixed(2)},{type:'num',val:totIgi.toFixed(2)},{type:'num',val:totTotal.toFixed(2)}]);
+  downloadExcel('Facturas_Recibidas_'+new Date().toISOString().slice(0,10),headers,rows);
+  toast('Excel exportado');
+}
+
+function exportInformePDF(){
+  var output=document.getElementById('informe-output');
+  if(!output||!output.innerHTML||output.innerHTML.indexOf('empty')>=0){toast('Genera un informe primero');return;}
+  var html='<html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}@page{size:A4;margin:12mm}body{font-family:Inter,-apple-system,sans-serif;font-size:11px;color:#1A1A1A}h2{font-size:16px;margin-bottom:12px}.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}.kpi{border:1px solid #DDD;border-radius:6px;padding:10px;text-align:center}.kpi-val{font-size:18px;font-weight:800}.kpi-label{font-size:9px;color:#666;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin-bottom:16px}th{background:#F0F0F0;padding:6px 8px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;border-bottom:2px solid #CCC}td{padding:5px 8px;border-bottom:1px solid #EEE;font-size:11px}.mono{font-family:monospace}.card{border:1px solid #DDD;border-radius:6px;margin-bottom:12px}.card-header{padding:10px 14px;border-bottom:1px solid #EEE;font-weight:700;font-size:12px}.card-body{padding:12px 14px}</style></head><body>';
+  html+='<h2>Informe — Servap Turístics</h2>';
+  html+='<div style="font-size:10px;color:#666;margin-bottom:16px">Generado: '+new Date().toLocaleString('es-ES')+'</div>';
+  html+=output.innerHTML;
+  html+='</body></html>';
+  var w=window.open('','_blank');w.document.write(html);w.document.close();
+  setTimeout(function(){w.print();},500);
+}
 
 //=== IMPORT FACTURA PDF ====================================================
 var impDocs=[];
