@@ -826,15 +826,25 @@ async function integrityCheck(){
 }
 
 //=== DATA LOAD =============================================================
+// Normaliza campos numéricos (Supabase NUMERIC llega como string)
+function normNum(list,fields){
+  list.forEach(function(r){
+    fields.forEach(function(f){
+      if(r[f]!=null) r[f]=parseFloat(r[f])||0;
+    });
+  });
+  return list;
+}
+
 async function loadAll(){
   if(!supa){toast('Sin conexión a Supabase');return;}
   try{
     clientes=await sbLoad('inv_clientes');
     proveedores=await sbLoad('inv_proveedores');
-    servicios=await sbLoad('inv_servicios');
-    facturasEmit=await sbLoad('inv_facturas_emit');
-    facturasRec=await sbLoad('inv_facturas_rec');
-    pagos=await sbLoad('inv_pagos');
+    servicios=normNum(await sbLoad('inv_servicios'),['precio']);
+    facturasEmit=normNum(await sbLoad('inv_facturas_emit'),['base','igi','total']);
+    facturasRec=normNum(await sbLoad('inv_facturas_rec'),['base','igi','total']);
+    pagos=normNum(await sbLoad('inv_pagos'),['monto']);
     adjuntos=await sbLoad('inv_adjuntos');
     var cfgRows=await sbLoad('inv_config');
     if(cfgRows.length){var c=cfgRows[0];Object.assign(config,c);}
@@ -1192,9 +1202,9 @@ function editFactura(id){
     +'</div>'
     +'<div class="form-group"><label class="form-label">Conceptos</label>'+lineasHtml+'</div>'
     +'<div class="form-row-3">'
-    +'<div class="form-group"><label class="form-label">Base imponible</label><input type="number" step="0.01" class="form-input mono" id="ed-base" value="'+f.base+'" oninput="calcEdTotal()"></div>'
-    +'<div class="form-group"><label class="form-label">I.G.I.</label><input type="number" step="0.01" class="form-input mono" id="ed-igi" value="'+f.igi+'" oninput="calcEdTotal()"></div>'
-    +'<div class="form-group"><label class="form-label">Total</label><input type="number" step="0.01" class="form-input mono" id="ed-total" value="'+f.total+'" style="font-weight:700;font-size:16px"></div>'
+    +'<div class="form-group"><label class="form-label">Base imponible</label><input type="number" step="0.01" class="form-input mono" id="ed-base" value="'+(parseFloat(f.base)||0)+'" oninput="calcEdTotal()"></div>'
+    +'<div class="form-group"><label class="form-label">I.G.I.</label><input type="number" step="0.01" class="form-input mono" id="ed-igi" value="'+(parseFloat(f.igi)||0)+'" oninput="calcEdTotal()"></div>'
+    +'<div class="form-group"><label class="form-label">Total</label><input type="number" step="0.01" class="form-input mono" id="ed-total" value="'+(parseFloat(f.total)||0)+'" style="font-weight:700;font-size:16px"></div>'
     +'</div>'
     +'<div class="form-row">'
     +'<div class="form-group"><label class="form-label">Estado</label><select class="form-select" id="ed-estado">'+estOpts+'</select></div>'
@@ -1384,13 +1394,13 @@ function dashFilter(list){
 }
 function renderDashboard(){
   var emitFilt=dashFilter(facturasEmit);
-  var totalEmit=emitFilt.reduce(function(s,f){return s+(f.total||0);},0);
+  var totalEmit=emitFilt.reduce(function(s,f){return s+(parseFloat(f.total)||0);},0);
   var pendientes=emitFilt.filter(function(f){return f.estado==='enviada'||f.estado==='vencida';});
-  var totalPend=pendientes.reduce(function(s,f){return s+(f.total||0);},0);
+  var totalPend=pendientes.reduce(function(s,f){return s+(parseFloat(f.total)||0);},0);
   var pagadas=emitFilt.filter(function(f){return f.estado==='pagada'||f.estado==='declarada';});
-  var totalPagado=pagadas.reduce(function(s,f){return s+(f.total||0);},0);
+  var totalPagado=pagadas.reduce(function(s,f){return s+(parseFloat(f.total)||0);},0);
   var recFilt=dashFilter(facturasRec);
-  var totalRec=recFilt.reduce(function(s,f){return s+(f.total||0);},0);
+  var totalRec=recFilt.reduce(function(s,f){return s+(parseFloat(f.total)||0);},0);
 
   document.getElementById('dash-kpis').innerHTML=
     '<div class="kpi"><div class="kpi-val" style="color:var(--primary)">'+fmt(totalEmit)+'</div><div class="kpi-label">Facturado periodo</div><div class="kpi-sub">'+emitFilt.length+' facturas</div></div>'
@@ -1434,10 +1444,10 @@ function renderInforme(){
   if(!emit.length&&!rec.length){el.innerHTML='<div class="empty"><div class="empty-icon">&#128202;</div><div class="empty-title">Sin datos</div><div class="empty-sub">Ajusta los filtros o selecciona otro periodo</div></div>';return;}
   var h='';
   if(tipo==='resumen'){
-    var tEmit=emit.reduce(function(s,f){return s+(f.total||0);},0);
-    var tRec=rec.reduce(function(s,f){return s+(f.total||0);},0);
-    var tIgiE=emit.reduce(function(s,f){return s+(f.igi||0);},0);
-    var tIgiR=rec.reduce(function(s,f){return s+(f.igi||0);},0);
+    var tEmit=emit.reduce(function(s,f){return s+(parseFloat(f.total)||0);},0);
+    var tRec=rec.reduce(function(s,f){return s+(parseFloat(f.total)||0);},0);
+    var tIgiE=emit.reduce(function(s,f){return s+(parseFloat(f.igi)||0);},0);
+    var tIgiR=rec.reduce(function(s,f){return s+(parseFloat(f.igi)||0);},0);
     h+='<div class="kpi-grid" style="margin-bottom:20px">';
     h+='<div class="kpi"><div class="kpi-val" style="color:var(--primary)">'+fmt(tEmit)+'</div><div class="kpi-label">Total facturado</div><div class="kpi-sub">'+emit.length+' facturas</div></div>';
     h+='<div class="kpi"><div class="kpi-val" style="color:var(--danger)">'+fmt(tRec)+'</div><div class="kpi-label">Total gastos</div><div class="kpi-sub">'+rec.length+' facturas</div></div>';
@@ -1448,29 +1458,29 @@ function renderInforme(){
     h+='</div>';
   }
   if(tipo==='por-cliente'){
-    var byC={};emit.forEach(function(f){var k=f.cliente_nombre||'Sin cliente';if(!byC[k])byC[k]={total:0,igi:0,count:0};byC[k].total+=f.total||0;byC[k].igi+=f.igi||0;byC[k].count++;});
+    var byC={};emit.forEach(function(f){var k=f.cliente_nombre||'Sin cliente';if(!byC[k])byC[k]={total:0,igi:0,count:0};byC[k].total+=parseFloat(f.total)||0;byC[k].igi+=parseFloat(f.igi)||0;byC[k].count++;});
     h+='<div class="card"><div class="card-header"><div class="card-title">Facturado por cliente</div></div><div class="card-body">';
     h+='<table class="tbl"><thead><tr><th>Cliente</th><th style="text-align:center">Facturas</th><th style="text-align:right">Base</th><th style="text-align:right">IGI</th><th style="text-align:right">Total</th></tr></thead><tbody>';
     Object.keys(byC).sort(function(a,b){return byC[b].total-byC[a].total;}).forEach(function(k){var c=byC[k];h+='<tr><td style="font-weight:600">'+k+'</td><td class="mono" style="text-align:center">'+c.count+'</td><td class="mono" style="text-align:right">'+fmt(c.total-c.igi)+'</td><td class="mono" style="text-align:right">'+fmt(c.igi)+'</td><td class="mono" style="text-align:right;font-weight:700">'+fmt(c.total)+'</td></tr>';});
     h+='</tbody></table></div></div>';
   }
   if(tipo==='por-categoria'){
-    var byCat={};emit.forEach(function(f){var k=f.categoria||'Sin categoría';if(!byCat[k])byCat[k]={total:0,count:0};byCat[k].total+=f.total||0;byCat[k].count++;});
+    var byCat={};emit.forEach(function(f){var k=f.categoria||'Sin categoría';if(!byCat[k])byCat[k]={total:0,count:0};byCat[k].total+=parseFloat(f.total)||0;byCat[k].count++;});
     h+='<div class="card"><div class="card-header"><div class="card-title">Facturado por categoría</div></div><div class="card-body">';
     h+='<table class="tbl"><thead><tr><th>Categoría</th><th style="text-align:center">Facturas</th><th style="text-align:right">Total</th></tr></thead><tbody>';
     Object.keys(byCat).sort(function(a,b){return byCat[b].total-byCat[a].total;}).forEach(function(k){var c=byCat[k];h+='<tr><td style="font-weight:600">'+k+'</td><td class="mono" style="text-align:center">'+c.count+'</td><td class="mono" style="text-align:right;font-weight:700">'+fmt(c.total)+'</td></tr>';});
     h+='</tbody></table></div></div>';
   }
   if(tipo==='por-proveedor'){
-    var byP={};rec.forEach(function(f){var k=f.proveedor_nombre||'Sin proveedor';if(!byP[k])byP[k]={total:0,igi:0,count:0};byP[k].total+=f.total||0;byP[k].igi+=f.igi||0;byP[k].count++;});
+    var byP={};rec.forEach(function(f){var k=f.proveedor_nombre||'Sin proveedor';if(!byP[k])byP[k]={total:0,igi:0,count:0};byP[k].total+=parseFloat(f.total)||0;byP[k].igi+=parseFloat(f.igi)||0;byP[k].count++;});
     h+='<div class="card"><div class="card-header"><div class="card-title">Gastos por proveedor</div></div><div class="card-body">';
     h+='<table class="tbl"><thead><tr><th>Proveedor</th><th style="text-align:center">Facturas</th><th style="text-align:right">Base</th><th style="text-align:right">IGI</th><th style="text-align:right">Total</th></tr></thead><tbody>';
     Object.keys(byP).sort(function(a,b){return byP[b].total-byP[a].total;}).forEach(function(k){var c=byP[k];h+='<tr><td style="font-weight:600">'+k+'</td><td class="mono" style="text-align:center">'+c.count+'</td><td class="mono" style="text-align:right">'+fmt(c.total-c.igi)+'</td><td class="mono" style="text-align:right">'+fmt(c.igi)+'</td><td class="mono" style="text-align:right;font-weight:700">'+fmt(c.total)+'</td></tr>';});
     h+='</tbody></table></div></div>';
   }
   if(tipo==='igi'){
-    var tIgiE=emit.reduce(function(s,f){return s+(f.igi||0);},0);
-    var tIgiR=rec.reduce(function(s,f){return s+(f.igi||0);},0);
+    var tIgiE=emit.reduce(function(s,f){return s+(parseFloat(f.igi)||0);},0);
+    var tIgiR=rec.reduce(function(s,f){return s+(parseFloat(f.igi)||0);},0);
     h+='<div class="card"><div class="card-header"><div class="card-title">IGI Repercutido / Soportado</div></div><div class="card-body">';
     h+='<table class="tbl"><thead><tr><th>Concepto</th><th style="text-align:right">Importe</th></tr></thead><tbody>';
     h+='<tr><td>IGI repercutido (facturas emitidas)</td><td class="mono" style="text-align:right;font-weight:700;color:var(--primary)">'+fmt(tIgiE)+'</td></tr>';
@@ -1613,16 +1623,16 @@ function exportEmitidasExcel(){
       f.cliente_nombre||'',
       f.cliente_nrt||'',
       f.categoria||'',
-      {type:'num',val:(f.base||0).toFixed(2)},
-      {type:'num',val:(f.igi||0).toFixed(2)},
-      {type:'num',val:(f.total||0).toFixed(2)},
+      {type:'num',val:(parseFloat(f.base)||0).toFixed(2)},
+      {type:'num',val:(parseFloat(f.igi)||0).toFixed(2)},
+      {type:'num',val:(parseFloat(f.total)||0).toFixed(2)},
       f.estado||''
     ];
   });
   // Totals row
-  var totBase=data.reduce(function(s,f){return s+(f.base||0);},0);
-  var totIgi=data.reduce(function(s,f){return s+(f.igi||0);},0);
-  var totTotal=data.reduce(function(s,f){return s+(f.total||0);},0);
+  var totBase=data.reduce(function(s,f){return s+(parseFloat(f.base)||0);},0);
+  var totIgi=data.reduce(function(s,f){return s+(parseFloat(f.igi)||0);},0);
+  var totTotal=data.reduce(function(s,f){return s+(parseFloat(f.total)||0);},0);
   rows.push(['','','','','TOTALES',{type:'num',val:totBase.toFixed(2)},{type:'num',val:totIgi.toFixed(2)},{type:'num',val:totTotal.toFixed(2)},'']);
   downloadExcel('Facturas_Emitidas_'+new Date().toISOString().slice(0,10),headers,rows);
   toast('Excel exportado');
@@ -1647,14 +1657,14 @@ function exportRecibidasExcel(){
       f.proveedor_nombre||'',
       f.categoria||'',
       f.concepto||'',
-      {type:'num',val:(f.base||0).toFixed(2)},
-      {type:'num',val:(f.igi||0).toFixed(2)},
-      {type:'num',val:(f.total||0).toFixed(2)}
+      {type:'num',val:(parseFloat(f.base)||0).toFixed(2)},
+      {type:'num',val:(parseFloat(f.igi)||0).toFixed(2)},
+      {type:'num',val:(parseFloat(f.total)||0).toFixed(2)}
     ];
   });
-  var totBase=data.reduce(function(s,f){return s+(f.base||0);},0);
-  var totIgi=data.reduce(function(s,f){return s+(f.igi||0);},0);
-  var totTotal=data.reduce(function(s,f){return s+(f.total||0);},0);
+  var totBase=data.reduce(function(s,f){return s+(parseFloat(f.base)||0);},0);
+  var totIgi=data.reduce(function(s,f){return s+(parseFloat(f.igi)||0);},0);
+  var totTotal=data.reduce(function(s,f){return s+(parseFloat(f.total)||0);},0);
   rows.push(['','','','TOTALES','',{type:'num',val:totBase.toFixed(2)},{type:'num',val:totIgi.toFixed(2)},{type:'num',val:totTotal.toFixed(2)}]);
   downloadExcel('Facturas_Recibidas_'+new Date().toISOString().slice(0,10),headers,rows);
   toast('Excel exportado');
