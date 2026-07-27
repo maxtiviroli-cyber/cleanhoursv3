@@ -208,7 +208,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     </div>
     <div class="sb-section">
       <div class="sb-section-label">Facturación</div>
-      <button class="sb-item" onclick="showPanel('emitir')"><span class="icon">&#10133;</span> Emitir factura</button>
+      <button class="sb-item ro-hide" onclick="showPanel('emitir')"><span class="icon">&#10133;</span> Emitir factura</button>
       <button class="sb-item" onclick="showPanel('emitidas')"><span class="icon">&#128196;</span> Facturas emitidas</button>
       <button class="sb-item" onclick="showPanel('recibidas')"><span class="icon">&#128229;</span> Facturas recibidas</button>
       <button class="sb-item" onclick="showPanel('pagos')"><span class="icon">&#128176;</span> Pagos</button>
@@ -269,7 +269,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     <div class="panel" id="panel-clientes">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div class="filters"><input type="text" placeholder="Buscar cliente..." id="cli-search" oninput="renderClientes()" style="width:220px"></div>
-        <button class="btn btn-primary" onclick="openModal('cli')">&#10133; Nuevo cliente</button>
+        <button class="btn btn-primary ro-hide" onclick="openModal('cli')">&#10133; Nuevo cliente</button>
       </div>
       <div class="card"><div class="card-body" id="clientes-list"></div></div>
     </div>
@@ -278,7 +278,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     <div class="panel" id="panel-proveedores">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div class="filters"><input type="text" placeholder="Buscar proveedor..." id="prov-search" oninput="renderProveedores()" style="width:220px"></div>
-        <button class="btn btn-primary" onclick="openModal('prov')">&#10133; Nuevo proveedor</button>
+        <button class="btn btn-primary ro-hide" onclick="openModal('prov')">&#10133; Nuevo proveedor</button>
       </div>
       <div class="card"><div class="card-body" id="proveedores-list"></div></div>
     </div>
@@ -287,7 +287,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     <div class="panel" id="panel-servicios">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div class="filters"><input type="text" placeholder="Buscar servicio..." id="svc-search" oninput="renderServicios()" style="width:220px"></div>
-        <button class="btn btn-primary" onclick="openModal('svc')">&#10133; Nuevo servicio</button>
+        <button class="btn btn-primary ro-hide" onclick="openModal('svc')">&#10133; Nuevo servicio</button>
       </div>
       <div class="card"><div class="card-body" id="servicios-list"></div></div>
     </div>
@@ -357,8 +357,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-sm btn-outline" onclick="exportEmitidasExcel()">&#128196; Excel</button>
-          <button class="btn btn-sm btn-accent" onclick="toggleImportPanel()">&#129302; Importar PDF</button>
-          <button class="btn btn-sm btn-primary" onclick="showPanel('emitir')">&#10133; Nueva factura</button>
+          <button class="btn btn-sm btn-accent ro-hide" onclick="toggleImportPanel()">&#129302; Importar PDF</button>
+          <button class="btn btn-sm btn-primary ro-hide" onclick="showPanel('emitir')">&#10133; Nueva factura</button>
         </div>
       </div>
       <!-- Import panel -->
@@ -430,8 +430,44 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-sm btn-outline" onclick="exportRecibidasExcel()">&#128196; Excel</button>
-          <button class="btn btn-sm btn-accent" onclick="openModal('rec-ai')">&#129302; Importar con IA</button>
-          <button class="btn btn-sm btn-primary" onclick="openModal('rec')">&#10133; Registrar factura</button>
+          <button class="btn btn-sm btn-accent ro-hide" onclick="toggleRecImportPanel()">&#129302; Importar PDF</button>
+          <button class="btn btn-sm btn-primary ro-hide" onclick="openModal('rec')">&#10133; Registrar factura</button>
+        </div>
+      </div>
+      <!-- Import panel recibidas -->
+      <div class="card ro-hide" id="rec-import-panel" style="display:none">
+        <div class="card-header"><div><div class="card-title">&#129302; Importar factura recibida desde PDF</div><div class="card-sub">Sube el PDF y la IA extraerá los datos del proveedor automáticamente</div></div><button class="btn-ghost" onclick="toggleRecImportPanel()" style="font-size:16px">&times;</button></div>
+        <div class="card-body">
+          <div class="doc-capture" onclick="document.getElementById(&quot;rec-import-input&quot;).click()">
+            <div style="font-size:32px;margin-bottom:6px">&#128196;</div>
+            <div style="font-size:12px;color:var(--text2)">Arrastra el PDF aquí o haz clic para seleccionar</div>
+            <input type="file" id="rec-import-input" accept="application/pdf,image/*" style="display:none" onchange="handleRecImportPDF(this)">
+          </div>
+          <div id="rec-import-info" style="display:none;margin-top:10px;padding:8px 12px;background:var(--bg);border-radius:6px;font-size:12px;font-family:var(--mono)"></div>
+          <div id="rec-import-processing" style="display:none;text-align:center;padding:20px"><div style="font-size:14px;color:var(--primary)">&#9203; Procesando con IA...</div></div>
+          <div id="rec-import-error" style="display:none;padding:10px;background:var(--danger-light);border:1px solid var(--danger);border-radius:6px;color:var(--danger);font-size:12px;margin-top:8px"></div>
+          <div id="rec-import-result" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
+            <div style="font-size:13px;font-weight:700;margin-bottom:12px">Datos extraídos — revisa y corrige:</div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Proveedor</label><select class="form-select" id="ri-prov"><option value="">Seleccionar...</option></select></div>
+              <div class="form-group"><label class="form-label">N° Factura</label><input class="form-input mono" id="ri-num"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-input" id="ri-fecha"></div>
+              <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="ri-cat"><option>Suministros</option><option>Servicios</option><option>Material</option><option>Alquiler</option><option>Otros</option></select></div>
+            </div>
+            <div class="form-row-3">
+              <div class="form-group"><label class="form-label">Base</label><input type="number" step="0.01" class="form-input mono" id="ri-base" oninput="calcRiTotal()"></div>
+              <div class="form-group"><label class="form-label">IGI</label><input type="number" step="0.01" class="form-input mono" id="ri-igi" oninput="calcRiTotal()"></div>
+              <div class="form-group"><label class="form-label">Total</label><input type="number" step="0.01" class="form-input mono" id="ri-total" style="font-weight:700;font-size:16px"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Concepto</label><input class="form-input" id="ri-concepto"></div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:12px">&#128206; El PDF original se guardará como documento adjunto automáticamente</div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:12px;border-top:1px solid var(--border)">
+              <button class="btn btn-outline" onclick="toggleRecImportPanel()">Cancelar</button>
+              <button class="btn btn-primary" onclick="confirmRecImport()">&#10004; Guardar factura recibida</button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="card"><div class="card-body" id="recibidas-list"></div></div>
@@ -441,7 +477,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     <div class="panel" id="panel-pagos">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
         <div class="filters"><input type="month" id="pago-filter-mes" onchange="renderPagos()"></div>
-        <button class="btn btn-primary" onclick="openModal('pago')">&#10133; Registrar pago</button>
+        <button class="btn btn-primary ro-hide" onclick="openModal('pago')">&#10133; Registrar pago</button>
       </div>
       <div class="card"><div class="card-body" id="pagos-list"></div></div>
     </div>
@@ -570,7 +606,27 @@ function doLoginSuccess(found){
   var su=document.getElementById('sb-username');if(su)su.textContent=found.name||found.username;
   var sr=document.getElementById('sb-role');if(sr)sr.textContent=found.role||'admin';
   var av=document.getElementById('sb-avatar');if(av)av.textContent=(found.name||found.username||'U')[0].toUpperCase();
+  applyRolePermissions();
   renderDashboard();
+}
+
+// Read-only role: can view + export, cannot create/edit/delete
+function isReadOnly(){
+  return currentUser && (currentUser.role==='viewer' || currentUser.role==='readonly' || currentUser.role==='lectura');
+}
+
+function applyRolePermissions(){
+  var ro=isReadOnly();
+  // Hide create/edit/delete buttons via CSS class
+  var style=document.getElementById('ro-style');
+  if(!style){style=document.createElement('style');style.id='ro-style';document.head.appendChild(style);}
+  if(ro){
+    style.textContent='.ro-hide{display:none !important;}';
+    document.body.classList.add('readonly-mode');
+  } else {
+    style.textContent='';
+    document.body.classList.remove('readonly-mode');
+  }
 }
 
 function doLogout(){
@@ -783,8 +839,14 @@ async function backupToSheets(){
     }
   }
   localStorage.setItem('inv_last_backup',new Date().toISOString());
-  logInvAudit('backup_sheets','Backup manual: '+clientes.length+' clientes, '+facturasEmit.length+' emitidas, '+facturasRec.length+' recibidas');
-  toast('Backup completado — '+facturasEmit.length+' facturas respaldadas');
+  // Backup adjuntos metadata (not binary) for document traceability in audit
+  for(var k=0;k<adjuntos.length;k++){
+    var a=adjuntos[k];
+    sheetPostInv({tipo:'inv_backup_adjuntos',id:a.id,factura_id:a.factura_id,nombre:a.nombre,doc_tipo:a.tipo,nota:a.nota,tiene_datos:(a.data&&a.data.length>10)?'SI':'NO'});
+    await new Promise(function(r){setTimeout(r,100);});
+  }
+  logInvAudit('backup_sheets','Backup manual: '+clientes.length+' clientes, '+facturasEmit.length+' emitidas, '+facturasRec.length+' recibidas, '+adjuntos.length+' documentos');
+  toast('Backup completado — '+facturasEmit.length+' facturas y '+adjuntos.length+' documentos respaldados');
 }
 
 function checkWeeklyBackup(){
@@ -799,30 +861,57 @@ async function integrityCheck(){
   if(!supa){toast('Sin conexión a Supabase');return;}
   toast('Verificando integridad...');
   var supaEmit=await sbLoad('inv_facturas_emit');
+  var supaRec=await sbLoad('inv_facturas_rec');
   var supaCli=await sbLoad('inv_clientes');
+  var supaAdj=await sbLoad('inv_adjuntos');
   var issues=[];
 
   // Check local vs Supabase count
   if(supaEmit.length!==facturasEmit.length)
     issues.push('Facturas emitidas: local='+facturasEmit.length+' vs Supabase='+supaEmit.length);
+  if(supaRec.length!==facturasRec.length)
+    issues.push('Facturas recibidas: local='+facturasRec.length+' vs Supabase='+supaRec.length);
   if(supaCli.length!==clientes.length)
     issues.push('Clientes: local='+clientes.length+' vs Supabase='+supaCli.length);
+  if(supaAdj.length!==adjuntos.length)
+    issues.push('Documentos adjuntos: local='+adjuntos.length+' vs Supabase='+supaAdj.length);
 
-  // Check for orphaned invoices (client deleted but invoice references it)
+  // Orphaned invoices (client deleted but invoice references it)
   var cliIds=clientes.map(function(c){return c.id;});
   facturasEmit.forEach(function(f){
     if(f.cliente_id&&cliIds.indexOf(f.cliente_id)<0)
       issues.push('Factura '+f.numero+' referencia cliente inexistente (ID:'+f.cliente_id+')');
   });
 
+  // Orphaned attachments (document references a deleted invoice)
+  var allFactIds=facturasEmit.map(function(f){return f.id;}).concat(facturasRec.map(function(f){return f.id;}));
+  var orphanDocs=0;
+  supaAdj.forEach(function(a){
+    if(a.factura_id&&allFactIds.indexOf(a.factura_id)<0)orphanDocs++;
+  });
+  if(orphanDocs>0)issues.push(orphanDocs+' documento(s) adjunto(s) sin factura asociada (huérfanos)');
+
+  // Documents with no data (corrupt / empty)
+  var emptyDocs=supaAdj.filter(function(a){return !a.data||a.data.length<10;}).length;
+  if(emptyDocs>0)issues.push(emptyDocs+' documento(s) sin contenido (vacíos o corruptos)');
+
+  // Invoices flagged as having a PDF but attachment missing
+  var missingPdf=0;
+  facturasEmit.forEach(function(f){
+    var hasDoc=supaAdj.some(function(a){return a.factura_id==f.id;});
+    // only flag imported ones (número exists and lineas empty = imported)
+    if(!hasDoc&&f.lineas==='[]'&&f.numero)missingPdf++;
+  });
+  if(missingPdf>0)issues.push(missingPdf+' factura(s) importada(s) sin PDF adjunto');
+
   if(issues.length){
     toast('⚠ '+issues.length+' inconsistencias detectadas');
     console.warn('INTEGRITY CHECK:',issues);
-    alert('Verificación de integridad:\n\n'+issues.join('\n'));
+    alert('Verificación de integridad:\n\n'+issues.join('\n\n'));
   } else {
-    toast('✓ Integridad OK — datos consistentes');
+    toast('✓ Integridad OK — todos los datos y documentos consistentes');
   }
-  logInvAudit('integrity_check',issues.length?issues.join('; '):'OK');
+  logInvAudit('integrity_check',issues.length?issues.join('; '):'OK — '+facturasEmit.length+' emit, '+facturasRec.length+' rec, '+adjuntos.length+' docs');
 }
 
 //=== DATA LOAD =============================================================
@@ -911,12 +1000,13 @@ function renderClientes(){
   data.forEach(function(c){
     var nf=facturasEmit.filter(function(f){return f.cliente_id==c.id;}).length;
     h+='<tr><td style="font-weight:600">'+c.nombre+'</td><td style="color:var(--text2);font-size:11px;font-style:italic">'+(c.nombre_fantasia||'—')+'</td><td class="mono">'+(c.nrt||'—')+'</td><td>'+(c.email||'—')+'</td><td>'+(c.telefono||'—')+'</td><td class="mono">'+nf+'</td>';
-    h+='<td><button class="btn-ghost" onclick="editCliente('+c.id+')" style="font-size:16px" title="Editar">&#9998;</button> <button class="btn-ghost" onclick="deleteCliente('+c.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button></td></tr>';
+    h+='<td>'+(isReadOnly()?'<span style="color:var(--text3)">—</span>':'<button class="btn-ghost" onclick="editCliente('+c.id+')" style="font-size:16px" title="Editar">&#9998;</button> <button class="btn-ghost" onclick="deleteCliente('+c.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button>')+'</td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('clientes-list').innerHTML=h;
 }
 async function saveCliente(editId){
+  if(isReadOnly()){toast("Sin permisos para editar");return;}
   var obj={nombre:document.getElementById('m-cli-name').value.trim(),nrt:document.getElementById('m-cli-nrt').value.trim(),nombre_fantasia:document.getElementById('m-cli-fantasia').value.trim(),email:document.getElementById('m-cli-email').value.trim(),telefono:document.getElementById('m-cli-tel').value.trim(),direccion:document.getElementById('m-cli-dir').value.trim(),notas:document.getElementById('m-cli-notas').value.trim()};
   if(!obj.nombre){toast('Nombre es obligatorio');return;}
   if(editId){obj.id=editId;}else{obj.id=uid();}
@@ -926,7 +1016,7 @@ async function saveCliente(editId){
   if(idx>=0)clientes[idx]=obj;else clientes.push(obj);
   closeModal();populateSelects();renderClientes();toast('Cliente guardado');
 }
-async function deleteCliente(id){if(!confirm('¿Eliminar cliente?'))return;var c=clientes.find(function(x){return x.id==id;});logInvAudit('eliminar_cliente',c?c.nombre:'ID:'+id);await sbDel('inv_clientes',id);clientes=clientes.filter(function(x){return x.id!=id;});populateSelects();renderClientes();toast('Cliente eliminado');}
+async function deleteCliente(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar cliente?'))return;var c=clientes.find(function(x){return x.id==id;});logInvAudit('eliminar_cliente',c?c.nombre:'ID:'+id);await sbDel('inv_clientes',id);clientes=clientes.filter(function(x){return x.id!=id;});populateSelects();renderClientes();toast('Cliente eliminado');}
 function editCliente(id){var c=clientes.find(function(x){return x.id==id;});if(c)openModal('cli',c);}
 
 //=== PROVEEDORES ===========================================================
@@ -944,12 +1034,13 @@ function renderProveedores(){
   });
   data.forEach(function(p){
     h+='<tr><td style="font-weight:600">'+p.nombre+'</td><td class="mono">'+(p.nrt||'—')+'</td><td><span class="badge-status badge-borrador">'+(p.categoria||'—')+'</span></td><td>'+(p.email||'—')+'</td>';
-    h+='<td><button class="btn-ghost" onclick="editProveedor('+p.id+')" style="font-size:16px" title="Editar">&#9998;</button> <button class="btn-ghost" onclick="deleteProveedor('+p.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button></td></tr>';
+    h+='<td>'+(isReadOnly()?'<span style="color:var(--text3)">—</span>':'<button class="btn-ghost" onclick="editProveedor('+p.id+')" style="font-size:16px" title="Editar">&#9998;</button> <button class="btn-ghost" onclick="deleteProveedor('+p.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button>')+'</td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('proveedores-list').innerHTML=h;
 }
 async function saveProveedor(editId){
+  if(isReadOnly()){toast("Sin permisos para editar");return;}
   var obj={nombre:document.getElementById('m-prov-name').value.trim(),nrt:document.getElementById('m-prov-nrt').value.trim(),email:document.getElementById('m-prov-email').value.trim(),categoria:document.getElementById('m-prov-cat').value,telefono:document.getElementById('m-prov-tel').value.trim(),notas:document.getElementById('m-prov-notas').value.trim()};
   if(!obj.nombre){toast('Nombre es obligatorio');return;}
   if(editId){obj.id=editId;}else{obj.id=uid();}
@@ -959,7 +1050,7 @@ async function saveProveedor(editId){
   if(idx>=0)proveedores[idx]=obj;else proveedores.push(obj);
   closeModal();populateSelects();renderProveedores();toast('Proveedor guardado');
 }
-async function deleteProveedor(id){if(!confirm('¿Eliminar proveedor?'))return;await sbDel('inv_proveedores',id);proveedores=proveedores.filter(function(p){return p.id!=id;});populateSelects();renderProveedores();toast('Proveedor eliminado');}
+async function deleteProveedor(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar proveedor?'))return;await sbDel('inv_proveedores',id);proveedores=proveedores.filter(function(p){return p.id!=id;});populateSelects();renderProveedores();toast('Proveedor eliminado');}
 function editProveedor(id){var p=proveedores.find(function(x){return x.id==id;});if(p)openModal('prov',p);}
 
 //=== SERVICIOS =============================================================
@@ -970,12 +1061,13 @@ function renderServicios(){
   var h='<table class="tbl"><thead><tr><th>Servicio</th><th>Categoría</th><th>Precio</th><th>Unidad</th><th></th></tr></thead><tbody>';
   data.forEach(function(s){
     h+='<tr><td style="font-weight:600">'+s.nombre+'</td><td><span class="badge-status badge-borrador">'+(s.categoria||'')+'</span></td><td class="mono" style="font-weight:600">'+fmt(s.precio)+'</td><td>'+(s.unidad||'servicio')+'</td>';
-    h+='<td><button class="btn-ghost" onclick="editServicio('+s.id+')" style="font-size:16px" title="Editar">&#9998;</button> <button class="btn-ghost" onclick="deleteServicio('+s.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button></td></tr>';
+    h+='<td>'+(isReadOnly()?'<span style="color:var(--text3)">—</span>':'<button class="btn-ghost" onclick="editServicio('+s.id+')" style="font-size:16px" title="Editar">&#9998;</button> <button class="btn-ghost" onclick="deleteServicio('+s.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button>')+'</td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('servicios-list').innerHTML=h;
 }
 async function saveServicio(editId){
+  if(isReadOnly()){toast("Sin permisos para editar");return;}
   var obj={nombre:document.getElementById('m-svc-name').value.trim(),categoria:document.getElementById('m-svc-cat').value,precio:parseFloat(document.getElementById('m-svc-precio').value)||0,unidad:document.getElementById('m-svc-unidad').value,descripcion:document.getElementById('m-svc-desc').value.trim()};
   if(!obj.nombre){toast('Nombre es obligatorio');return;}
   if(editId){obj.id=editId;}else{obj.id=uid();}
@@ -985,7 +1077,7 @@ async function saveServicio(editId){
   if(idx>=0)servicios[idx]=obj;else servicios.push(obj);
   closeModal();renderServicios();toast('Servicio guardado');
 }
-async function deleteServicio(id){if(!confirm('¿Eliminar servicio?'))return;await sbDel('inv_servicios',id);servicios=servicios.filter(function(s){return s.id!=id;});renderServicios();toast('Servicio eliminado');}
+async function deleteServicio(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar servicio?'))return;await sbDel('inv_servicios',id);servicios=servicios.filter(function(s){return s.id!=id;});renderServicios();toast('Servicio eliminado');}
 function editServicio(id){var s=servicios.find(function(x){return x.id==id;});if(s)openModal('svc',s);}
 
 //=== EMITIR FACTURA ========================================================
@@ -1043,6 +1135,7 @@ function calcEmitTotals(){
   document.getElementById('emit-total').textContent=fmt(base+igi);
 }
 async function saveFactura(estado){
+  if(isReadOnly()){toast("Sin permisos para crear facturas");return;}
   var cliId=document.getElementById('emit-cliente').value;
   if(!cliId){toast('Selecciona un cliente');return;}
   var cli=clientes.find(function(c){return c.id==cliId;});
@@ -1142,12 +1235,12 @@ function renderEmitidas(){
     h+='<td style="white-space:nowrap;text-align:center">';
     var numDocs=adjuntos.filter(function(a){return a.factura_id==f.id;}).length;
     if(numDocs>0) h+='<button class="btn-ghost" title="Ver documentos ('+numDocs+')" onclick="viewFacturaDocs('+f.id+')" style="font-size:18px">&#128206;<sup style="font-size:9px;color:var(--primary)">'+numDocs+'</sup></button>';
-    if(f.estado!=='pagada'&&f.estado!=='declarada') h+='<button class="btn-ghost" title="Marcar pagada" onclick="setEstado('+f.id+',&quot;pagada&quot;)" style="font-size:18px">&#9744;</button>';
-    if(f.estado==='pagada') h+='<button class="btn-ghost" title="Marcar declarada" onclick="setEstado('+f.id+',&quot;declarada&quot;)" style="font-size:18px">&#9745;</button>';
+    if(!isReadOnly()&&f.estado!=='pagada'&&f.estado!=='declarada') h+='<button class="btn-ghost" title="Marcar pagada" onclick="setEstado('+f.id+',&quot;pagada&quot;)" style="font-size:18px">&#9744;</button>';
+    if(!isReadOnly()&&f.estado==='pagada') h+='<button class="btn-ghost" title="Marcar declarada" onclick="setEstado('+f.id+',&quot;declarada&quot;)" style="font-size:18px">&#9745;</button>';
     if(f.estado==='declarada') h+='<span style="font-size:18px;opacity:0.3">&#9745;</span>';
     h+='<button class="btn-ghost" title="Generar PDF" onclick="generateFacturaPDF(facturasEmit.find(function(x){return x.id=='+f.id+';}))" style="font-size:18px">&#128438;</button>';
     h+='</td>';
-    h+='<td><button class="btn-ghost" onclick="editFactura('+f.id+')" style="font-size:16px" title="Editar">&#9998;</button></td>';
+    h+='<td>'+(isReadOnly()?'':'<button class="btn-ghost" onclick="editFactura('+f.id+')" style="font-size:16px" title="Editar">&#9998;</button>')+'</td>';
     h+='</tr>';
   });
   h+='</tbody></table>';
@@ -1155,6 +1248,7 @@ function renderEmitidas(){
 }
 function sortEmit(field){if(emitSort.field===field)emitSort.dir*=-1;else{emitSort.field=field;emitSort.dir=field==='fecha'?-1:1;}renderEmitidas();}
 async function setEstado(id,estado){
+  if(isReadOnly()){toast("Sin permisos");return;}
   var f=facturasEmit.find(function(x){return x.id==id;});
   if(f){
     var oldEstado=f.estado;
@@ -1227,6 +1321,7 @@ function calcEdTotal(){
 }
 
 async function saveEditFactura(id){
+  if(isReadOnly()){toast("Sin permisos para editar");return;}
   var f=facturasEmit.find(function(x){return x.id==id;});
   if(!f){toast('Error');return;}
   var cliId=document.getElementById('ed-cliente').value;
@@ -1254,6 +1349,7 @@ async function saveEditFactura(id){
 }
 
 async function deleteFacturaEmit(id){
+  if(isReadOnly()){toast("Sin permisos para eliminar");return;}
   if(!confirm('¿Eliminar esta factura? Esta acción no se puede deshacer.'))return;
   var f=facturasEmit.find(function(x){return x.id==id;});
   var desc=f?('Factura '+f.numero+' — '+f.cliente_nombre+' — '+fmt(f.total)):'ID:'+id;
@@ -1351,7 +1447,12 @@ function renderRecibidas(){
   var h='<table class="tbl"><thead><tr><th>N°</th><th>Fecha</th><th>Proveedor</th><th>Categoría</th><th>Base</th><th>IGI</th><th>Total</th><th></th></tr></thead><tbody>';
   data.forEach(function(f){
     h+='<tr><td class="mono">'+(f.numero||'—')+'</td><td class="mono">'+fmtDate(f.fecha)+'</td><td style="font-weight:500">'+(f.proveedor_nombre||'—')+'</td><td><span class="badge-status badge-borrador">'+(f.categoria||'')+'</span></td><td class="mono" style="text-align:right">'+fmt(f.base)+'</td><td class="mono" style="text-align:right">'+fmt(f.igi)+'</td><td class="mono" style="font-weight:700;text-align:right">'+fmt(f.total)+'</td>';
-    h+='<td><button class="btn-ghost" onclick="deleteRecibida('+f.id+')" style="color:var(--danger)">&#128465;</button></td></tr>';
+    var recDocs=adjuntos.filter(function(a){return a.factura_id==f.id;}).length;
+    h+='<td style="white-space:nowrap">';
+    if(recDocs>0)h+='<button class="btn-ghost" title="Ver documento" onclick="viewFacturaDocs('+f.id+')" style="font-size:16px">&#128206;</button>';
+    if(!isReadOnly())h+='<button class="btn-ghost" onclick="deleteRecibida('+f.id+')" style="color:var(--danger)">&#128465;</button>';
+    if(isReadOnly()&&recDocs===0)h+='<span style="color:var(--text3)">—</span>';
+    h+='</td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById('recibidas-list').innerHTML=h;
@@ -1362,6 +1463,7 @@ function calcRecTotal(){
   document.getElementById('m-rec-total').value=(base+igi).toFixed(2);
 }
 async function saveRecibida(){
+  if(isReadOnly()){toast("Sin permisos");return;}
   var provId=document.getElementById('m-rec-prov').value;
   var prov=proveedores.find(function(p){return p.id==provId;});
   var obj={id:uid(),numero:document.getElementById('m-rec-num').value.trim(),fecha:document.getElementById('m-rec-fecha').value,proveedor_id:provId?parseInt(provId):null,proveedor_nombre:prov?prov.nombre:'',categoria:document.getElementById('m-rec-cat').value,base:parseFloat(document.getElementById('m-rec-base').value)||0,igi:parseFloat(document.getElementById('m-rec-igi').value)||0,total:parseFloat(document.getElementById('m-rec-total').value)||0,concepto:document.getElementById('m-rec-concepto').value.trim(),created:new Date().toISOString()};
@@ -1369,7 +1471,7 @@ async function saveRecibida(){
   facturasRec.push(obj);
   closeModal();renderRecibidas();toast('Factura recibida registrada');
 }
-async function deleteRecibida(id){if(!confirm('¿Eliminar?'))return;var f=facturasRec.find(function(x){return x.id==id;});logInvAudit('eliminar_factura_rec',f?('N°'+f.numero+' — '+f.proveedor_nombre):'ID:'+id);await sbDel('inv_facturas_rec',id);facturasRec=facturasRec.filter(function(x){return x.id!=id;});renderRecibidas();}
+async function deleteRecibida(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar?'))return;var f=facturasRec.find(function(x){return x.id==id;});logInvAudit('eliminar_factura_rec',f?('N°'+f.numero+' — '+f.proveedor_nombre):'ID:'+id);await sbDel('inv_facturas_rec',id);facturasRec=facturasRec.filter(function(x){return x.id!=id;});renderRecibidas();}
 
 //=== PAGOS =================================================================
 function renderPagos(){
@@ -1814,6 +1916,7 @@ function handleImpDocs(input){
 }
 
 async function confirmImportEmit(){
+  if(isReadOnly()){toast("Sin permisos");return;}
   var numero=document.getElementById('imp-numero').value.trim();
   if(!numero){toast('Ingresa el número de factura');return;}
   var cliId=document.getElementById('imp-cliente').value;
@@ -1846,28 +1949,172 @@ async function confirmImportEmit(){
   };
 
   var r=await sbSave('inv_facturas_emit',factura);
-  if(!r){return;}
+  if(!r){toast('Error: la factura no se guardó');return;}
   facturasEmit.push(factura);
   logInvAudit('importar_factura','Factura '+numero+' importada — '+fmt(factura.total));
   sheetPostInv({tipo:'inv_factura_emit',numero:numero,fecha:factura.fecha,cliente:factura.cliente_nombre,base:factura.base,igi:factura.igi,total:factura.total,estado:estado,categoria:factura.categoria});
 
-  // Save the original imported PDF as attachment
+  var docsFailed=0;
+  // Save the original imported PDF as attachment — verify it persisted
   if(impPdfData){
     var pdfDoc={id:uid(),factura_id:factId,cliente_id:factura.cliente_id,tipo:'factura_pdf',nombre:impPdfData.name,data:impPdfData.data,media_type:impPdfData.type,nota:'PDF original factura '+numero,created_at:new Date().toISOString()};
-    await sbSave('inv_adjuntos',pdfDoc);
-    adjuntos.push(pdfDoc);
+    var rPdf=await sbSave('inv_adjuntos',pdfDoc);
+    if(!rPdf){docsFailed++;logInvAudit('adjunto_fallido','Factura '+numero+' — PDF original no se guardó');}
+    else adjuntos.push(pdfDoc);
   }
 
-  // Save additional backup docs
+  // Save additional backup docs — verify each
   for(var i=0;i<impDocs.length;i++){
     var doc={id:uid(),factura_id:factId,cliente_id:factura.cliente_id,tipo:'respaldo',nombre:impDocs[i].name,data:impDocs[i].data.split(',')[1]||impDocs[i].data,media_type:impDocs[i].type,nota:'Respaldo factura '+numero,created_at:new Date().toISOString()};
-    await sbSave('inv_adjuntos',doc);
-    adjuntos.push(doc);
+    var rDoc=await sbSave('inv_adjuntos',doc);
+    if(!rDoc){docsFailed++;logInvAudit('adjunto_fallido','Factura '+numero+' — respaldo '+impDocs[i].name+' no se guardó');}
+    else adjuntos.push(doc);
   }
 
-  toast('Factura '+numero+' importada como '+estado.toUpperCase());
+  // Clear temp data to prevent double-attach
+  impPdfData=null;
+  impDocs=[];
+
+  if(docsFailed>0) toast('⚠ Factura '+numero+' guardada, pero '+docsFailed+' documento(s) fallaron. Revisa la conexión.');
+  else toast('Factura '+numero+' importada como '+estado.toUpperCase());
   toggleImportPanel();
   renderEmitidas();
+}
+
+//=== IMPORT FACTURA RECIBIDA PDF ===========================================
+var recImpPdfData=null;
+
+function toggleRecImportPanel(){
+  var p=document.getElementById('rec-import-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+  if(p.style.display==='block'){
+    var ps=document.getElementById('ri-prov');
+    ps.innerHTML='<option value="">Seleccionar...</option>'+proveedores.map(function(pr){return'<option value="'+pr.id+'">'+pr.nombre+'</option>';}).join('');
+    recImpPdfData=null;
+    document.getElementById('rec-import-result').style.display='none';
+    document.getElementById('rec-import-info').style.display='none';
+    document.getElementById('rec-import-error').style.display='none';
+  }
+}
+
+function handleRecImportPDF(input){
+  var file=input.files[0];
+  if(!file)return;
+  document.getElementById('rec-import-info').style.display='block';
+  document.getElementById('rec-import-info').textContent=file.name+' ('+Math.round(file.size/1024)+' KB)';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    recImpPdfData={name:file.name,data:e.target.result.split(',')[1],type:file.type};
+    processRecImportPDF();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function processRecImportPDF(){
+  if(!recImpPdfData){toast('Sube un archivo primero');return;}
+  var ak=config.apiKey||localStorage.getItem('servap_apikey');
+  if(!ak){toast('Configura la API key de Anthropic en Configuración');return;}
+
+  document.getElementById('rec-import-processing').style.display='block';
+  document.getElementById('rec-import-error').style.display='none';
+  document.getElementById('rec-import-result').style.display='none';
+
+  var mediaType=recImpPdfData.type.indexOf('pdf')>=0?'application/pdf':'image/jpeg';
+  var contentBlock=mediaType==='application/pdf'?
+    {type:'document',source:{type:'base64',media_type:mediaType,data:recImpPdfData.data}}:
+    {type:'image',source:{type:'base64',media_type:mediaType,data:recImpPdfData.data}};
+
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':ak,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',max_tokens:1500,
+        messages:[{role:'user',content:[
+          contentBlock,
+          {type:'text',text:'Esta es una factura que un proveedor emitió a nuestra empresa. Extrae los datos del PROVEEDOR (quien emite) y los importes. Responde SOLO con JSON (sin markdown):\n{"proveedor_nombre":"","numero":"","fecha":"YYYY-MM-DD","categoria":"Suministros|Servicios|Material|Alquiler|Otros","base":0,"igi":0,"total":0,"concepto":""}'}
+        ]}]
+      })
+    });
+    var data=await resp.json();
+    if(data.error)throw new Error(data.error.message);
+    var text=data.content.map(function(c){return c.text||'';}).join('');
+    text=text.replace(/```json|```/g,'').trim();
+    var parsed=JSON.parse(text);
+
+    document.getElementById('ri-num').value=parsed.numero||'';
+    document.getElementById('ri-fecha').value=parsed.fecha||'';
+    document.getElementById('ri-base').value=parsed.base||0;
+    document.getElementById('ri-igi').value=parsed.igi||0;
+    document.getElementById('ri-total').value=parsed.total||0;
+    document.getElementById('ri-concepto').value=parsed.concepto||'';
+    if(parsed.categoria){var cs=document.getElementById('ri-cat');for(var i=0;i<cs.options.length;i++){if(cs.options[i].value===parsed.categoria){cs.selectedIndex=i;break;}}}
+    // Try match proveedor
+    if(parsed.proveedor_nombre){
+      var match=proveedores.find(function(p){return p.nombre.toLowerCase().indexOf(parsed.proveedor_nombre.toLowerCase())>=0||parsed.proveedor_nombre.toLowerCase().indexOf(p.nombre.toLowerCase())>=0;});
+      if(match)document.getElementById('ri-prov').value=match.id;
+      else{
+        // Show hint that proveedor not found
+        var errEl=document.getElementById('rec-import-error');
+        errEl.style.display='block';
+        errEl.style.background='var(--warning-light)';errEl.style.color='#92400E';errEl.style.borderColor='var(--warning)';
+        errEl.textContent='Proveedor detectado: "'+parsed.proveedor_nombre+'" — no está registrado. Créalo primero o selecciona uno existente.';
+      }
+    }
+    document.getElementById('rec-import-result').style.display='block';
+  }catch(err){
+    document.getElementById('rec-import-error').style.display='block';
+    document.getElementById('rec-import-error').textContent='Error: '+err.message;
+  }
+  document.getElementById('rec-import-processing').style.display='none';
+}
+
+function calcRiTotal(){
+  var base=parseFloat(document.getElementById('ri-base').value)||0;
+  var igi=parseFloat(document.getElementById('ri-igi').value)||0;
+  document.getElementById('ri-total').value=(base+igi).toFixed(2);
+}
+
+async function confirmRecImport(){
+  if(isReadOnly()){toast('Sin permisos');return;}
+  var numero=document.getElementById('ri-num').value.trim();
+  var provId=document.getElementById('ri-prov').value;
+  if(!numero&&!provId){toast('Indica al menos el número de factura o el proveedor');return;}
+  var prov=provId?proveedores.find(function(p){return p.id==provId;}):null;
+  var recId=uid();
+  var obj={
+    id:recId,
+    numero:numero,
+    fecha:document.getElementById('ri-fecha').value,
+    proveedor_id:provId?parseInt(provId):null,
+    proveedor_nombre:prov?prov.nombre:'',
+    categoria:document.getElementById('ri-cat').value,
+    base:parseFloat(document.getElementById('ri-base').value)||0,
+    igi:parseFloat(document.getElementById('ri-igi').value)||0,
+    total:parseFloat(document.getElementById('ri-total').value)||0,
+    concepto:document.getElementById('ri-concepto').value.trim(),
+    created:new Date().toISOString()
+  };
+  var r=await sbSave('inv_facturas_rec',obj);
+  if(!r){toast('Error: la factura no se guardó');return;}
+  facturasRec.push(obj);
+  // Save original PDF as attachment — verify it persisted (crítico para auditoría)
+  if(recImpPdfData){
+    var pdfDoc={id:uid(),factura_id:recId,tipo:'factura_rec_pdf',nombre:recImpPdfData.name,data:recImpPdfData.data,media_type:recImpPdfData.type,nota:'PDF original factura recibida '+obj.numero,created_at:new Date().toISOString()};
+    var rDoc=await sbSave('inv_adjuntos',pdfDoc);
+    if(!rDoc){
+      toast('⚠ La factura se guardó pero el PDF adjunto falló. Reintenta adjuntarlo.');
+      logInvAudit('adjunto_fallido','Factura recibida '+obj.numero+' — PDF no se guardó');
+    } else {
+      adjuntos.push(pdfDoc);
+    }
+  }
+  logInvAudit('importar_factura_rec','Factura recibida '+obj.numero+' — '+obj.proveedor_nombre+' — '+fmt(obj.total));
+  sheetPostInv({tipo:'inv_factura_rec',numero:obj.numero,fecha:obj.fecha,proveedor:obj.proveedor_nombre,base:obj.base,igi:obj.igi,total:obj.total,categoria:obj.categoria});
+  recImpPdfData=null;
+  toast('Factura recibida importada');
+  toggleRecImportPanel();
+  renderRecibidas();
 }
 
 //=== INIT ==================================================================
