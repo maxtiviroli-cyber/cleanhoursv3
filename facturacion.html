@@ -142,6 +142,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
 
 /* RESPONSIVE */
 @media(max-width:768px){
+  #panel-emitidas > div:first-child, #panel-recibidas > div:first-child{flex-wrap:wrap !important}
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
   .main{margin-left:0}
@@ -343,9 +344,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
 
     <!-- ═══ FACTURAS EMITIDAS ═══ -->
     <div class="panel" id="panel-emitidas">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <div class="filters" style="gap:6px;flex-wrap:nowrap;overflow-x:auto">
-          <input type="text" id="emit-search" oninput="renderEmitidas()" placeholder="&#128269; Buscar..." style="font-size:11px;width:130px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:nowrap;gap:12px">
+        <div class="filters" style="gap:6px;flex-wrap:nowrap;overflow-x:auto;flex:1;min-width:0">
+          <input type="text" id="emit-search" oninput="renderEmitidas()" placeholder="&#128269; Buscar..." style="font-size:11px;width:130px;flex-shrink:0">
           <select id="emit-filter-estado" onchange="renderEmitidas()" style="font-size:11px"><option value="">Estado</option><option>borrador</option><option>enviada</option><option>pagada</option><option>declarada</option><option>vencida</option></select>
           <select id="emit-filter-cat" onchange="renderEmitidas()" style="font-size:11px"><option value="">Categoría</option></select>
           <select id="emit-filter-cliente" onchange="renderEmitidas()" style="font-size:11px"><option value="">Cliente</option></select>
@@ -357,7 +358,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
           <span style="font-size:10px;color:var(--text2)">a</span>
           <input type="date" id="emit-filter-hasta" onchange="renderEmitidas()" title="Hasta" style="font-size:11px;width:125px">
         </div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-shrink:0">
           <button class="btn btn-sm btn-outline" onclick="exportEmitidasExcel()">&#128196; Excel</button>
           <button class="btn btn-sm btn-accent ro-hide" onclick="toggleImportPanel()">&#129302; Importar PDF</button>
           <button class="btn btn-sm btn-primary ro-hide" onclick="showPanel('emitir')">&#10133; Nueva factura</button>
@@ -424,9 +425,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
 
     <!-- ═══ FACTURAS RECIBIDAS ═══ -->
     <div class="panel" id="panel-recibidas">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <div class="filters" style="gap:6px;flex-wrap:nowrap;overflow-x:auto">
-          <input type="text" id="rec-search" oninput="renderRecibidas()" placeholder="&#128269; Buscar..." style="font-size:11px;width:130px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:nowrap;gap:12px">
+        <div class="filters" style="gap:6px;flex-wrap:nowrap;overflow-x:auto;flex:1;min-width:0">
+          <input type="text" id="rec-search" oninput="renderRecibidas()" placeholder="&#128269; Buscar..." style="font-size:11px;width:130px;flex-shrink:0">
           <select id="rec-filter-cat" onchange="renderRecibidas()" style="font-size:11px"><option value="">Categoría</option><option>Suministros</option><option>Servicios</option><option>Material</option><option>Alquiler</option><option>Otros</option></select>
           <select id="rec-filter-prov" onchange="renderRecibidas()" style="font-size:11px"><option value="">Proveedor</option></select>
           <span style="font-size:10px;color:var(--text2);border-left:1px solid var(--border);padding-left:8px">|</span>
@@ -437,7 +438,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
           <span style="font-size:10px;color:var(--text2)">a</span>
           <input type="date" id="rec-filter-hasta" onchange="renderRecibidas()" title="Hasta" style="font-size:11px;width:125px">
         </div>
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-shrink:0">
           <button class="btn btn-sm btn-outline" onclick="exportRecibidasExcel()">&#128196; Excel</button>
           <button class="btn btn-sm btn-accent ro-hide" onclick="toggleRecImportPanel()">&#129302; Importar PDF</button>
           <button class="btn btn-sm btn-primary ro-hide" onclick="openModal('rec')">&#10133; Registrar factura</button>
@@ -1396,16 +1397,42 @@ async function saveEditFactura(id){
   toast('Factura '+f.numero+' actualizada');
 }
 
+// Modal de contraseña para eliminar documentos
+function askDeletePassword(onConfirm){
+  var m=document.getElementById('modal-overlay');
+  var title=document.getElementById('modal-title');
+  var body=document.getElementById('modal-body');
+  var footer=document.getElementById('modal-footer');
+  title.textContent='🔒 Confirmar eliminación';
+  body.innerHTML='<div style="font-size:13px;color:var(--text2);margin-bottom:14px">Esta acción eliminará el documento de forma permanente. Ingresa la contraseña de seguridad para continuar.</div>'
+    +'<div class="form-group"><label class="form-label">Contraseña</label><input type="password" class="form-input" id="del-pass-input" placeholder="••••••••" onkeydown="if(event.key===\'Enter\')confirmDeletePass()"></div>'
+    +'<div id="del-pass-error" style="display:none;color:var(--danger);font-size:12px;margin-top:4px">Contraseña incorrecta</div>';
+  footer.innerHTML='<button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-danger" onclick="confirmDeletePass()">&#128465; Eliminar</button>';
+  _pendingDelete=onConfirm;
+  m.classList.add('active');
+  setTimeout(function(){var el=document.getElementById('del-pass-input');if(el)el.focus();},100);
+}
+var _pendingDelete=null;
+function confirmDeletePass(){
+  var pass=document.getElementById('del-pass-input').value;
+  var correct=config.delPassword||'dante1979';
+  if(pass!==correct){document.getElementById('del-pass-error').style.display='block';return;}
+  var fn=_pendingDelete;_pendingDelete=null;
+  closeModal();
+  if(fn)fn();
+}
+
 async function deleteFacturaEmit(id){
   if(isReadOnly()){toast("Sin permisos para eliminar");return;}
-  if(!confirm('¿Eliminar esta factura? Esta acción no se puede deshacer.'))return;
+  askDeletePassword(function(){doDeleteFacturaEmit(id);});
+}
+async function doDeleteFacturaEmit(id){
   var f=facturasEmit.find(function(x){return x.id==id;});
   var desc=f?('Factura '+f.numero+' — '+f.cliente_nombre+' — '+fmt(f.total)):'ID:'+id;
   await sbDel('inv_facturas_emit',id);
   facturasEmit=facturasEmit.filter(function(x){return x.id!=id;});
   logInvAudit('eliminar_factura',desc);
   sheetPostInv({tipo:'inv_eliminar',numero:f?f.numero:'',cliente:f?f.cliente_nombre:'',total:f?f.total:0});
-  closeModal();
   renderEmitidas();
   toast('Factura eliminada');
 }
@@ -1543,7 +1570,8 @@ async function saveRecibida(){
   facturasRec.push(obj);
   closeModal();renderRecibidas();toast('Factura recibida registrada');
 }
-async function deleteRecibida(id){if(isReadOnly()){toast("Sin permisos");return;}if(!askDeletePassword())return;var f=facturasRec.find(function(x){return x.id==id;});logInvAudit('eliminar_factura_rec',f?('N°'+f.numero+' — '+f.proveedor_nombre):'ID:'+id);await sbDel('inv_facturas_rec',id);facturasRec=facturasRec.filter(function(x){return x.id!=id;});renderRecibidas();}
+async function deleteRecibida(id){if(isReadOnly()){toast("Sin permisos");return;}askDeletePassword(function(){doDeleteRecibida(id);});}
+async function doDeleteRecibida(id){var f=facturasRec.find(function(x){return x.id==id;});logInvAudit('eliminar_factura_rec',f?('N°'+f.numero+' — '+f.proveedor_nombre):'ID:'+id);sheetPostInv({tipo:'inv_eliminar_rec',numero:f?f.numero:'',proveedor:f?f.proveedor_nombre:'',total:f?f.total:0});await sbDel('inv_facturas_rec',id);facturasRec=facturasRec.filter(function(x){return x.id!=id;});renderRecibidas();toast('Factura eliminada');}
 
 //=== PAGOS =================================================================
 function renderPagos(){
