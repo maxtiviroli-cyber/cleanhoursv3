@@ -259,8 +259,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
         <input type="date" id="dash-filter-hasta" onchange="renderDashboard()" title="Hasta" style="font-size:11px;width:125px">
       </div>
       <div class="kpi-grid" id="dash-kpis"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="dash-grid">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px" id="dash-grid">
         <div class="card"><div class="card-header"><div class="card-title">Últimas facturas emitidas</div></div><div class="card-body" id="dash-recent-emit" style="font-size:12px"></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">Últimas facturas recibidas</div></div><div class="card-body" id="dash-recent-rec" style="font-size:12px"></div></div>
         <div class="card"><div class="card-header"><div class="card-title">Facturas por cobrar</div></div><div class="card-body" id="dash-pendientes" style="font-size:12px"></div></div>
       </div>
     </div>
@@ -343,7 +344,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     <!-- ═══ FACTURAS EMITIDAS ═══ -->
     <div class="panel" id="panel-emitidas">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <div class="filters" style="gap:6px">
+        <div class="filters" style="gap:6px;flex-wrap:nowrap;overflow-x:auto">
+          <input type="text" id="emit-search" oninput="renderEmitidas()" placeholder="&#128269; Buscar..." style="font-size:11px;width:130px">
           <select id="emit-filter-estado" onchange="renderEmitidas()" style="font-size:11px"><option value="">Estado</option><option>borrador</option><option>enviada</option><option>pagada</option><option>declarada</option><option>vencida</option></select>
           <select id="emit-filter-cat" onchange="renderEmitidas()" style="font-size:11px"><option value="">Categoría</option></select>
           <select id="emit-filter-cliente" onchange="renderEmitidas()" style="font-size:11px"><option value="">Cliente</option></select>
@@ -423,10 +425,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
     <!-- ═══ FACTURAS RECIBIDAS ═══ -->
     <div class="panel" id="panel-recibidas">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-        <div class="filters">
-          <select id="rec-filter-prov" onchange="renderRecibidas()"><option value="">Todos los proveedores</option></select>
-          <select id="rec-filter-cat" onchange="renderRecibidas()"><option value="">Todas las categorías</option><option>Suministros</option><option>Servicios</option><option>Material</option><option>Alquiler</option><option>Otros</option></select>
-          <input type="month" id="rec-filter-mes" onchange="renderRecibidas()">
+        <div class="filters" style="gap:6px;flex-wrap:nowrap;overflow-x:auto">
+          <input type="text" id="rec-search" oninput="renderRecibidas()" placeholder="&#128269; Buscar..." style="font-size:11px;width:130px">
+          <select id="rec-filter-cat" onchange="renderRecibidas()" style="font-size:11px"><option value="">Categoría</option><option>Suministros</option><option>Servicios</option><option>Material</option><option>Alquiler</option><option>Otros</option></select>
+          <select id="rec-filter-prov" onchange="renderRecibidas()" style="font-size:11px"><option value="">Proveedor</option></select>
+          <span style="font-size:10px;color:var(--text2);border-left:1px solid var(--border);padding-left:8px">|</span>
+          <select id="rec-filter-anio" onchange="renderRecibidas()" style="font-size:11px;width:80px"><option value="">Año</option></select>
+          <select id="rec-filter-mes" onchange="renderRecibidas()" style="font-size:11px;width:80px"><option value="">Mes</option><option value="01">Ene</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Abr</option><option value="05">May</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Ago</option><option value="09">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option></select>
+          <span style="font-size:10px;color:var(--text2)">|</span>
+          <input type="date" id="rec-filter-desde" onchange="renderRecibidas()" title="Desde" style="font-size:11px;width:125px">
+          <span style="font-size:10px;color:var(--text2)">a</span>
+          <input type="date" id="rec-filter-hasta" onchange="renderRecibidas()" title="Hasta" style="font-size:11px;width:125px">
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-sm btn-outline" onclick="exportRecibidasExcel()">&#128196; Excel</button>
@@ -508,6 +517,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
           <div class="form-row"><div class="form-group"><label class="form-label">Email</label><input type="text" class="form-input" id="cfg-email" value="paitosr@hotmail.com"></div><div class="form-group"><label class="form-label">% I.G.I.</label><input type="number" class="form-input" id="cfg-igi" value="4.5" step="0.1"></div></div>
           <div class="form-row"><div class="form-group"><label class="form-label">Prefijo factura</label><input type="text" class="form-input" id="cfg-prefijo" value="SRV"></div><div class="form-group"><label class="form-label">Siguiente N°</label><input type="number" class="form-input" id="cfg-next-num" value="1"></div></div>
           <div class="form-group"><label class="form-label">API Key Anthropic</label><input type="password" class="form-input" id="cfg-apikey" placeholder="sk-ant-..."></div>
+          <div class="form-group"><label class="form-label">Contraseña para eliminar documentos</label><input type="password" class="form-input" id="cfg-del-pass" placeholder="dante1979"></div>
           <button class="btn btn-primary" onclick="saveConfig()">Guardar configuración</button>
           <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
             <div style="font-size:13px;font-weight:700;margin-bottom:8px">Seguridad de datos</div>
@@ -655,13 +665,14 @@ initSupa();
 
 //=== STATE =================================================================
 var clientes=[], proveedores=[], servicios=[], facturasEmit=[], facturasRec=[], pagos=[], adjuntos=[];
-var config={empresa:'Servap Turístics',nrt:'',direccion:'',telefono:'+376 679 669',email:'paitosr@hotmail.com',igi:4.5,prefijo:'SRV',nextNum:1,apiKey:''};
+var config={delPassword:'dante1979',empresa:'Servap Turístics',nrt:'',direccion:'',telefono:'+376 679 669',email:'paitosr@hotmail.com',igi:4.5,prefijo:'SRV',nextNum:1,apiKey:''};
 var currentPanel='dashboard';
 var emitDocs=[]; // temp docs for current invoice being created
 
 //=== UTILS =================================================================
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
 function fmt(n){var v=Number(n||0).toFixed(2);var p=v.split('.');var i=p[0];var d=p[1];var neg=i.charAt(0)==='-';if(neg)i=i.substring(1);var o='';for(var x=i.length-1,c=0;x>=0;x--,c++){if(c>0&&c%3===0)o='.'+o;o=i.charAt(x)+o;}return(neg?'-':'')+o+','+d+' €';}
+function eurFmt(n){var v=Number(n||0).toFixed(2);var p=v.split('.');var i=p[0];var d=p[1];var neg=i.charAt(0)==='-';if(neg)i=i.substring(1);var o='';for(var x=i.length-1,c=0;x>=0;x--,c++){if(c>0&&c%3===0)o='.'+o;o=i.charAt(x)+o;}return(neg?'-':'')+o+','+d;}
 function fmtDate(iso){if(!iso)return'—';var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function uid(){return Date.now()*100+Math.floor(Math.random()*100);}
 function today(){return new Date().toISOString().slice(0,10);}
@@ -963,10 +974,18 @@ function populateYearFilters(){
   var years={};
   facturasEmit.forEach(function(f){if(f.fecha)years[f.fecha.slice(0,4)]=1;});
   facturasRec.forEach(function(f){if(f.fecha)years[f.fecha.slice(0,4)]=1;});
+  // Ensure current year is always available
+  var curY=new Date().toISOString().slice(0,4);
+  years[curY]=1;
   var yOpts='<option value="">Año</option>'+Object.keys(years).sort().reverse().map(function(y){return'<option>'+y+'</option>';}).join('');
-  ['emit-filter-anio','dash-filter-anio','inf-filter-anio'].forEach(function(id){
+  ['emit-filter-anio','dash-filter-anio','inf-filter-anio','rec-filter-anio'].forEach(function(id){
     var el=document.getElementById(id);if(el)el.innerHTML=yOpts;
   });
+  // Default dashboard to current month + year (only if not already set)
+  var dm=document.getElementById('dash-filter-mes');
+  var dy=document.getElementById('dash-filter-anio');
+  if(dm&&!dm.value)dm.value=new Date().toISOString().slice(5,7);
+  if(dy&&!dy.value)dy.value=curY;
 }
 
 function populateSelects(){
@@ -1014,7 +1033,17 @@ async function saveCliente(editId){
   if(!r){return;}
   var idx=clientes.findIndex(function(c){return c.id==obj.id;});
   if(idx>=0)clientes[idx]=obj;else clientes.push(obj);
-  closeModal();populateSelects();renderClientes();toast('Cliente guardado');
+  // Cascada: actualizar nombre/NRT en facturas emitidas de este cliente
+  if(editId){
+    var affected=facturasEmit.filter(function(f){return f.cliente_id==obj.id&&(f.cliente_nombre!==obj.nombre||f.cliente_nrt!==obj.nrt);});
+    for(var i=0;i<affected.length;i++){
+      affected[i].cliente_nombre=obj.nombre;
+      affected[i].cliente_nrt=obj.nrt;
+      await sbSave('inv_facturas_emit',affected[i]);
+    }
+    if(affected.length)logInvAudit('actualizar_cliente_cascada','Cliente '+obj.nombre+' actualizado en '+affected.length+' factura(s)');
+  }
+  closeModal();populateSelects();renderClientes();renderEmitidas();toast('Cliente guardado');
 }
 async function deleteCliente(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar cliente?'))return;var c=clientes.find(function(x){return x.id==id;});logInvAudit('eliminar_cliente',c?c.nombre:'ID:'+id);await sbDel('inv_clientes',id);clientes=clientes.filter(function(x){return x.id!=id;});populateSelects();renderClientes();toast('Cliente eliminado');}
 function editCliente(id){var c=clientes.find(function(x){return x.id==id;});if(c)openModal('cli',c);}
@@ -1048,7 +1077,16 @@ async function saveProveedor(editId){
   if(!r){return;}
   var idx=proveedores.findIndex(function(p){return p.id==obj.id;});
   if(idx>=0)proveedores[idx]=obj;else proveedores.push(obj);
-  closeModal();populateSelects();renderProveedores();toast('Proveedor guardado');
+  // Cascada: actualizar nombre en facturas recibidas de este proveedor
+  if(editId){
+    var affected=facturasRec.filter(function(f){return f.proveedor_id==obj.id&&f.proveedor_nombre!==obj.nombre;});
+    for(var i=0;i<affected.length;i++){
+      affected[i].proveedor_nombre=obj.nombre;
+      await sbSave('inv_facturas_rec',affected[i]);
+    }
+    if(affected.length)logInvAudit('actualizar_proveedor_cascada','Proveedor '+obj.nombre+' actualizado en '+affected.length+' factura(s)');
+  }
+  closeModal();populateSelects();renderProveedores();renderRecibidas();toast('Proveedor guardado');
 }
 async function deleteProveedor(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar proveedor?'))return;await sbDel('inv_proveedores',id);proveedores=proveedores.filter(function(p){return p.id!=id;});populateSelects();renderProveedores();toast('Proveedor eliminado');}
 function editProveedor(id){var p=proveedores.find(function(x){return x.id==id;});if(p)openModal('prov',p);}
@@ -1186,6 +1224,8 @@ function renderEmitidas(){
   var estado=document.getElementById('emit-filter-estado').value;
   var cat=document.getElementById('emit-filter-cat').value;
   var cliId=document.getElementById('emit-filter-cliente').value;
+  var search=(document.getElementById('emit-search')||{}).value||'';
+  search=search.toLowerCase().trim();
   var data=facturasEmit.filter(function(f){
     if(estado&&f.estado!==estado)return false;
     if(cat&&f.categoria!==cat)return false;
@@ -1198,6 +1238,10 @@ function renderEmitidas(){
     if(mes&&f.fecha&&f.fecha.slice(5,7)!==mes)return false;
     if(desde&&f.fecha&&f.fecha<desde)return false;
     if(hasta&&f.fecha&&f.fecha>hasta)return false;
+    if(search){
+      var hay=(String(f.numero||'')+' '+String(f.cliente_nombre||'')+' '+String(f.categoria||'')+' '+String(f.total||'')).toLowerCase();
+      if(hay.indexOf(search)<0)return false;
+    }
     return true;
   });
   // Check overdue
@@ -1212,13 +1256,15 @@ function renderEmitidas(){
     va=String(va).toLowerCase();vb=String(vb).toLowerCase();
     if(va<vb)return -1*emitSort.dir;if(va>vb)return 1*emitSort.dir;return 0;
   });
-  if(!data.length){document.getElementById('emitidas-list').innerHTML='<div class="empty"><div class="empty-icon">&#128196;</div><div class="empty-title">Sin facturas</div><div class="empty-sub">Emite tu primera factura</div></div>';return;}
+  if(!data.length){document.getElementById('emitidas-list').innerHTML='<div class="empty"><div class="empty-icon">&#128196;</div><div class="empty-title">Sin facturas</div><div class="empty-sub">Emite tu primera factura o ajusta los filtros</div></div>';return;}
   var arrow=function(f){return emitSort.field===f?(emitSort.dir===1?' ↑':' ↓'):' ⇅';};
   var h='<table class="tbl"><thead><tr>';
   h+='<th onclick="sortEmit(&quot;numero&quot;)">N°'+arrow('numero')+'</th>';
   h+='<th onclick="sortEmit(&quot;fecha&quot;)">Fecha'+arrow('fecha')+'</th>';
   h+='<th onclick="sortEmit(&quot;cliente_nombre&quot;)">Cliente'+arrow('cliente_nombre')+'</th>';
   h+='<th onclick="sortEmit(&quot;categoria&quot;)">Categoría'+arrow('categoria')+'</th>';
+  h+='<th onclick="sortEmit(&quot;base&quot;)" style="text-align:right">Base'+arrow('base')+'</th>';
+  h+='<th onclick="sortEmit(&quot;igi&quot;)" style="text-align:right">IGI'+arrow('igi')+'</th>';
   h+='<th onclick="sortEmit(&quot;total&quot;)" style="text-align:right">Total'+arrow('total')+'</th>';
   h+='<th onclick="sortEmit(&quot;estado&quot;)">Estado'+arrow('estado')+'</th>';
   h+='<th style="text-align:center">Controles</th><th>Acciones</th></tr></thead><tbody>';
@@ -1229,6 +1275,8 @@ function renderEmitidas(){
     h+='<td class="mono">'+fmtDate(f.fecha)+'</td>';
     h+='<td style="font-weight:500">'+f.cliente_nombre+'</td>';
     h+='<td><span class="badge-status badge-borrador">'+(f.categoria||'')+'</span></td>';
+    h+='<td class="mono" style="text-align:right">'+fmt(f.base)+'</td>';
+    h+='<td class="mono" style="text-align:right">'+fmt(f.igi)+'</td>';
     h+='<td class="mono" style="font-weight:700;text-align:right">'+fmt(f.total)+'</td>';
     h+='<td><span class="badge-status '+bc+'">'+f.estado.toUpperCase()+'</span></td>';
     // Status controls
@@ -1426,31 +1474,55 @@ function downloadDoc(docId){
 }
 
 //=== FACTURAS RECIBIDAS ====================================================
+var recSort={field:'fecha',dir:-1};
+function sortRec(field){if(recSort.field===field)recSort.dir*=-1;else{recSort.field=field;recSort.dir=field==='fecha'?-1:1;}renderRecibidas();}
 function renderRecibidas(){
-  var prov=document.getElementById('rec-filter-prov').value;
-  var cat=document.getElementById('rec-filter-cat').value;
-  var mes=document.getElementById('rec-filter-mes').value;
+  var prov=(document.getElementById('rec-filter-prov')||{}).value||'';
+  var cat=(document.getElementById('rec-filter-cat')||{}).value||'';
+  var search=((document.getElementById('rec-search')||{}).value||'').toLowerCase().trim();
   var data=facturasRec.filter(function(f){
     if(prov&&f.proveedor_id!=prov)return false;
     if(cat&&f.categoria!==cat)return false;
-    var anio=document.getElementById('emit-filter-anio').value;
-    var mes=document.getElementById('emit-filter-mes').value;
-    var desde=document.getElementById('emit-filter-desde').value;
-    var hasta=document.getElementById('emit-filter-hasta').value;
+    var anio=(document.getElementById('rec-filter-anio')||{}).value||'';
+    var mes=(document.getElementById('rec-filter-mes')||{}).value||'';
+    var desde=(document.getElementById('rec-filter-desde')||{}).value||'';
+    var hasta=(document.getElementById('rec-filter-hasta')||{}).value||'';
     if(anio&&f.fecha&&f.fecha.slice(0,4)!==anio)return false;
     if(mes&&f.fecha&&f.fecha.slice(5,7)!==mes)return false;
     if(desde&&f.fecha&&f.fecha<desde)return false;
     if(hasta&&f.fecha&&f.fecha>hasta)return false;
+    if(search){
+      var hay=(String(f.numero||'')+' '+String(f.proveedor_nombre||'')+' '+String(f.categoria||'')+' '+String(f.concepto||'')+' '+String(f.total||'')).toLowerCase();
+      if(hay.indexOf(search)<0)return false;
+    }
     return true;
   });
-  if(!data.length){document.getElementById('recibidas-list').innerHTML='<div class="empty"><div class="empty-icon">&#128229;</div><div class="empty-title">Sin facturas recibidas</div><div class="empty-sub">Registra facturas de proveedores</div></div>';return;}
-  var h='<table class="tbl"><thead><tr><th>N°</th><th>Fecha</th><th>Proveedor</th><th>Categoría</th><th>Base</th><th>IGI</th><th>Total</th><th></th></tr></thead><tbody>';
+  // Sort
+  data.sort(function(a,b){
+    var va=a[recSort.field],vb=b[recSort.field];
+    if(va==null)va='';if(vb==null)vb='';
+    if(recSort.field==='total'||recSort.field==='base'||recSort.field==='igi'){return((parseFloat(va)||0)-(parseFloat(vb)||0))*recSort.dir;}
+    if(recSort.field==='numero'){var na=parseInt(String(va).replace(/[^0-9]/g,''))||0,nb=parseInt(String(vb).replace(/[^0-9]/g,''))||0;return(na-nb)*recSort.dir;}
+    va=String(va).toLowerCase();vb=String(vb).toLowerCase();
+    if(va<vb)return -1*recSort.dir;if(va>vb)return 1*recSort.dir;return 0;
+  });
+  if(!data.length){document.getElementById('recibidas-list').innerHTML='<div class="empty"><div class="empty-icon">&#128229;</div><div class="empty-title">Sin facturas recibidas</div><div class="empty-sub">Registra facturas de proveedores o ajusta los filtros</div></div>';return;}
+  var arrow=function(f){return recSort.field===f?(recSort.dir===1?' ↑':' ↓'):' ⇅';};
+  var h='<table class="tbl"><thead><tr>';
+  h+='<th onclick="sortRec(&quot;numero&quot;)">N°'+arrow('numero')+'</th>';
+  h+='<th onclick="sortRec(&quot;fecha&quot;)">Fecha'+arrow('fecha')+'</th>';
+  h+='<th onclick="sortRec(&quot;proveedor_nombre&quot;)">Proveedor'+arrow('proveedor_nombre')+'</th>';
+  h+='<th onclick="sortRec(&quot;categoria&quot;)">Categoría'+arrow('categoria')+'</th>';
+  h+='<th onclick="sortRec(&quot;base&quot;)" style="text-align:right">Base'+arrow('base')+'</th>';
+  h+='<th onclick="sortRec(&quot;igi&quot;)" style="text-align:right">IGI'+arrow('igi')+'</th>';
+  h+='<th onclick="sortRec(&quot;total&quot;)" style="text-align:right">Total'+arrow('total')+'</th>';
+  h+='<th style="text-align:center">Acciones</th></tr></thead><tbody>';
   data.forEach(function(f){
     h+='<tr><td class="mono">'+(f.numero||'—')+'</td><td class="mono">'+fmtDate(f.fecha)+'</td><td style="font-weight:500">'+(f.proveedor_nombre||'—')+'</td><td><span class="badge-status badge-borrador">'+(f.categoria||'')+'</span></td><td class="mono" style="text-align:right">'+fmt(f.base)+'</td><td class="mono" style="text-align:right">'+fmt(f.igi)+'</td><td class="mono" style="font-weight:700;text-align:right">'+fmt(f.total)+'</td>';
     var recDocs=adjuntos.filter(function(a){return a.factura_id==f.id;}).length;
-    h+='<td style="white-space:nowrap">';
+    h+='<td style="white-space:nowrap;text-align:center">';
     if(recDocs>0)h+='<button class="btn-ghost" title="Ver documento" onclick="viewFacturaDocs('+f.id+')" style="font-size:16px">&#128206;</button>';
-    if(!isReadOnly())h+='<button class="btn-ghost" onclick="deleteRecibida('+f.id+')" style="color:var(--danger)">&#128465;</button>';
+    if(!isReadOnly())h+='<button class="btn-ghost" onclick="deleteRecibida('+f.id+')" style="color:var(--danger);font-size:16px" title="Eliminar">&#128465;</button>';
     if(isReadOnly()&&recDocs===0)h+='<span style="color:var(--text3)">—</span>';
     h+='</td></tr>';
   });
@@ -1471,7 +1543,7 @@ async function saveRecibida(){
   facturasRec.push(obj);
   closeModal();renderRecibidas();toast('Factura recibida registrada');
 }
-async function deleteRecibida(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar?'))return;var f=facturasRec.find(function(x){return x.id==id;});logInvAudit('eliminar_factura_rec',f?('N°'+f.numero+' — '+f.proveedor_nombre):'ID:'+id);await sbDel('inv_facturas_rec',id);facturasRec=facturasRec.filter(function(x){return x.id!=id;});renderRecibidas();}
+async function deleteRecibida(id){if(isReadOnly()){toast("Sin permisos");return;}if(!askDeletePassword())return;var f=facturasRec.find(function(x){return x.id==id;});logInvAudit('eliminar_factura_rec',f?('N°'+f.numero+' — '+f.proveedor_nombre):'ID:'+id);await sbDel('inv_facturas_rec',id);facturasRec=facturasRec.filter(function(x){return x.id!=id;});renderRecibidas();}
 
 //=== PAGOS =================================================================
 function renderPagos(){
@@ -1510,19 +1582,30 @@ function renderDashboard(){
     +'<div class="kpi"><div class="kpi-val" style="color:var(--success)">'+fmt(totalPagado)+'</div><div class="kpi-label">Cobrado total</div><div class="kpi-sub">'+pagadas.length+' facturas</div></div>'
     +'<div class="kpi"><div class="kpi-val" style="color:var(--danger)">'+fmt(totalRec)+'</div><div class="kpi-label">Gastos periodo</div><div class="kpi-sub">'+recFilt.length+' facturas</div></div>';
 
-  // Recent emitidas
-  var recent=facturasEmit.slice().sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');}).slice(0,5);
-  if(!recent.length){document.getElementById('dash-recent-emit').innerHTML='<span style="color:var(--text3)">Sin facturas aún</span>';
+  // Recent emitidas — ordenar por número correlativo (mayor primero)
+  var numVal=function(f){return parseInt(String(f.numero||'').replace(/[^0-9]/g,''))||0;};
+  var recent=emitFilt.slice().sort(function(a,b){return numVal(b)-numVal(a);}).slice(0,6);
+  if(!recent.length){document.getElementById('dash-recent-emit').innerHTML='<span style="color:var(--text3)">Sin facturas en el periodo</span>';
   }else{
     var h='';recent.forEach(function(f){
       h+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><div><strong>'+f.numero+'</strong> — '+f.cliente_nombre+'</div><div class="mono" style="font-weight:600">'+fmt(f.total)+'</div></div>';
     });
     document.getElementById('dash-recent-emit').innerHTML=h;
   }
-  // Pendientes
-  if(!pendientes.length){document.getElementById('dash-pendientes').innerHTML='<span style="color:var(--text3)">Todo al día &#10004;</span>';
+  // Recent recibidas — ordenar por fecha (más reciente primero)
+  var recentRec=recFilt.slice().sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');}).slice(0,6);
+  if(!recentRec.length){document.getElementById('dash-recent-rec').innerHTML='<span style="color:var(--text3)">Sin facturas en el periodo</span>';
   }else{
-    var h='';pendientes.forEach(function(f){
+    var h='';recentRec.forEach(function(f){
+      h+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><div><strong>'+(f.numero||'—')+'</strong> — '+(f.proveedor_nombre||'—')+'</div><div class="mono" style="font-weight:600">'+fmt(f.total)+'</div></div>';
+    });
+    document.getElementById('dash-recent-rec').innerHTML=h;
+  }
+  // Pendientes — ordenar por número correlativo
+  var pendSort=pendientes.slice().sort(function(a,b){return numVal(b)-numVal(a);});
+  if(!pendSort.length){document.getElementById('dash-pendientes').innerHTML='<span style="color:var(--text3)">Todo al día &#10004;</span>';
+  }else{
+    var h='';pendSort.forEach(function(f){
       var bc=f.estado==='vencida'?'badge-vencida':'badge-pendiente';
       h+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><div><strong>'+f.numero+'</strong> — '+f.cliente_nombre+'<br><span class="badge-status '+bc+'">'+f.estado.toUpperCase()+'</span></div><div class="mono" style="font-weight:600">'+fmt(f.total)+'</div></div>';
     });
@@ -1609,16 +1692,18 @@ async function saveConfig(){
   config.igi=parseFloat(document.getElementById('cfg-igi').value)||4.5;
   config.prefijo=document.getElementById('cfg-prefijo').value;
   config.nextNum=parseInt(document.getElementById('cfg-next-num').value)||1;
+  config.delPassword=document.getElementById('cfg-del-pass').value||'dante1979';
   var ak=document.getElementById('cfg-apikey').value;
   if(ak){config.apiKey=ak;localStorage.setItem('servap_apikey',ak);}
   // Only send valid table columns (not apiKey)
-  var dbData={id:1,empresa:config.empresa,nrt:config.nrt,direccion:config.direccion,telefono:config.telefono,email:config.email,igi:config.igi,prefijo:config.prefijo,nextNum:config.nextNum};
+  var dbData={id:1,empresa:config.empresa,nrt:config.nrt,direccion:config.direccion,telefono:config.telefono,email:config.email,igi:config.igi,prefijo:config.prefijo,nextNum:config.nextNum,del_password:config.delPassword};
   var r=await sbSave('inv_config',dbData);
   if(r) toast('Configuración guardada');
 }
 
 function loadConfigToForm(){
-  var fields={empresa:'cfg-empresa',nrt:'cfg-nrt',direccion:'cfg-direccion',telefono:'cfg-telefono',email:'cfg-email',igi:'cfg-igi',prefijo:'cfg-prefijo',nextNum:'cfg-next-num'};
+  if(config.del_password)config.delPassword=config.del_password;
+  var fields={empresa:'cfg-empresa',nrt:'cfg-nrt',direccion:'cfg-direccion',telefono:'cfg-telefono',email:'cfg-email',igi:'cfg-igi',prefijo:'cfg-prefijo',nextNum:'cfg-next-num',delPassword:'cfg-del-pass'};
   Object.keys(fields).forEach(function(k){
     var el=document.getElementById(fields[k]);
     if(el&&config[k]!=null) el.value=config[k];
@@ -1682,7 +1767,7 @@ function downloadExcel(filename, headers, rows){
   rows.forEach(function(row){
     html+='<tr>';
     row.forEach(function(cell){
-      if(cell&&cell.type==='num') html+='<td class="num">'+cell.val+'</td>';
+      if(cell&&cell.type==='num'){html+='<td style="mso-number-format:\'\\@\';text-align:right">'+eurFmt(cell.val)+'</td>';}
       else if(cell&&cell.type==='date') html+='<td class="date">'+cell.val+'</td>';
       else html+='<td>'+(cell!=null?cell:'')+'</td>';
     });
