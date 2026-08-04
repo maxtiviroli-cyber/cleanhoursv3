@@ -901,17 +901,16 @@ tbody tr:hover{background:#F8F9FC}
     <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Emitir Nomina</h2><div style="font-size:13px;color:var(--text2)">Genera la nomina de salario de una trabajadora</div></div>
     <div class="card"><div class="card-body">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Trabajadora</label><select id="nom-trabajador" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px" onchange="nomAutofillWorker()"></select></div>
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Trabajadora (nombre completo)</label><input type="text" id="nom-trabajador" list="nom-trabajador-list" placeholder="Escribe el nombre completo..." style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"><datalist id="nom-trabajador-list"></datalist></div>
         <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">NIA</label><input type="text" id="nom-nia" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
         <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Mes</label><select id="nom-mes" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div>
         <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Año</label><input type="number" id="nom-anio" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Mono',monospace"></div>
-        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Tipo de contrato</label><select id="nom-contrato" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"><option>Plazo fijo</option><option>Indefinido</option><option>Obra o servicio</option></select></div>
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Tipo de contrato</label><input type="text" id="nom-contrato" list="nom-contrato-list" value="Plazo fijo" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"><datalist id="nom-contrato-list"><option value="Plazo fijo"><option value="Indefinido"><option value="Obra o servicio"></datalist></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
-        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Jornada</label><select id="nom-jornada" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"><option value="Jornada completa (40 horas semanales, 173,33 horas mensuales)">Completa (40h/semana)</option><option value="Media jornada (20 horas semanales, 100 horas mensuales)" selected>Media jornada (20h/semana)</option><option value="custom">Personalizada...</option></select></div>
-        <div id="nom-jornada-custom-wrap" style="display:none"><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Detalle jornada</label><input type="text" id="nom-jornada-custom" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px" placeholder="Ej: 30 horas semanales, 130 horas mensuales"></div>
+      <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px">
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Jornada</label><input type="text" id="nom-jornada" list="nom-jornada-list" value="Media jornada (20 horas semanales, 100 horas mensuales)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"><datalist id="nom-jornada-list"><option value="Jornada completa (40 horas semanales, 173,33 horas mensuales)"><option value="Media jornada (20 horas semanales, 100 horas mensuales)"></datalist></div>
       </div>
       <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
         <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Conceptos economicos</div>
@@ -4546,12 +4545,19 @@ async function loadNominas(){
 
 function initNomEmitir(){
   var cfg=getCfg();
-  var sel=document.getElementById('nom-trabajador');
-  sel.innerHTML='<option value="">Seleccionar...</option>'+(cfg.workers||[]).map(function(w){return'<option>'+w+'</option>';}).join('');
+  var dl=document.getElementById('nom-trabajador-list');
+  // Sugerencias: trabajadores activos + nombres ya usados en nominas previas
+  var names={};
+  (cfg.workers||[]).forEach(function(w){names[w]=1;});
+  nominas.forEach(function(n){if(n.trabajador)names[n.trabajador]=1;});
+  dl.innerHTML=Object.keys(names).sort().map(function(w){return'<option value="'+w.replace(/"/g,'&quot;')+'">';}).join('');
   var now=new Date();
+  document.getElementById('nom-trabajador').value='';
   document.getElementById('nom-anio').value=now.getFullYear();
   document.getElementById('nom-mes').value=String(now.getMonth()+1).padStart(2,'0');
   document.getElementById('nom-nia').value='';
+  document.getElementById('nom-contrato').value='Plazo fijo';
+  document.getElementById('nom-jornada').value='Media jornada (20 horas semanales, 100 horas mensuales)';
   document.getElementById('nom-bruto').value='';
   document.getElementById('nom-ss-pct').value='6.5';
   document.getElementById('nom-anticipo').value='0';
@@ -4559,14 +4565,6 @@ function initNomEmitir(){
   document.getElementById('nom-permiso').value='0';
   document.getElementById('nom-vacaciones').value='0';
   calcNomNeto();
-  var jSel=document.getElementById('nom-jornada');
-  jSel.onchange=function(){
-    document.getElementById('nom-jornada-custom-wrap').style.display=(jSel.value==='custom')?'block':'none';
-  };
-}
-
-function nomAutofillWorker(){
-  // Placeholder: could pull saved NIA per worker from cfg in future
 }
 
 function calcNomNeto(){
@@ -4584,14 +4582,13 @@ function calcNomNeto(){
 }
 
 function getNomFormData(){
-  var trabajador=document.getElementById('nom-trabajador').value;
-  if(!trabajador){toast('Selecciona una trabajadora');return null;}
+  var trabajador=document.getElementById('nom-trabajador').value.trim();
+  if(!trabajador){toast('Escribe el nombre de la trabajadora');return null;}
   var nia=document.getElementById('nom-nia').value.trim();
   var mes=document.getElementById('nom-mes').value;
   var anio=document.getElementById('nom-anio').value;
-  var contrato=document.getElementById('nom-contrato').value;
-  var jSel=document.getElementById('nom-jornada');
-  var jornada=jSel.value==='custom'?document.getElementById('nom-jornada-custom').value.trim():jSel.value;
+  var contrato=document.getElementById('nom-contrato').value.trim();
+  var jornada=document.getElementById('nom-jornada').value.trim();
   var calc=calcNomNeto();
   var permiso=parseFloat(document.getElementById('nom-permiso').value)||0;
   var vacaciones=parseFloat(document.getElementById('nom-vacaciones').value)||0;
