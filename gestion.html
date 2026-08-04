@@ -265,6 +265,19 @@ tbody tr:hover{background:#F8F9FC}
     </div>
   </div>
 
+  <!-- MÓDULO 4: NOMINAS -->
+  <div class="sb-module" id="mod-nominas">
+    <div class="sb-module-header" onclick="toggleModule('nominas')">
+      <div class="sb-module-dot" style="background:#CBA6F7"></div>
+      <div class="sb-module-name">Nominas</div>
+      <div class="sb-module-arrow">&#9654;</div>
+    </div>
+    <div class="sb-module-items">
+      <button class="sb-item" id="tab-nom-emitir" onclick="showTab('nom-emitir')"><span class="sb-icon">&#10133;</span> Emitir Nomina</button>
+      <button class="sb-item" id="tab-nom-historial" onclick="showTab('nom-historial')"><span class="sb-icon">&#128203;</span> Historial</button>
+    </div>
+  </div>
+
   <!-- CONFIG -->
   <div style="padding:6px 8px">
     <button class="sb-item" id="tab-config" onclick="showTab('config')"><span class="sb-icon">&#9881;</span> Configuracion</button>
@@ -883,6 +896,68 @@ tbody tr:hover{background:#F8F9FC}
     <div id="svc-resumen-output"></div>
   </div>
 
+  <!-- ══ PANEL: NOMINAS - EMITIR ════════════════════════ -->
+  <div class="panel" id="panel-nom-emitir">
+    <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Emitir Nomina</h2><div style="font-size:13px;color:var(--text2)">Genera la nomina de salario de una trabajadora</div></div>
+    <div class="card"><div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Trabajadora</label><select id="nom-trabajador" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px" onchange="nomAutofillWorker()"></select></div>
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">NIA</label><input type="text" id="nom-nia" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Mes</label><select id="nom-mes" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"><option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option><option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option><option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div>
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Año</label><input type="number" id="nom-anio" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Mono',monospace"></div>
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Tipo de contrato</label><select id="nom-contrato" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"><option>Plazo fijo</option><option>Indefinido</option><option>Obra o servicio</option></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Jornada</label><select id="nom-jornada" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px"><option value="Jornada completa (40 horas semanales, 173,33 horas mensuales)">Completa (40h/semana)</option><option value="Media jornada (20 horas semanales, 100 horas mensuales)" selected>Media jornada (20h/semana)</option><option value="custom">Personalizada...</option></select></div>
+        <div id="nom-jornada-custom-wrap" style="display:none"><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Detalle jornada</label><input type="text" id="nom-jornada-custom" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px" placeholder="Ej: 30 horas semanales, 130 horas mensuales"></div>
+      </div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Conceptos economicos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Salario Bruto (€)</label><input type="number" step="0.01" id="nom-bruto" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Mono',monospace;font-weight:700" oninput="calcNomNeto()"></div>
+          <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">% Seguridad Social</label><input type="number" step="0.01" id="nom-ss-pct" value="6.5" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Mono',monospace" oninput="calcNomNeto()"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Anticipo (€)</label><input type="number" step="0.01" id="nom-anticipo" value="0" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Mono',monospace" oninput="calcNomNeto()"></div>
+          <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Otros descuentos (€)</label><input type="number" step="0.01" id="nom-otros-desc" value="0" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Mono',monospace" oninput="calcNomNeto()"></div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Otros conceptos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Permiso retribuido pagado (dias)</label><input type="number" step="0.5" id="nom-permiso" value="0" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Mono',monospace"></div>
+          <div><label style="font-size:10px;font-weight:600;color:#666;text-transform:uppercase;display:block;margin-bottom:4px">Vacaciones generadas (dias)</label><input type="number" step="0.5" id="nom-vacaciones" value="0" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:'DM Mono',monospace"></div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:14px;background:var(--bg);border-radius:var(--radius);display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:12px;color:var(--text2)">
+          <div>Salario Bruto: <strong class="mono" id="nom-preview-bruto">0,00 €</strong></div>
+          <div>Descuento SS: <strong class="mono" id="nom-preview-ss">-0,00 €</strong></div>
+          <div>Anticipo: <strong class="mono" id="nom-preview-ant">-0,00 €</strong></div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--text2);text-transform:uppercase">Salario Neto a percibir</div>
+          <div style="font-size:24px;font-weight:800;font-family:'DM Mono',monospace;color:var(--primary)" id="nom-preview-neto">0,00 €</div>
+        </div>
+      </div>
+      <div style="margin-top:16px;text-align:right;display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn" style="background:var(--primary);color:#fff;padding:10px 24px;font-size:13px" onclick="generarNominaPDF()">&#128438; Generar PDF</button>
+        <button class="btn" style="background:var(--surface);border:1px solid var(--border);padding:10px 24px;font-size:13px" onclick="enviarNominaEmail()">&#9993; Enviar por correo</button>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ══ PANEL: NOMINAS - HISTORIAL ═════════════════════ -->
+  <div class="panel" id="panel-nom-historial">
+    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <select id="nom-h-trabajador" onchange="renderNomHistorial()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px"><option value="">Todas las trabajadoras</option></select>
+      <input type="number" id="nom-h-anio" onchange="renderNomHistorial()" placeholder="Año" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;width:90px">
+    </div>
+    <div class="card"><div class="card-body" id="nom-historial-list"></div></div>
+  </div>
+
   <!-- ══ PANEL: CONFIG ══════════════════════════════════ -->
   <div class="panel" id="panel-config">
     <div style="margin-bottom:20px"><h2 style="font-size:20px;font-weight:700">Configuracion</h2><div style="font-size:13px;color:var(--text2)">Gestiona trabajadores, pisos, admins y usuarios</div></div>
@@ -1385,11 +1460,11 @@ function showTab(name){
   if(name==='registro'&&role==='normal') return toast('Sin permiso para registrar horas');
   if(name==='auditoria'&&role==='normal') return toast('Sin permiso para acceder a auditoria');
 
-  ['registro','auditoria','dashboard','config','calendario','informe','planning','reservas-lista','reservas-inf','facturas-emit','facturas-rec','nueva-factura'].forEach(function(t){
+  ['registro','auditoria','dashboard','config','calendario','informe','planning','reservas-lista','reservas-inf','importwa','svc-registro','svc-detalle','svc-resumen','nom-emitir','nom-historial'].forEach(function(t){
     var p=document.getElementById('panel-'+t); if(p) p.className='panel'+(t===name?' active':'');
-    var b=document.getElementById('tab-'+t);   if(b) b.className='sidebar-item'+(t===name?' active':'');
+    var b=document.getElementById('tab-'+t);   if(b) b.className='sb-item'+(t===name?' active':'');
   });
-  var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion',calendario:'Calendario',informe:'Informes',planning:'Planning','reservas-lista':'Reservas','reservas-inf':'Informes Reservas',importwa:'Importar WhatsApp','svc-registro':'Registro de servicio','svc-detalle':'Servicios realizados','svc-resumen':'Resumen de servicios'};
+  var titles={registro:'Registro de horas',auditoria:'Auditoria',dashboard:'Dashboard',config:'Configuracion',calendario:'Calendario',informe:'Informes',planning:'Planning','reservas-lista':'Reservas','reservas-inf':'Informes Reservas',importwa:'Importar WhatsApp','svc-registro':'Registro de servicio','svc-detalle':'Servicios realizados','svc-resumen':'Resumen de servicios','nom-emitir':'Emitir Nomina','nom-historial':'Historial de Nominas'};
   document.getElementById('page-title').textContent=titles[name]||name;
   var crumb=document.getElementById('page-crumb'); if(crumb) crumb.textContent=titles[name]||name;
   if(name==='auditoria') renderAudit();
@@ -1400,6 +1475,11 @@ function showTab(name){
   if(name==='planning'){loadReservas().then(function(){ setTimeout(renderPlanning, 100); });}
   if(name==='reservas-lista'){loadReservas().then(function(){ setTimeout(renderReservas, 100); });}
   if(name==='reservas-inf'){loadReservas().then(function(){ setTimeout(renderInformeReservas, 100); });}
+  if(name==='svc-registro') initSvcRegistro();
+  if(name==='svc-detalle') renderSvcDetalle();
+  if(name==='svc-resumen') renderSvcResumen();
+  if(name==='nom-emitir') initNomEmitir();
+  if(name==='nom-historial') { loadNominas().then(renderNomHistorial); }
   closeSidebar();
 }
 
@@ -4442,6 +4522,247 @@ function scheduleWANotification(){
 // Init
 renderWAHistory();
 scheduleWANotification();
+
+//=== NOMINAS ================================================================
+var nominas=[];
+
+async function loadNominas(){
+  if(!supa)return;
+  try{
+    var r=await supa.from('nominas').select('*').limit(10000);
+    if(!r.error&&r.data){
+      nominas=r.data;
+      nominas.forEach(function(n){
+        if(n.bruto!=null)n.bruto=parseFloat(n.bruto)||0;
+        if(n.ss_pct!=null)n.ss_pct=parseFloat(n.ss_pct)||0;
+        if(n.ss_monto!=null)n.ss_monto=parseFloat(n.ss_monto)||0;
+        if(n.anticipo!=null)n.anticipo=parseFloat(n.anticipo)||0;
+        if(n.otros_desc!=null)n.otros_desc=parseFloat(n.otros_desc)||0;
+        if(n.neto!=null)n.neto=parseFloat(n.neto)||0;
+      });
+    }
+  }catch(e){console.warn('loadNominas error:',e);}
+}
+
+function initNomEmitir(){
+  var cfg=getCfg();
+  var sel=document.getElementById('nom-trabajador');
+  sel.innerHTML='<option value="">Seleccionar...</option>'+(cfg.workers||[]).map(function(w){return'<option>'+w+'</option>';}).join('');
+  var now=new Date();
+  document.getElementById('nom-anio').value=now.getFullYear();
+  document.getElementById('nom-mes').value=String(now.getMonth()+1).padStart(2,'0');
+  document.getElementById('nom-nia').value='';
+  document.getElementById('nom-bruto').value='';
+  document.getElementById('nom-ss-pct').value='6.5';
+  document.getElementById('nom-anticipo').value='0';
+  document.getElementById('nom-otros-desc').value='0';
+  document.getElementById('nom-permiso').value='0';
+  document.getElementById('nom-vacaciones').value='0';
+  calcNomNeto();
+  var jSel=document.getElementById('nom-jornada');
+  jSel.onchange=function(){
+    document.getElementById('nom-jornada-custom-wrap').style.display=(jSel.value==='custom')?'block':'none';
+  };
+}
+
+function nomAutofillWorker(){
+  // Placeholder: could pull saved NIA per worker from cfg in future
+}
+
+function calcNomNeto(){
+  var bruto=parseFloat(document.getElementById('nom-bruto').value)||0;
+  var ssPct=parseFloat(document.getElementById('nom-ss-pct').value)||0;
+  var anticipo=parseFloat(document.getElementById('nom-anticipo').value)||0;
+  var otrosDesc=parseFloat(document.getElementById('nom-otros-desc').value)||0;
+  var ssMonto=bruto*ssPct/100;
+  var neto=bruto-ssMonto-anticipo-otrosDesc;
+  document.getElementById('nom-preview-bruto').textContent=fmt2(bruto);
+  document.getElementById('nom-preview-ss').textContent='-'+fmt2(ssMonto);
+  document.getElementById('nom-preview-ant').textContent='-'+fmt2(anticipo+otrosDesc);
+  document.getElementById('nom-preview-neto').textContent=fmt2(neto);
+  return {bruto:bruto,ssPct:ssPct,ssMonto:ssMonto,anticipo:anticipo,otrosDesc:otrosDesc,neto:neto};
+}
+
+function getNomFormData(){
+  var trabajador=document.getElementById('nom-trabajador').value;
+  if(!trabajador){toast('Selecciona una trabajadora');return null;}
+  var nia=document.getElementById('nom-nia').value.trim();
+  var mes=document.getElementById('nom-mes').value;
+  var anio=document.getElementById('nom-anio').value;
+  var contrato=document.getElementById('nom-contrato').value;
+  var jSel=document.getElementById('nom-jornada');
+  var jornada=jSel.value==='custom'?document.getElementById('nom-jornada-custom').value.trim():jSel.value;
+  var calc=calcNomNeto();
+  var permiso=parseFloat(document.getElementById('nom-permiso').value)||0;
+  var vacaciones=parseFloat(document.getElementById('nom-vacaciones').value)||0;
+
+  var meses=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var mesNombre=meses[parseInt(mes)]||mes;
+  var ultimoDia=new Date(anio,parseInt(mes),0).getDate();
+
+  return {
+    trabajador:trabajador,nia:nia,mes:mes,anio:anio,mesNombre:mesNombre,ultimoDia:ultimoDia,
+    contrato:contrato,jornada:jornada,
+    bruto:calc.bruto,ssPct:calc.ssPct,ssMonto:calc.ssMonto,anticipo:calc.anticipo,otrosDesc:calc.otrosDesc,neto:calc.neto,
+    permiso:permiso,vacaciones:vacaciones
+  };
+}
+
+function buildNominaHTML(d){
+  var cfg=getCfg();
+  var empresa=(cfg.empresaNombre)||'SERVAP TURISTICS';
+  var html='<html><head><meta charset="UTF-8"><style>';
+  html+='*{box-sizing:border-box;margin:0;padding:0}@page{size:A4;margin:18mm}';
+  html+='body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#1A1A1A}';
+  html+='.title{font-size:16px;font-weight:800;text-align:center;margin-bottom:4px}';
+  html+='.subtitle{font-size:11px;text-align:center;color:#555;margin-bottom:20px}';
+  html+='.meta{margin-bottom:16px;line-height:1.9}';
+  html+='.meta b{display:inline-block;width:170px}';
+  html+='table{width:100%;border-collapse:collapse;margin:16px 0}';
+  html+='th{background:#F0F0F0;text-align:left;padding:8px 10px;font-size:11px;border:1px solid #CCC}';
+  html+='td{padding:8px 10px;border:1px solid #CCC;font-size:12px}';
+  html+='.right{text-align:right}';
+  html+='.total-row td{font-weight:800;font-size:13px;background:#FAFAFA}';
+  html+='.otros{margin-top:16px;font-size:12px;line-height:1.8}';
+  html+='.firmas{display:flex;justify-content:space-between;margin-top:60px}';
+  html+='.firma{width:45%;text-align:center;border-top:1px solid #333;padding-top:6px;font-size:11px}';
+  html+='</style></head><body>';
+  html+='<div class="title">Nomina de Salario - '+d.mesNombre.toUpperCase()+' '+d.anio+'</div>';
+  html+='<div class="meta">';
+  html+='<div><b>Empresa:</b> '+empresa+'</div>';
+  html+='<div><b>Nombre trabajadora:</b> '+d.trabajador+'</div>';
+  html+='<div><b>NIA:</b> '+(d.nia||'—')+'</div>';
+  html+='<div><b>Periodo:</b> 01/'+d.mes+'/'+d.anio+' al '+d.ultimoDia+'/'+d.mes+'/'+d.anio+'</div>';
+  html+='<div><b>Jornada:</b> '+d.jornada+'</div>';
+  html+='<div><b>Tipo de contrato:</b> '+d.contrato+'</div>';
+  html+='</div>';
+  html+='<table><thead><tr><th>Concepto</th><th class="right">Importe (€)</th></tr></thead><tbody>';
+  html+='<tr><td>Salario Bruto</td><td class="right">'+fmt2(d.bruto)+'</td></tr>';
+  html+='<tr><td>Descuento '+d.ssPct+'% Seguridad Social</td><td class="right">-'+fmt2(d.ssMonto)+'</td></tr>';
+  if(d.anticipo>0)html+='<tr><td>Anticipo</td><td class="right">-'+fmt2(d.anticipo)+'</td></tr>';
+  if(d.otrosDesc>0)html+='<tr><td>Otros descuentos</td><td class="right">-'+fmt2(d.otrosDesc)+'</td></tr>';
+  html+='<tr class="total-row"><td>Salario Neto a percibir</td><td class="right">'+fmt2(d.neto)+'</td></tr>';
+  html+='</tbody></table>';
+  if(d.permiso>0||d.vacaciones>0){
+    html+='<div class="otros"><b>Otros conceptos:</b><br>';
+    if(d.permiso>0)html+='Permiso retribuido pagado '+d.permiso+' dias<br>';
+    if(d.vacaciones>0)html+='Vacaciones generadas '+d.vacaciones+' dias<br>';
+    html+='</div>';
+  }
+  html+='<div class="firmas"><div class="firma">Firma Empresa</div><div class="firma">Firma Trabajadora</div></div>';
+  html+='</body></html>';
+  return html;
+}
+
+async function saveNomina(d){
+  var obj={
+    id:Date.now()*100+Math.floor(Math.random()*100),
+    trabajador:d.trabajador,nia:d.nia,mes:d.mes,anio:d.anio,
+    contrato:d.contrato,jornada:d.jornada,
+    bruto:d.bruto,ss_pct:d.ssPct,ss_monto:d.ssMonto,anticipo:d.anticipo,otros_desc:d.otrosDesc,neto:d.neto,
+    permiso:d.permiso,vacaciones:d.vacaciones,
+    created_at:new Date().toISOString()
+  };
+  if(!supa)return null;
+  try{
+    var r=await supa.from('nominas').upsert(obj,{onConflict:'id'});
+    if(r.error){toast('Error guardando nomina: '+r.error.message);return null;}
+    nominas.push(obj);
+    if(typeof logAudit==='function')logAudit('nomina_emitida',d.trabajador+' — '+d.mesNombre+' '+d.anio+' — '+fmt2(d.neto));
+    return obj;
+  }catch(e){toast('Error guardando nomina');return null;}
+}
+
+async function generarNominaPDF(){
+  var d=getNomFormData();
+  if(!d)return;
+  var saved=await saveNomina(d);
+  if(!saved){toast('No se pudo guardar el registro, pero se generara el PDF igualmente');}
+  var html=buildNominaHTML(d);
+  var w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){w.print();},400);
+  toast('Nomina generada — '+d.trabajador+' '+d.mesNombre+' '+d.anio);
+}
+
+async function enviarNominaEmail(){
+  var d=getNomFormData();
+  if(!d)return;
+  await saveNomina(d);
+  var cfg=getCfg();
+  var subject='Nomina '+d.mesNombre+' '+d.anio+' - '+d.trabajador;
+  var body='Adjunto la nomina correspondiente a '+d.mesNombre+' '+d.anio+'.\n\nSalario Neto a percibir: '+fmt2(d.neto)+'\n\nSaludos,\nServap Turistics';
+  // Genera el PDF para que el usuario lo adjunte manualmente, y abre el cliente de correo
+  var html=buildNominaHTML(d);
+  var w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){w.print();},400);
+  var mailto='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  setTimeout(function(){window.open(mailto,'_self');},600);
+  toast('PDF generado — adjunta el archivo guardado al correo');
+}
+
+function renderNomHistorial(){
+  var sel=document.getElementById('nom-h-trabajador');
+  if(sel&&!sel.options.length){
+    var cfg=getCfg();
+    sel.innerHTML='<option value="">Todas las trabajadoras</option>'+(cfg.workers||[]).map(function(w){return'<option>'+w+'</option>';}).join('');
+  }
+  var fTrab=(document.getElementById('nom-h-trabajador')||{}).value||'';
+  var fAnio=(document.getElementById('nom-h-anio')||{}).value||'';
+  var data=nominas.filter(function(n){
+    if(fTrab&&n.trabajador!==fTrab)return false;
+    if(fAnio&&String(n.anio)!==String(fAnio))return false;
+    return true;
+  });
+  data.sort(function(a,b){
+    if(a.anio!==b.anio)return b.anio-a.anio;
+    return b.mes-a.mes;
+  });
+  var el=document.getElementById('nom-historial-list');
+  if(!data.length){el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text2)"><div style="font-size:28px;margin-bottom:8px">&#128203;</div>Sin nominas emitidas</div>';return;}
+  var meses=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr>';
+  h+='<th style="padding:6px 8px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text2);border-bottom:2px solid var(--border)">Trabajadora</th>';
+  h+='<th style="padding:6px 8px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text2);border-bottom:2px solid var(--border)">Periodo</th>';
+  h+='<th style="padding:6px 8px;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text2);border-bottom:2px solid var(--border)">Bruto</th>';
+  h+='<th style="padding:6px 8px;text-align:right;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text2);border-bottom:2px solid var(--border)">Neto</th>';
+  h+='<th style="padding:6px 8px;border-bottom:2px solid var(--border)"></th></tr></thead><tbody>';
+  data.forEach(function(n){
+    h+='<tr style="border-bottom:1px solid var(--border)">';
+    h+='<td style="padding:6px 8px;font-weight:600;color:#CBA6F7">'+n.trabajador+'</td>';
+    h+='<td style="padding:6px 8px">'+(meses[parseInt(n.mes)]||n.mes)+' '+n.anio+'</td>';
+    h+='<td style="padding:6px 8px;text-align:right;font-family:\'DM Mono\',monospace">'+fmt2(n.bruto)+'</td>';
+    h+='<td style="padding:6px 8px;text-align:right;font-family:\'DM Mono\',monospace;font-weight:700;color:var(--primary)">'+fmt2(n.neto)+'</td>';
+    h+='<td style="padding:6px 8px;text-align:right"><button style="background:none;border:none;cursor:pointer;font-size:16px" title="Reimprimir" onclick="reprintNomina('+n.id+')">&#128438;</button></td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
+
+function reprintNomina(id){
+  var n=nominas.find(function(x){return x.id===id;});
+  if(!n){toast('Nomina no encontrada');return;}
+  var meses=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var ultimoDia=new Date(n.anio,parseInt(n.mes),0).getDate();
+  var d={
+    trabajador:n.trabajador,nia:n.nia,mes:n.mes,anio:n.anio,mesNombre:meses[parseInt(n.mes)]||n.mes,ultimoDia:ultimoDia,
+    contrato:n.contrato,jornada:n.jornada,
+    bruto:n.bruto,ssPct:n.ss_pct,ssMonto:n.ss_monto,anticipo:n.anticipo,otrosDesc:n.otros_desc,neto:n.neto,
+    permiso:n.permiso,vacaciones:n.vacaciones
+  };
+  var html=buildNominaHTML(d);
+  var w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){w.print();},400);
+}
+
+// Load nominas on startup
+loadNominas();
 
 </script>
 </body>
