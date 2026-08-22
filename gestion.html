@@ -4087,10 +4087,10 @@ function renderPlanning(){
       if(width<=1) return;
 
       var pax=(r.personas&&r.personas>0)?Math.min(10,Math.max(1,r.personas)):1;
-      var label=pax+'P '+r.nombre_huesped;
 
       h+='<div title="'+pax+' pax — '+r.nombre_huesped+' ('+r.plataforma+')" onclick="openChecklist('+r.id+')" style="position:absolute;left:'+left+'px;top:6px;width:'+(width-1)+'px;height:'+(rowH-12)+'px;background:'+col+';border-radius:3px;cursor:pointer;display:flex;align-items:center;padding:0 6px;overflow:hidden">';
-      h+='<span style="font-size:10px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+label+'</span>';
+      h+='<span style="font-size:10px;font-weight:700;color:white;flex-shrink:0;white-space:nowrap">'+pax+'P</span>';
+      h+='<span style="font-size:10px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;margin-left:3px">'+r.nombre_huesped+'</span>';
       h+='</div>';
     });
 
