@@ -357,9 +357,12 @@ tbody tr:hover{background:#F8F9FC}
     <div style="position:sticky;top:60px;z-index:40;margin-bottom:8px;background:var(--bg);padding:4px 0">
       <div style="display:flex;gap:6px;flex-wrap:nowrap">
         <select id="res-filter-piso" onchange="renderReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0"><option value="">Todos los pisos</option>
-          <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
-          <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
-          <option>Dolsa 3</option><option>Madriu 45</option>
+          <option>Madriu 45</option><option>Dolsa 3</option><option>Morera 5C</option>
+            <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
+            <option>Nuria 3A</option><option>Chamois 47</option>
+            <option disabled>&#9472;&#9472; Tarter &#9472;&#9472;</option>
+            <option>A01</option><option>B21</option><option>B24</option><option>C22</option>
+            <option>D12</option><option>D13</option><option>D43</option><option>D11 (Kristine)</option>
         </select>
         <select id="res-filter-mes" onchange="renderReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
           <option value="">Todos los meses</option>
@@ -373,6 +376,14 @@ tbody tr:hover{background:#F8F9FC}
         <select id="res-filter-plat" onchange="renderReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
           <option value="">Todas las plataformas</option>
           <option>Airbnb</option><option>Booking</option><option>Directo</option><option>Propietario</option>
+        </select>
+        <select id="res-filter-periodo" onchange="renderReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
+          <option value="">Todos los periodos</option>
+          <option value="4T 2024">4T 2024</option><option value="1T 2025">1T 2025</option>
+          <option value="2T 2025">2T 2025</option><option value="3T 2025">3T 2025</option>
+          <option value="4T 2025">4T 2025</option><option value="1T 2026">1T 2026</option>
+          <option value="2T 2026">2T 2026</option><option value="3T 2026">3T 2026</option>
+          <option value="4T 2026">4T 2026</option>
         </select>
         <select id="res-filter-roat" onchange="renderReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
           <option value="">Todos los ROAT</option>
@@ -406,10 +417,13 @@ tbody tr:hover{background:#F8F9FC}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
         <div><label style="font-size:10px">Piso</label>
-          <select id="res-piso" style="font-size:12px;padding:6px 8px">
-            <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
+          <select id="res-piso" onchange="toggleTarifaFields()" style="font-size:12px;padding:6px 8px">
+            <option>Madriu 45</option><option>Dolsa 3</option><option>Morera 5C</option>
             <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
-            <option>Dolsa 3</option><option>Madriu 45</option>
+            <option>Nuria 3A</option><option>Chamois 47</option>
+            <option disabled>&#9472;&#9472; Tarter &#9472;&#9472;</option>
+            <option>A01</option><option>B21</option><option>B24</option><option>C22</option>
+            <option>D12</option><option>D13</option><option>D43</option><option>D11 (Kristine)</option>
           </select>
         </div>
         <div><label style="font-size:10px">Plataforma</label>
@@ -429,11 +443,12 @@ tbody tr:hover{background:#F8F9FC}
         <div><label style="font-size:10px">Personas</label><input type="number" id="res-personas" min="1" value="2" style="font-size:12px;padding:6px 8px"></div>
         <div><label style="font-size:10px">Hora llegada</label><input type="time" id="res-hora" style="font-size:12px;padding:6px 8px"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div id="res-tarifa-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
         <div><label style="font-size:10px">Precio reserva (€)</label><input type="number" id="res-precio" step="0.01" placeholder="0.00" style="font-size:12px;padding:6px 8px"></div>
         <div><label style="font-size:10px">Taxa turistica (€)</label><input type="number" id="res-taxa" step="0.01" placeholder="0.00" style="font-size:12px;padding:6px 8px"></div>
       </div>
-      <div style="margin-bottom:14px"><label style="font-size:10px">Observaciones</label>
+      <div id="res-sintarifa-note" style="display:none;margin-bottom:10px;padding:8px 10px;background:var(--bg);border-radius:var(--radius);font-size:11px;color:var(--text2)">Este piso no factura tarifa — solo se registra la reserva para planificación.</div>
+      <div style="margin-bottom:14px"><label style="font-size:10px">Observaciones / Notas</label>
         <textarea id="res-obs" rows="2" placeholder="Notas, parking, mascotas..." style="font-size:12px;padding:6px 8px"></textarea>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -475,9 +490,12 @@ tbody tr:hover{background:#F8F9FC}
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
         <select id="inf-res-piso" onchange="renderInformeReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:120px">
           <option value="all">Todos los pisos</option>
-          <option>Chamois 47</option><option>Nuria 3A</option><option>Morera 5C</option>
-          <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
-          <option>Dolsa 3</option><option>Madriu 45</option>
+          <option>Madriu 45</option><option>Dolsa 3</option><option>Morera 5C</option>
+            <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
+            <option>Nuria 3A</option><option>Chamois 47</option>
+            <option disabled>&#9472;&#9472; Tarter &#9472;&#9472;</option>
+            <option>A01</option><option>B21</option><option>B24</option><option>C22</option>
+            <option>D12</option><option>D13</option><option>D43</option><option>D11 (Kristine)</option>
         </select>
         <select id="inf-res-periodo" onchange="toggleInfPeriodoFechas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:120px">
           <option value="all">Todos los periodos</option>
@@ -3415,14 +3433,15 @@ function renderInformeReservas(){
       h += '<span style="font-size:12px;font-weight:600;font-family:\'DM Mono\',monospace;min-width:80px;text-align:right">'+fmt2(plats[pl])+'</span>';
       h += '</div>';
     });
-    // Facturas section
+    // Facturas section — clave combinada piso+periodo para no mezclar facturas entre periodos
+    var pisoPeriodoKey = infPisoPeriodoKey(p, periodo);
     h += '<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px">';
-    h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:8px">Facturas</div>';
-    h += '<div id="inf-facturas-list-'+p.replace(/\s/g,'_')+'"></div>';
+    h += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:8px">Facturas — '+(periodo==='all'?'todos los periodos':periodo)+'</div>';
+    h += '<div id="inf-facturas-list-'+pisoPeriodoKey+'"></div>';
     h += '<div style="display:flex;gap:6px;align-items:center;margin-top:6px">';
-    h += '<input type="text" placeholder="N° Factura" id="inf-fact-num-'+p.replace(/\s/g,'_')+'" style="flex:1;font-size:11px;padding:4px 8px;border:1px solid #E2E5ED;border-radius:var(--radius)">';
-    h += '<input type="number" step="0.01" placeholder="Monto" id="inf-fact-monto-'+p.replace(/\s/g,'_')+'" style="width:100px;font-size:11px;padding:4px 8px;border:1px solid #E2E5ED;border-radius:var(--radius);font-family:\'DM Mono\',monospace">';
-    h += '<button class="btn btn-sm" style="background:var(--primary);color:#fff;font-size:10px;padding:4px 10px" onclick="addInfFactura(\''+p.replace(/'/g,"\\'")+'\')">+</button>';
+    h += '<input type="text" placeholder="N° Factura" id="inf-fact-num-'+pisoPeriodoKey+'" style="flex:1;font-size:11px;padding:4px 8px;border:1px solid #E2E5ED;border-radius:var(--radius)">';
+    h += '<input type="number" step="0.01" placeholder="Monto" id="inf-fact-monto-'+pisoPeriodoKey+'" style="width:100px;font-size:11px;padding:4px 8px;border:1px solid #E2E5ED;border-radius:var(--radius);font-family:\'DM Mono\',monospace">';
+    h += '<button class="btn btn-sm" style="background:var(--primary);color:#fff;font-size:10px;padding:4px 10px" onclick="addInfFactura(\''+pisoPeriodoKey+'\')">+</button>';
     h += '</div></div>';
     h += '</div>';
     // Right: financial breakdown
@@ -3456,6 +3475,12 @@ function renderInformeReservas(){
   });
 
   out.innerHTML = h;
+  // Pintar facturas ya guardadas para cada piso+periodo visible
+  pisos.forEach(function(p){ renderInfFacturas(infPisoPeriodoKey(p, periodo)); });
+}
+
+function infPisoPeriodoKey(piso, periodo){
+  return (piso+'__'+(periodo||'all')).replace(/[^a-zA-Z0-9]/g,'_');
 }
 
 function exportInformeReservasExcel(){
@@ -3720,7 +3745,11 @@ var currentReservaId = null;
 var planYear = new Date().getFullYear();
 var planMonth = new Date().getMonth();
 
-var PISOS_PAS = ['Chamois 47','Nuria 3A','Morera 5C','Sapporo 20','Nevada 32','Nevada 33','Dolsa 3','Madriu 45'];
+var PISOS_PAS = ['Madriu 45','Dolsa 3','Morera 5C','Sapporo 20','Nevada 32','Nevada 33','Nuria 3A','Chamois 47'];
+var PISOS_TARTER = ['A01','B21','B24','C22','D12','D13','D43','D11 (Kristine)'];
+var PISOS_SOLO_LIMPIEZA = ['Nevada 32','Nevada 33','Nuria 3A'];
+var PISOS_SIN_TARIFA = PISOS_SOLO_LIMPIEZA.concat(PISOS_TARTER);
+function pisoTieneTarifa(piso){ return PISOS_SIN_TARIFA.indexOf(piso)<0; }
 var PLAT_COLORS = {'Airbnb':'#FF5A5F','Booking':'#003580','Directo':'#22C55E','Propietario':'#9CA3AF','default':'#6B7280'};
 
 async function loadReservas(){
@@ -3739,6 +3768,15 @@ async function loadReservas(){
   } catch(e){ console.warn('loadReservas error:',e); }
 }
 
+function toggleTarifaFields(){
+  var piso=document.getElementById('res-piso').value;
+  var sinTarifa=(typeof pisoTieneTarifa==='function')?!pisoTieneTarifa(piso):false;
+  var row=document.getElementById('res-tarifa-row');
+  var note=document.getElementById('res-sintarifa-note');
+  if(row) row.style.display=sinTarifa?'none':'grid';
+  if(note) note.style.display=sinTarifa?'block':'none';
+}
+
 function openNuevaReserva(){
   currentReservaId = null;
   document.getElementById('modal-res-title').textContent = 'Nueva Reserva';
@@ -3747,6 +3785,7 @@ function openNuevaReserva(){
   document.getElementById('res-personas').value='2';
   document.getElementById('res-entrada').value='';
   document.getElementById('res-salida').value='';
+  toggleTarifaFields();
   document.getElementById('modal-reserva').style.display='flex';
 }
 
@@ -3807,12 +3846,14 @@ function renderReservas(){
   var fp = document.getElementById('res-filter-piso').value;
   var fm = document.getElementById('res-filter-mes').value;
   var fpl = document.getElementById('res-filter-plat').value;
+  var fper = document.getElementById('res-filter-periodo') ? document.getElementById('res-filter-periodo').value : '';
 
   var froat = document.getElementById('res-filter-roat') ? document.getElementById('res-filter-roat').value : '';
   var data = reservas.filter(function(r){
     return (!fp||r.piso===fp)
       && (!fm||r.fecha_entrada.indexOf(fm)===0||r.fecha_salida.indexOf(fm)===0)
       && (!fpl||r.plataforma===fpl)
+      && (!fper||r.periodo===fper)
       && (!froat||(froat==='pendiente'&&!r.roat_registrado)||(froat==='ok'&&r.roat_registrado));
   }).sort(function(a,b){return b.fecha_entrada.localeCompare(a.fecha_entrada);});
 
@@ -3932,6 +3973,7 @@ function editReserva(id){
   document.getElementById('res-taxa').value=r.taxa;
   document.getElementById('res-periodo').value=r.periodo||'';
   document.getElementById('res-obs').value=r.observaciones||'';
+  toggleTarifaFields();
   document.getElementById('modal-reserva').style.display='flex';
 }
 
@@ -3940,8 +3982,20 @@ function planPrevMonth(){ planMonth--; if(planMonth<0){planMonth=11;planYear--;}
 function planNextMonth(){ planMonth++; if(planMonth>11){planMonth=0;planYear++;} renderPlanning(); }
 function planGoToday(){ planYear=new Date().getFullYear(); planMonth=new Date().getMonth(); renderPlanning(); }
 
+var PLAN_CHECKOUT_FRACTION = 10/24; // 10:00 fijo
+function planCheckinFraction(r){
+  // Usa hora_llegada si está definida (formato "HH:MM"), si no, 16:00 por defecto
+  if(r.hora_llegada && /^\d{1,2}:\d{2}$/.test(r.hora_llegada)){
+    var parts=r.hora_llegada.split(':');
+    var hh=parseInt(parts[0])||16, mm=parseInt(parts[1])||0;
+    return (hh+mm/60)/24;
+  }
+  return 16/24;
+}
+
 function renderPlanning(){
   var months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var dowAbbr=['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
   var el=document.getElementById('plan-month-title');
   if(el) el.textContent=months[planMonth]+' '+planYear;
 
@@ -3963,20 +4017,23 @@ function renderPlanning(){
 
   var h='<div style="min-width:'+totalW+'px">';
 
-  // Header — days
+  // Header — days (día de la semana arriba, número del día abajo)
   h+='<div style="display:flex;border-bottom:1px solid #E8EAF0;background:#F8F9FC">';
-  h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:8px 12px;font-size:11px;font-weight:600;color:var(--text2)">PISO</div>';
+  h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:8px 12px;font-size:11px;font-weight:600;color:var(--text2);align-self:flex-end">PISO</div>';
   for(var d=1;d<=daysInMonth;d++){
     var ds=planYear+'-'+(planMonth<9?'0':'')+(planMonth+1)+'-'+(d<10?'0':'')+d;
     var isToday=ds===todayStr;
     var dow=new Date(planYear,planMonth,d).getDay();
     var isSun=dow===0; var isSat=dow===6;
-    h+='<div style="width:'+cellW+'px;flex-shrink:0;text-align:center;padding:6px 0;font-size:10px;font-weight:'+(isToday?'700':'500')+';color:'+(isToday?'var(--primary)':isSun?'var(--danger)':'var(--text2)')+';background:'+(isToday?'#EEF3FF':'transparent')+';border-left:1px solid #F0F2F7">'+d+'</div>';
+    var dcolor=(isToday?'var(--primary)':isSun?'var(--danger)':'var(--text2)');
+    h+='<div style="width:'+cellW+'px;flex-shrink:0;text-align:center;padding:4px 0 6px;background:'+(isToday?'#EEF3FF':'transparent')+';border-left:1px solid #F0F2F7">';
+    h+='<div style="font-size:9px;font-weight:600;color:'+dcolor+';text-transform:uppercase;letter-spacing:.02em">'+dowAbbr[dow]+'</div>';
+    h+='<div style="font-size:11px;font-weight:'+(isToday?'700':'500')+';color:'+dcolor+'">'+d+'</div>';
+    h+='</div>';
   }
   h+='</div>';
 
-  // Rows — one per piso
-  PISOS_PAS.forEach(function(piso){
+  function renderPisoRow(piso){
     h+='<div style="display:flex;border-bottom:1px solid #F0F2F7;position:relative;height:'+rowH+'px;align-items:center">';
     h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:0 12px;font-size:12px;font-weight:600;color:#1A1D27;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+piso+'</div>';
 
@@ -3993,30 +4050,71 @@ function renderPlanning(){
     cellsH+='</div>';
     h+=cellsH;
 
-    // Reserva bars
-    var pisoRes=monthRes.filter(function(r){return r.piso===piso;});
+    // Reserva bars — orden por fecha de entrada, para detectar turnovers mismo día
+    var pisoRes=monthRes.filter(function(r){return r.piso===piso;}).sort(function(a,b){return a.fecha_entrada.localeCompare(b.fecha_entrada);});
+
+    // Detecta fechas donde hay turnover el mismo día (salida de una = entrada de otra)
+    var turnoverDates={};
+    for(var i=0;i<pisoRes.length;i++){
+      for(var j=0;j<pisoRes.length;j++){
+        if(i!==j && pisoRes[i].fecha_salida===pisoRes[j].fecha_entrada){
+          turnoverDates[pisoRes[j].fecha_entrada]=true;
+        }
+      }
+    }
+
+    var monthStart=new Date(planYear,planMonth,1);
+    var monthEndExcl=new Date(planYear,planMonth,daysInMonth+1);
+
     pisoRes.forEach(function(r){
       var col=PLAT_COLORS[r.plataforma]||PLAT_COLORS.default;
-      // Calculate position
       var p1=r.fecha_entrada.split('-').map(Number);
       var p2=r.fecha_salida.split('-').map(Number);
       var startDate=new Date(p1[0],p1[1]-1,p1[2]);
       var endDate=new Date(p2[0],p2[1]-1,p2[2]);
-      var monthStart=new Date(planYear,planMonth,1);
-      var monthEnd=new Date(planYear,planMonth,daysInMonth);
-      var barStart=Math.max(startDate,monthStart);
-      var barEnd=Math.min(endDate,monthEnd);
-      var startDay=Math.round((barStart-monthStart)/86400000);
-      var width=Math.round((barEnd-barStart)/86400000);
-      if(width<=0) return;
-      var left=labelW+(startDay*cellW);
-      h+='<div title="'+r.nombre_huesped+' ('+r.plataforma+')" onclick="openChecklist('+r.id+')" style="position:absolute;left:'+left+'px;top:6px;width:'+(width*cellW-2)+'px;height:'+(rowH-12)+'px;background:'+col+';border-radius:4px;cursor:pointer;display:flex;align-items:center;padding:0 8px;overflow:hidden">';
-      h+='<span style="font-size:10px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+r.nombre_huesped+'</span>';
+
+      var startsInView = startDate>=monthStart;
+      var endsInView = endDate<monthEndExcl;
+
+      var barStart=startsInView?startDate:monthStart;
+      var barEnd=endsInView?endDate:monthEndExcl;
+      var startDayIdx=Math.round((barStart-monthStart)/86400000);
+      var endDayIdx=Math.round((barEnd-monthStart)/86400000);
+
+      var left=labelW+(startDayIdx*cellW);
+      if(startsInView){
+        var isTurnoverIn = !!turnoverDates[r.fecha_entrada];
+        var fracIn = isTurnoverIn ? PLAN_CHECKOUT_FRACTION : planCheckinFraction(r);
+        left += cellW*fracIn;
+      }
+
+      var right=labelW+(endDayIdx*cellW);
+      if(endsInView){
+        right += cellW*PLAN_CHECKOUT_FRACTION;
+      }
+
+      var width=right-left;
+      if(width<=1) return;
+
+      var pax=(r.personas&&r.personas>0)?Math.min(10,Math.max(1,r.personas)):1;
+      var label=pax+'P '+r.nombre_huesped;
+
+      h+='<div title="'+pax+' pax — '+r.nombre_huesped+' ('+r.plataforma+')" onclick="openChecklist('+r.id+')" style="position:absolute;left:'+left+'px;top:6px;width:'+(width-1)+'px;height:'+(rowH-12)+'px;background:'+col+';border-radius:3px;cursor:pointer;display:flex;align-items:center;padding:0 6px;overflow:hidden">';
+      h+='<span style="font-size:10px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+label+'</span>';
       h+='</div>';
     });
 
     h+='</div>';
-  });
+  }
+
+  // Grupo: Pas de la Casa
+  h+='<div style="padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:#F8F9FC;border-bottom:1px solid #F0F2F7">Pas de la Casa</div>';
+  PISOS_PAS.forEach(renderPisoRow);
+
+  // Grupo: Tarter
+  h+='<div style="padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:#F8F9FC;border-bottom:1px solid #F0F2F7">Tarter</div>';
+  PISOS_TARTER.forEach(renderPisoRow);
+
   h+='</div>';
 
   var grid=document.getElementById('plan-grid');
