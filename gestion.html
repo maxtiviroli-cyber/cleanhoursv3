@@ -4010,7 +4010,7 @@ function renderPlanning(){
   });
 
   // Build grid
-  var cellW=32; // px per day
+  var cellW=38; // px per day (ancho suficiente para mostrar '10P' completo)
   var rowH=40;
   var labelW=110;
   var totalW=labelW+(daysInMonth*cellW);
@@ -4018,15 +4018,15 @@ function renderPlanning(){
   var h='<div style="min-width:'+totalW+'px">';
 
   // Header — days (día de la semana arriba, número del día abajo)
-  h+='<div style="display:flex;border-bottom:1px solid #E8EAF0;background:#F8F9FC">';
-  h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:8px 12px;font-size:11px;font-weight:600;color:var(--text2);align-self:flex-end">PISO</div>';
+  h+='<div style="display:flex;border-bottom:1px solid #C7CCD9;background:#EEF0F5">';
+  h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:8px 12px;font-size:11px;font-weight:600;color:var(--text2);align-self:flex-end;position:sticky;left:0;z-index:12;background:#F8F9FC;box-shadow:2px 0 3px -1px rgba(0,0,0,0.06)">PISO</div>';
   for(var d=1;d<=daysInMonth;d++){
     var ds=planYear+'-'+(planMonth<9?'0':'')+(planMonth+1)+'-'+(d<10?'0':'')+d;
     var isToday=ds===todayStr;
     var dow=new Date(planYear,planMonth,d).getDay();
     var isSun=dow===0; var isSat=dow===6;
     var dcolor=(isToday?'var(--primary)':isSun?'var(--danger)':'var(--text2)');
-    h+='<div style="width:'+cellW+'px;flex-shrink:0;text-align:center;padding:4px 0 6px;background:'+(isToday?'#EEF3FF':'transparent')+';border-left:1px solid #F0F2F7">';
+    h+='<div style="width:'+cellW+'px;flex-shrink:0;text-align:center;padding:4px 0 6px;background:'+(isToday?'#D9E4FF':'transparent')+';border-left:1px solid #B8BFCF">';
     h+='<div style="font-size:9px;font-weight:600;color:'+dcolor+';text-transform:uppercase;letter-spacing:.02em">'+dowAbbr[dow]+'</div>';
     h+='<div style="font-size:11px;font-weight:'+(isToday?'700':'500')+';color:'+dcolor+'">'+d+'</div>';
     h+='</div>';
@@ -4034,8 +4034,8 @@ function renderPlanning(){
   h+='</div>';
 
   function renderPisoRow(piso){
-    h+='<div style="display:flex;border-bottom:1px solid #F0F2F7;position:relative;height:'+rowH+'px;align-items:center">';
-    h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:0 12px;font-size:12px;font-weight:600;color:#1A1D27;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+piso+'</div>';
+    h+='<div style="display:flex;border-bottom:1px solid #C7CCD9;position:relative;height:'+rowH+'px;align-items:center">';
+    h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:0 12px;font-size:12px;font-weight:600;color:#1A1D27;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:sticky;left:0;z-index:11;background:#fff;box-shadow:2px 0 3px -1px rgba(0,0,0,0.06)">'+piso+'</div>';
 
     // Day cells background
     var cellsH='<div style="display:flex;flex:1;height:100%">';
@@ -4044,24 +4044,16 @@ function renderPlanning(){
       var isToday=ds===todayStr;
       var dow=new Date(planYear,planMonth,d).getDay();
       var isSat=dow===6; var isSun=dow===0;
-      var bg=isToday?'#EEF3FF':(isSat||isSun?'#FAFAFA':'white');
-      cellsH+='<div style="width:'+cellW+'px;flex-shrink:0;height:100%;background:'+bg+';border-left:1px solid #F0F2F7"></div>';
+      var bg=isToday?'#D9E4FF':(isSat||isSun?'#E7E9EF':'#F5F6F9');
+      cellsH+='<div style="width:'+cellW+'px;flex-shrink:0;height:100%;background:'+bg+';border-left:1px solid #B8BFCF"></div>';
     }
     cellsH+='</div>';
     h+=cellsH;
 
-    // Reserva bars — orden por fecha de entrada, para detectar turnovers mismo día
+    // Reserva bars — la línea de entrada (~16:00) y salida (10:00) es siempre
+    // consistente; en un turnover mismo día simplemente queda un hueco sin
+    // colorear entre ambas barras (no se "pegan").
     var pisoRes=monthRes.filter(function(r){return r.piso===piso;}).sort(function(a,b){return a.fecha_entrada.localeCompare(b.fecha_entrada);});
-
-    // Detecta fechas donde hay turnover el mismo día (salida de una = entrada de otra)
-    var turnoverDates={};
-    for(var i=0;i<pisoRes.length;i++){
-      for(var j=0;j<pisoRes.length;j++){
-        if(i!==j && pisoRes[i].fecha_salida===pisoRes[j].fecha_entrada){
-          turnoverDates[pisoRes[j].fecha_entrada]=true;
-        }
-      }
-    }
 
     var monthStart=new Date(planYear,planMonth,1);
     var monthEndExcl=new Date(planYear,planMonth,daysInMonth+1);
@@ -4083,9 +4075,7 @@ function renderPlanning(){
 
       var left=labelW+(startDayIdx*cellW);
       if(startsInView){
-        var isTurnoverIn = !!turnoverDates[r.fecha_entrada];
-        var fracIn = isTurnoverIn ? PLAN_CHECKOUT_FRACTION : planCheckinFraction(r);
-        left += cellW*fracIn;
+        left += cellW*planCheckinFraction(r);
       }
 
       var right=labelW+(endDayIdx*cellW);
@@ -4108,11 +4098,11 @@ function renderPlanning(){
   }
 
   // Grupo: Pas de la Casa
-  h+='<div style="padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:#F8F9FC;border-bottom:1px solid #F0F2F7">Pas de la Casa</div>';
+  h+='<div style="padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:#F8F9FC;border-bottom:1px solid #F0F2F7;position:sticky;left:0;z-index:11">Pas de la Casa</div>';
   PISOS_PAS.forEach(renderPisoRow);
 
   // Grupo: Tarter
-  h+='<div style="padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:#F8F9FC;border-bottom:1px solid #F0F2F7">Tarter</div>';
+  h+='<div style="padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:#F8F9FC;border-bottom:1px solid #F0F2F7;position:sticky;left:0;z-index:11">Tarter</div>';
   PISOS_TARTER.forEach(renderPisoRow);
 
   h+='</div>';
