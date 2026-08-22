@@ -470,6 +470,7 @@ tbody tr:hover{background:#F8F9FC}
       <div id="checklist-items" style="display:flex;flex-direction:column;gap:10px"></div>
       <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px">
         <button class="btn btn-light" onclick="closeChecklist()">Cerrar</button>
+        <button class="btn btn-light btn-sm" onclick="editReservaFromChecklist()">Editar reserva</button>
         <button class="btn btn-danger btn-sm" onclick="deleteReserva()">Eliminar reserva</button>
       </div>
     </div>
@@ -3782,11 +3783,27 @@ function openNuevaReserva(){
   document.getElementById('modal-res-title').textContent = 'Nueva Reserva';
   ['res-nombre','res-pais','res-obs'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
   ['res-precio','res-taxa'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('res-piso').value=PISOS_PAS[0];
   document.getElementById('res-personas').value='2';
   document.getElementById('res-entrada').value='';
   document.getElementById('res-salida').value='';
   toggleTarifaFields();
   document.getElementById('modal-reserva').style.display='flex';
+}
+
+function planNuevaReserva(piso, fechaEntrada){
+  openNuevaReserva();
+  var pisoSel=document.getElementById('res-piso');
+  // Selecciona el piso si existe como opción; si no, deja el valor por defecto
+  var found=false;
+  for(var i=0;i<pisoSel.options.length;i++){ if(pisoSel.options[i].value===piso){ pisoSel.selectedIndex=i; found=true; break; } }
+  if(found) toggleTarifaFields();
+  document.getElementById('res-entrada').value=fechaEntrada;
+  // Sugiere salida al día siguiente
+  var p=fechaEntrada.split('-').map(Number);
+  var next=new Date(p[0],p[1]-1,p[2]+1);
+  var ns=next.getFullYear()+'-'+String(next.getMonth()+1).padStart(2,'0')+'-'+String(next.getDate()).padStart(2,'0');
+  document.getElementById('res-salida').value=ns;
 }
 
 function closeModalReserva(){
@@ -3943,6 +3960,13 @@ function closeChecklist(){
   currentReservaId=null;
 }
 
+function editReservaFromChecklist(){
+  var id=currentReservaId;
+  if(!id) return;
+  document.getElementById('modal-checklist').style.display='none';
+  editReserva(id);
+}
+
 async function deleteReserva(){
   if(!currentReservaId) return;
   if(!confirm('Eliminar esta reserva? Esta accion no se puede deshacer.')) return;
@@ -4045,7 +4069,8 @@ function renderPlanning(){
       var dow=new Date(planYear,planMonth,d).getDay();
       var isSat=dow===6; var isSun=dow===0;
       var bg=isToday?'#D9E4FF':(isSat||isSun?'#E7E9EF':'#F5F6F9');
-      cellsH+='<div style="width:'+cellW+'px;flex-shrink:0;height:100%;background:'+bg+';border-left:1px solid #B8BFCF"></div>';
+      var pisoEsc=piso.replace(/'/g,"\\'");
+      cellsH+='<div onclick="planNuevaReserva(\''+pisoEsc+'\',\''+ds+'\')" title="Nueva reserva — '+piso+' '+d+'/'+(planMonth+1)+'" style="width:'+cellW+'px;flex-shrink:0;height:100%;background:'+bg+';border-left:1px solid #B8BFCF;cursor:pointer"></div>';
     }
     cellsH+='</div>';
     h+=cellsH;
