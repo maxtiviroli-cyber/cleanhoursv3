@@ -2567,7 +2567,7 @@ function doLoginSuccess(found){
   var avEl=document.getElementById('sb-avatar');if(avEl)avEl.textContent=(found.name||'U')[0].toUpperCase();
   applyRoleUI();
   if(found.role==='normal') showTab('calendario');
-  else { toggleModule('limpieza'); showTab('registro'); }
+  else { showTab('planning'); }
 }
 
 function doLogout(){
@@ -4006,15 +4006,11 @@ function planPrevMonth(){ planMonth--; if(planMonth<0){planMonth=11;planYear--;}
 function planNextMonth(){ planMonth++; if(planMonth>11){planMonth=0;planYear++;} renderPlanning(); }
 function planGoToday(){ planYear=new Date().getFullYear(); planMonth=new Date().getMonth(); renderPlanning(); }
 
-var PLAN_CHECKOUT_FRACTION = 10/24; // 10:00 fijo
+// Las barras arrancan/terminan cerca del centro de la celda del día,
+// dejando solo un margen mínimo entre una salida y una entrada del mismo día.
+var PLAN_CHECKOUT_FRACTION = 0.44;
 function planCheckinFraction(r){
-  // Usa hora_llegada si está definida (formato "HH:MM"), si no, 16:00 por defecto
-  if(r.hora_llegada && /^\d{1,2}:\d{2}$/.test(r.hora_llegada)){
-    var parts=r.hora_llegada.split(':');
-    var hh=parseInt(parts[0])||16, mm=parseInt(parts[1])||0;
-    return (hh+mm/60)/24;
-  }
-  return 16/24;
+  return 0.56;
 }
 
 function renderPlanning(){
