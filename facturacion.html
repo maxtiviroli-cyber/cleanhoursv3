@@ -704,6 +704,8 @@ function showPanel(id){
 
 //=== MODAL =================================================================
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;');}
+// Quita el contenido pesado (base64) antes de guardar en memoria/caché — solo queda lo necesario para listar y mostrar el badge de documentos.
+function stripDocData(d){return {id:d.id,factura_id:d.factura_id,cliente_id:d.cliente_id,tipo:d.tipo,nombre:d.nombre,media_type:d.media_type,nota:d.nota,created_at:d.created_at};}
 
 function openModal(type,data){
   var m=document.getElementById('modal-overlay');
@@ -777,19 +779,46 @@ async function sbLoad(table){
     return[];
   }
 }
+// Igual que sbLoad pero pidiendo solo columnas específicas (para tablas con
+// columnas pesadas tipo base64, evita descargar el contenido completo solo
+// para listar). No usa caché — si falla, devuelve [] y loadAll seguirá con
+// las demás tablas.
+async function sbLoadCols(table,cols){
+  if(!supa){console.warn('sbLoadCols: supa is null');return[];}
+  try{
+    var r=await supa.from(table).select(cols).limit(10000);
+    if(r.error){console.warn('sbLoadCols error ['+table+']:',r.error);toast('No se pudo cargar '+table);return[];}
+    console.log('sbLoadCols ['+table+']: '+((r.data||[]).length)+' rows');
+    return r.data||[];
+  }catch(e){console.warn('sbLoadCols exception ['+table+']:',e);return[];}
+}
+// Trae el contenido completo (incluyendo el base64) de UN solo documento,
+// bajo demanda, cuando el usuario efectivamente quiere verlo o descargarlo.
+async function fetchAdjuntoData(id){
+  if(!supa){toast('Sin conexión a Supabase');return null;}
+  try{
+    var r=await supa.from('inv_adjuntos').select('*').eq('id',id).single();
+    if(r.error||!r.data){toast('No se pudo cargar el documento: '+(r.error?r.error.message:'no encontrado'));return null;}
+    return r.data;
+  }catch(e){toast('Error cargando documento');return null;}
+}
 async function sbSave(table,data){
   if(!supa){console.warn('sbSave: supa is null');return null;}
   try{
     var r=await supa.from(table).upsert(data,{onConflict:'id'});
     if(r.error){console.warn('sbSave error ['+table+']:',r.error);toast('Error guardando: '+r.error.message);return null;}
-    // Update cache after successful save
-    try{
-      var cache=JSON.parse(localStorage.getItem('inv_cache_'+table)||'[]');
-      var id=Array.isArray(data)?data[0].id:data.id;
-      var idx=cache.findIndex(function(x){return x.id==id;});
-      if(idx>=0)cache[idx]=data;else cache.push(data);
-      localStorage.setItem('inv_cache_'+table,JSON.stringify(cache));
-    }catch(e){}
+    // Update cache after successful save (se salta inv_adjuntos: sus filas
+    // llevan contenido pesado en base64 y ya no dependemos de esta caché
+    // para esa tabla, así evitamos llenar la cuota de localStorage)
+    if(table!=='inv_adjuntos'){
+      try{
+        var cache=JSON.parse(localStorage.getItem('inv_cache_'+table)||'[]');
+        var id=Array.isArray(data)?data[0].id:data.id;
+        var idx=cache.findIndex(function(x){return x.id==id;});
+        if(idx>=0)cache[idx]=data;else cache.push(data);
+        localStorage.setItem('inv_cache_'+table,JSON.stringify(cache));
+      }catch(e){}
+    }
     return r;
   }catch(e){console.warn('sbSave exception ['+table+']:',e);return null;}
 }
@@ -946,7 +975,10 @@ async function loadAll(){
     facturasEmit=normNum(await sbLoad('inv_facturas_emit'),['base','igi','total']);
     facturasRec=normNum(await sbLoad('inv_facturas_rec'),['base','igi','total']);
     pagos=normNum(await sbLoad('inv_pagos'),['monto']);
-    adjuntos=await sbLoad('inv_adjuntos');
+    // Solo metadatos livianos — el contenido (base64) se trae bajo demanda
+    // al abrir/descargar un documento, para no descargar todos los PDFs
+    // completos cada vez que se abre la app.
+    adjuntos=await sbLoadCols('inv_adjuntos','id,factura_id,cliente_id,tipo,nombre,media_type,nota,created_at');
     var cfgRows=await sbLoad('inv_config');
     if(cfgRows.length){var c=cfgRows[0];Object.assign(config,c);}
     // Load API key from localStorage
@@ -1439,13 +1471,13 @@ async function doDeleteFacturaEmit(id){
 
 function viewFacturaDocs(id){
   var docs=adjuntos.filter(function(a){return a.factura_id==id;});
-  var f=facturasEmit.find(function(x){return x.id==id;});
+  var f=facturasEmit.find(function(x){return x.id==id;})||facturasRec.find(function(x){return x.id==id;});
   var m=document.getElementById('modal-overlay');
   var title=document.getElementById('modal-title');
   var body=document.getElementById('modal-body');
   var footer=document.getElementById('modal-footer');
 
-  title.textContent='Documentos — '+(f?f.numero:'');
+  title.textContent='Documentos — '+(f?(f.numero||''):'');
 
   if(!docs.length){
     body.innerHTML='<div class="empty"><div class="empty-icon">&#128196;</div><div class="empty-title">Sin documentos adjuntos</div><div class="empty-sub">Esta factura no tiene PDFs ni respaldos vinculados</div></div>';
@@ -1453,19 +1485,14 @@ function viewFacturaDocs(id){
     var h='<div style="display:flex;flex-direction:column;gap:12px">';
     docs.forEach(function(d,i){
       var isPdf=(d.media_type||'').indexOf('pdf')>=0||(d.nombre||'').indexOf('.pdf')>=0;
-      var isImg=(d.media_type||'').indexOf('image')>=0;
-      var mediaType=d.media_type||'application/pdf';
       h+='<div style="border:1px solid var(--border);border-radius:var(--radius);padding:12px">';
-      h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-      h+='<div><strong style="font-size:12px">'+esc(d.nombre||'Documento '+(i+1))+'</strong>';
-      h+='<div style="font-size:10px;color:var(--text2)">'+(d.tipo==='factura_pdf'?'PDF original de la factura':'Documento de respaldo')+'</div></div>';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+      h+='<div><strong style="font-size:12px">'+(isPdf?'&#128196; ':'&#128247; ')+esc(d.nombre||'Documento '+(i+1))+'</strong>';
+      h+='<div style="font-size:10px;color:var(--text2)">'+(d.tipo==='factura_pdf'||d.tipo==='factura_rec_pdf'?'PDF original de la factura':'Documento de respaldo')+'</div></div>';
       h+='<div style="display:flex;gap:6px">';
       h+='<button class="btn btn-sm btn-primary" onclick="openDocView('+d.id+')">&#128065; Ver</button>';
       h+='<button class="btn btn-sm btn-outline" onclick="downloadDoc('+d.id+')">&#11015; Descargar</button>';
       h+='</div></div>';
-      if(isImg&&d.data){
-        h+='<img src="data:'+mediaType+';base64,'+d.data+'" style="max-width:100%;max-height:200px;border-radius:4px;border:1px solid var(--border)">';
-      }
       h+='</div>';
     });
     h+='</div>';
@@ -1475,8 +1502,9 @@ function viewFacturaDocs(id){
   m.classList.add('active');
 }
 
-function openDocView(docId){
-  var d=adjuntos.find(function(a){return a.id==docId;});
+async function openDocView(docId){
+  toast('Cargando documento...');
+  var d=await fetchAdjuntoData(docId);
   if(!d||!d.data){toast('Documento sin datos');return;}
   var mediaType=d.media_type||'application/pdf';
   var dataUri='data:'+mediaType+';base64,'+d.data;
@@ -1490,8 +1518,9 @@ function openDocView(docId){
   w.document.close();
 }
 
-function downloadDoc(docId){
-  var d=adjuntos.find(function(a){return a.id==docId;});
+async function downloadDoc(docId){
+  toast('Descargando documento...');
+  var d=await fetchAdjuntoData(docId);
   if(!d||!d.data){toast('Documento sin datos');return;}
   var mediaType=d.media_type||'application/pdf';
   var link=document.createElement('a');
@@ -2073,7 +2102,7 @@ async function confirmImportEmit(){
     var pdfDoc={id:uid(),factura_id:factId,cliente_id:factura.cliente_id,tipo:'factura_pdf',nombre:impPdfData.name,data:impPdfData.data,media_type:impPdfData.type,nota:'PDF original factura '+numero,created_at:new Date().toISOString()};
     var rPdf=await sbSave('inv_adjuntos',pdfDoc);
     if(!rPdf){docsFailed++;logInvAudit('adjunto_fallido','Factura '+numero+' — PDF original no se guardó');}
-    else adjuntos.push(pdfDoc);
+    else adjuntos.push(stripDocData(pdfDoc));
   }
 
   // Save additional backup docs — verify each
@@ -2081,7 +2110,7 @@ async function confirmImportEmit(){
     var doc={id:uid(),factura_id:factId,cliente_id:factura.cliente_id,tipo:'respaldo',nombre:impDocs[i].name,data:impDocs[i].data.split(',')[1]||impDocs[i].data,media_type:impDocs[i].type,nota:'Respaldo factura '+numero,created_at:new Date().toISOString()};
     var rDoc=await sbSave('inv_adjuntos',doc);
     if(!rDoc){docsFailed++;logInvAudit('adjunto_fallido','Factura '+numero+' — respaldo '+impDocs[i].name+' no se guardó');}
-    else adjuntos.push(doc);
+    else adjuntos.push(stripDocData(doc));
   }
 
   // Clear temp data to prevent double-attach
@@ -2219,7 +2248,7 @@ async function confirmRecImport(){
       toast('⚠ La factura se guardó pero el PDF adjunto falló. Reintenta adjuntarlo.');
       logInvAudit('adjunto_fallido','Factura recibida '+obj.numero+' — PDF no se guardó');
     } else {
-      adjuntos.push(pdfDoc);
+      adjuntos.push(stripDocData(pdfDoc));
     }
   }
   logInvAudit('importar_factura_rec','Factura recibida '+obj.numero+' — '+obj.proveedor_nombre+' — '+fmt(obj.total));
@@ -2240,6 +2269,9 @@ async function confirmRecImport(){
   // Load config from localStorage
   var lk=localStorage.getItem('servap_apikey');
   if(lk){config.apiKey=lk;var ki=document.getElementById('cfg-apikey');if(ki)ki.value=lk;}
+  // Limpia la caché vieja de inv_adjuntos (guardaba PDFs completos en base64
+  // y llenaba la cuota de localStorage) — ya no se usa para esta tabla
+  try{localStorage.removeItem('inv_cache_inv_adjuntos');}catch(e){}
   // Load all data
   loadAll();
 })();
