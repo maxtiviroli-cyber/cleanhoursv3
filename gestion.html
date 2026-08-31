@@ -608,13 +608,9 @@ tbody tr:hover{background:#F8F9FC}
             <div><label>Admin</label><select id="a-admin"></select></div>
             <div><label>Trabajador</label><select id="a-user"></select></div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 10px;background:#F8F9FC;border-radius:var(--radius)">
-            <input type="checkbox" id="a-sin-piso" onchange="toggleSinPiso()" style="width:16px;height:16px">
-            <label for="a-sin-piso" style="margin:0;font-size:12px;font-weight:600;cursor:pointer">Registrar sin piso — solo entrada y salida</label>
-          </div>
           <div class="form-grid">
             <div><label>Fecha</label><input type="date" id="a-date"></div>
-            <div id="a-negocio-wrap"><label>Negocio</label><select id="a-negocio"></select></div>
+            <div><label>Negocio</label><select id="a-negocio"></select></div>
           </div>
           <div class="form-grid">
             <div><label>Inicio</label><input type="time" id="a-start" onchange="calcPill('a')" style="font-size:17px;font-weight:600;text-align:center"></div>
@@ -1567,31 +1563,13 @@ function submitWorker(){
   document.getElementById('w-obs').value=''; setPendBadge();
   toast('Enviado - pendiente confirmacion del admin');
 }
-function toggleSinPiso(){
-  var checked=document.getElementById('a-sin-piso').checked;
-  document.getElementById('a-negocio-wrap').style.display=checked?'none':'block';
-}
 function submitAdmin(){
   var admin=document.getElementById('a-admin').value, user=document.getElementById('a-user').value;
-  var date=document.getElementById('a-date').value;
-  var sinPiso=document.getElementById('a-sin-piso').checked;
-  var neg=sinPiso?'':document.getElementById('a-negocio').value;
+  var date=document.getElementById('a-date').value, neg=document.getElementById('a-negocio').value;
   var s=document.getElementById('a-start').value, e=document.getElementById('a-end').value;
   var obs=document.getElementById('a-obs').value.trim();
   if(!date) return toast('Selecciona una fecha');
   var hrs=calcHrs(s,e); if(hrs<=0) return toast('Termino debe ser posterior al inicio');
-  if(sinPiso){
-    // Registro sin piso — siempre es una entrada nueva del admin, no hay
-    // registro pendiente de trabajador con el que cuadrar (los trabajadores
-    // no pueden registrar sin piso).
-    var rec2={id:getNextId(),date:date,negocio:'',start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:hrs,admin:admin,status:'admin-only'};
-    records.push(rec2); sheet(rec2); saveRecToSupa(rec2);
-    addMsg('Registro admin sin piso - '+admin+'<br>'+user+'<br>'+fmtHrs(hrs),admin,'in',true);
-    toast('Registro sin piso guardado');
-    saveRec(); setPendBadge(); document.getElementById('a-obs').value='';
-    document.getElementById('a-sin-piso').checked=false; toggleSinPiso();
-    return;
-  }
   var p=null;
   for(var i=0;i<records.length;i++){if(records[i].date===date&&records[i].negocio===neg&&records[i].user===user&&records[i].status==='pending'){p=records[i];break;}}
   if(p){
@@ -2747,9 +2725,9 @@ function renderInforme(){
   var cfg=getCfg();
   var byWorker={};
   data.forEach(function(r){byWorker[r.user]=(byWorker[r.user]||0)+(r.hrs||0);});
-  // By negocio (excluye registros sin piso, que tienen su propia sección)
+  // By negocio
   var byNeg={};
-  data.forEach(function(r){ if(r.negocio) byNeg[r.negocio]=(byNeg[r.negocio]||0)+(r.hrs||0); });
+  data.forEach(function(r){byNeg[r.negocio]=(byNeg[r.negocio]||0)+(r.hrs||0);});
 
   var h='';
 
@@ -2764,21 +2742,6 @@ function renderInforme(){
   h+='<div class="kpi warning"><div class="kpi-icon">&#8987;</div><div class="kpi-value">'+pend+'</div><div class="kpi-label">Pendientes</div></div>';
   h+='<div class="kpi secondary"><div class="kpi-icon">&#128197;</div><div class="kpi-value">'+infUniqD+'</div><div class="kpi-label">Dias del mes</div></div>';
   h+='</div>';
-
-  // Detalle por fecha — registros sin piso (solo entrada/salida, cada bloque aparte)
-  var sinPisoData=data.filter(function(r){return !r.negocio;}).sort(function(a,b){
-    if(a.date!==b.date) return a.date.localeCompare(b.date);
-    return (a.start||'').localeCompare(b.start||'');
-  });
-  if(sinPisoData.length){
-    var sinPisoTotal=sinPisoData.reduce(function(s,r){return s+(r.hrs||0);},0);
-    h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128337; Detalle por fecha — sin piso</div><div class="card-sub">'+sinPisoData.length+' bloques — '+sinPisoTotal.toFixed(1)+' hrs</div></div></div>';
-    h+='<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Trabajador</th><th>Entrada</th><th>Salida</th><th>Horas</th></tr></thead><tbody>';
-    sinPisoData.forEach(function(r){
-      h+='<tr><td style="font-weight:600">'+fmtDate(r.date)+'</td><td>'+r.user+'</td><td>'+(r.start||'—')+'</td><td>'+(r.end||'—')+'</td><td><b>'+(r.hrs||0).toFixed(2)+'</b> hrs</td></tr>';
-    });
-    h+='</tbody></table></div></div>';
-  }
 
   // By worker table
   h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128101; Por trabajador</div></div></div>';
@@ -3073,6 +3036,23 @@ function exportPDF(){
     unclP.forEach(function(n){var pct=total>0?Math.round(byNeg[n]/total*100):0;html+='<tr><td style="padding-left:14px"><b>'+n+'</b></td><td>'+byNeg[n].toFixed(1)+' hrs</td><td>'+pct+'%</td></tr>';});
   }
   html+='</tbody></table></div></div>';
+
+  // DETALLE DIARIO POR TRABAJADOR
+  html+='<div class="section" style="page-break-before:always">Detalle diario por trabajador</div>';
+  Object.keys(byWorker).sort(function(a,b){return byWorker[b]-byWorker[a];}).forEach(function(w){
+    var wdata=data.filter(function(r){return r.user===w;}).sort(function(a,b){
+      if(a.date!==b.date) return a.date.localeCompare(b.date);
+      return (a.start||'').localeCompare(b.start||'');
+    });
+    html+='<div style="margin-bottom:14px;page-break-inside:avoid">';
+    html+='<div style="font-size:11px;font-weight:700;color:#333;background:#F0EEFF;padding:6px 10px;border-left:3px solid #7366FF">'+w+' &nbsp;·&nbsp; '+byWorker[w].toFixed(1)+' hrs &nbsp;·&nbsp; '+wdata.length+' registros</div>';
+    html+='<table><thead><tr><th>Fecha</th><th>Negocio</th><th>Entrada</th><th>Salida</th><th>Horas</th><th>Estado</th></tr></thead><tbody>';
+    wdata.forEach(function(r){
+      var estLbl=r.status==='ok'?'<span class="ok">Cuadra</span>':r.status==='pending'?'<span class="warn">Pendiente</span>':r.status==='mismatch'?'<span class="bad">Conflicto</span>':'Admin';
+      html+='<tr><td>'+fmtDate(r.date)+'</td><td>'+(r.negocio||'<i>Sin piso</i>')+'</td><td>'+(r.start||'—')+'</td><td>'+(r.end||'—')+'</td><td><b>'+(r.hrs||0).toFixed(2)+'</b></td><td style="font-size:9px">'+estLbl+'</td></tr>';
+    });
+    html+='</tbody></table></div>';
+  });
 
   // CONTROL CIRCUITO
   if(circData.length>0||eventoData.length>0){
