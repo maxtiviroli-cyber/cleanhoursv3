@@ -4734,45 +4734,57 @@ function getNomFormData(){
 function buildNominaHTML(d){
   var cfg=getCfg();
   var empresa=(cfg.empresaNombre)||'SERVAP TURISTICS';
+  var mesosCat=['','Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
+  var mesCat=mesosCat[parseInt(d.mes)]||d.mesNombre;
+
   var html='<html><head><meta charset="UTF-8"><style>';
-  html+='*{box-sizing:border-box;margin:0;padding:0}@page{size:A4;margin:18mm}';
+  html+='*{box-sizing:border-box;margin:0;padding:0}@page{size:A4;margin:20mm}';
   html+='body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#1A1A1A}';
-  html+='.title{font-size:16px;font-weight:800;text-align:center;margin-bottom:4px}';
-  html+='.subtitle{font-size:11px;text-align:center;color:#555;margin-bottom:20px}';
-  html+='.meta{margin-bottom:16px;line-height:1.9}';
-  html+='.meta b{display:inline-block;width:170px}';
-  html+='table{width:100%;border-collapse:collapse;margin:16px 0}';
-  html+='th{background:#F0F0F0;text-align:left;padding:8px 10px;font-size:11px;border:1px solid #CCC}';
-  html+='td{padding:8px 10px;border:1px solid #CCC;font-size:12px}';
+  html+='.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #2C5F2D;padding-bottom:10px;margin-bottom:18px}';
+  html+='.top-title{font-size:18px;font-weight:800;color:#2C5F2D;letter-spacing:.01em}';
+  html+='.top-empresa{font-size:12px;font-weight:700;text-align:right}';
+  html+='.two-col{display:flex;gap:24px;margin-bottom:14px}';
+  html+='.box{flex:1;border:1px solid #DDD;border-radius:6px;padding:10px 14px}';
+  html+='.box-label{font-size:9px;font-weight:700;color:#2C5F2D;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}';
+  html+='.box-row{font-size:12px;line-height:1.7}';
+  html+='.box-row b{color:#555;font-weight:600}';
+  html+='.periode{font-size:12px;margin:4px 0 18px;padding:8px 14px;background:#F0F5F0;border-radius:6px;display:inline-block}';
+  html+='table{width:100%;border-collapse:collapse;margin:10px 0 6px}';
+  html+='th{background:#2C5F2D;color:#fff;text-align:left;padding:8px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.04em}';
+  html+='td{padding:8px 10px;border-bottom:1px solid #E5E5E5;font-size:12px}';
   html+='.right{text-align:right}';
-  html+='.total-row td{font-weight:800;font-size:13px;background:#FAFAFA}';
-  html+='.otros{margin-top:16px;font-size:12px;line-height:1.8}';
-  html+='.firmas{display:flex;justify-content:space-between;margin-top:60px}';
+  html+='.total-row td{font-weight:800;font-size:13px;background:#F0F5F0;border-top:2px solid #2C5F2D;border-bottom:none}';
+  html+='.otros{margin-top:14px;font-size:11px;line-height:1.8;color:#444}';
+  html+='.firmes{display:flex;justify-content:space-between;margin-top:110px}';
   html+='.firma{width:45%;text-align:center;border-top:1px solid #333;padding-top:6px;font-size:11px}';
   html+='</style></head><body>';
-  html+='<div class="title">Nomina de Salario - '+d.mesNombre.toUpperCase()+' '+d.anio+'</div>';
-  html+='<div class="meta">';
-  html+='<div><b>Empresa:</b> '+empresa+'</div>';
-  html+='<div><b>Nombre trabajadora:</b> '+d.trabajador+'</div>';
-  html+='<div><b>NIA:</b> '+(d.nia||'—')+'</div>';
-  html+='<div><b>Periodo:</b> 01/'+d.mes+'/'+d.anio+' al '+d.ultimoDia+'/'+d.mes+'/'+d.anio+'</div>';
-  html+='<div><b>Jornada:</b> '+d.jornada+'</div>';
-  html+='<div><b>Tipo de contrato:</b> '+d.contrato+'</div>';
-  html+='</div>';
-  html+='<table><thead><tr><th>Concepto</th><th class="right">Importe (€)</th></tr></thead><tbody>';
-  html+='<tr><td>Salario Bruto</td><td class="right">'+fmt2(d.bruto)+'</td></tr>';
-  html+='<tr><td>Descuento '+d.ssPct+'% Seguridad Social</td><td class="right">-'+fmt2(d.ssMonto)+'</td></tr>';
-  if(d.anticipo>0)html+='<tr><td>Anticipo</td><td class="right">-'+fmt2(d.anticipo)+'</td></tr>';
-  if(d.otrosDesc>0)html+='<tr><td>Otros descuentos</td><td class="right">-'+fmt2(d.otrosDesc)+'</td></tr>';
-  html+='<tr class="total-row"><td>Salario Neto a percibir</td><td class="right">'+fmt2(d.neto)+'</td></tr>';
+
+  html+='<div class="top"><div class="top-title">N&ograve;mina de salari</div><div class="top-empresa">'+empresa+'</div></div>';
+
+  html+='<div class="two-col">';
+  html+='<div class="box"><div class="box-label">Treballadora</div>';
+  html+='<div class="box-row"><b>Nom:</b> '+d.trabajador+'</div>';
+  html+='<div class="box-row"><b>NIA:</b> '+(d.nia||'—')+'</div>';
+  html+='</div></div>';
+
+  html+='<div class="periode">P&egrave;riode: <b>'+mesCat+' '+d.anio+'</b></div>';
+
+  html+='<table><thead><tr><th>Concepte</th><th class="right">Import (&euro;)</th></tr></thead><tbody>';
+  html+='<tr><td>Salari brut</td><td class="right">'+fmt2(d.bruto)+'</td></tr>';
+  html+='<tr><td>Descompte '+d.ssPct+'% Seguretat Social</td><td class="right">-'+fmt2(d.ssMonto)+'</td></tr>';
+  if(d.anticipo>0)html+='<tr><td>Bestreta</td><td class="right">-'+fmt2(d.anticipo)+'</td></tr>';
+  if(d.otrosDesc>0)html+='<tr><td>Altres descomptes</td><td class="right">-'+fmt2(d.otrosDesc)+'</td></tr>';
+  html+='<tr class="total-row"><td>Salari net a percebre</td><td class="right">'+fmt2(d.neto)+'</td></tr>';
   html+='</tbody></table>';
+
   if(d.permiso>0||d.vacaciones>0){
-    html+='<div class="otros"><b>Otros conceptos:</b><br>';
-    if(d.permiso>0)html+='Permiso retribuido pagado '+d.permiso+' dias<br>';
-    if(d.vacaciones>0)html+='Vacaciones generadas '+d.vacaciones+' dias<br>';
+    html+='<div class="otros"><b>Altres conceptes:</b><br>';
+    if(d.permiso>0)html+='Perm&iacute;s retribu&iuml;t pagat: '+d.permiso+' dies<br>';
+    if(d.vacaciones>0)html+='Vacances generades: '+d.vacaciones+' dies<br>';
     html+='</div>';
   }
-  html+='<div class="firmas"><div class="firma">Firma Empresa</div><div class="firma">Firma Trabajadora</div></div>';
+
+  html+='<div class="firmes"><div class="firma">Signatura de l\'empresa</div><div class="firma">Signatura de la treballadora</div></div>';
   html+='</body></html>';
   return html;
 }
