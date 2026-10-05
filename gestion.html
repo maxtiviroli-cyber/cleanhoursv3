@@ -608,9 +608,13 @@ tbody tr:hover{background:#F8F9FC}
             <div><label>Admin</label><select id="a-admin"></select></div>
             <div><label>Trabajador</label><select id="a-user"></select></div>
           </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 10px;background:#F8F9FC;border-radius:var(--radius)">
+            <input type="checkbox" id="a-sin-piso" onchange="toggleSinPiso()" style="width:16px;height:16px">
+            <label for="a-sin-piso" style="margin:0;font-size:12px;font-weight:600;cursor:pointer">Registrar sin piso — solo entrada y salida</label>
+          </div>
           <div class="form-grid">
             <div><label>Fecha</label><input type="date" id="a-date"></div>
-            <div><label>Negocio</label><select id="a-negocio"></select></div>
+            <div id="a-negocio-wrap"><label>Negocio</label><select id="a-negocio"></select></div>
           </div>
           <div class="form-grid">
             <div><label>Inicio</label><input type="time" id="a-start" onchange="calcPill('a')" style="font-size:17px;font-weight:600;text-align:center"></div>
@@ -1266,7 +1270,7 @@ async function loadFromSupabase(){
     if(recs.length > 0){
       records = recs.map(function(r){
         return {
-          id:r.id, date:r.fecha, user:r.user_name, negocio:r.negocio,
+          id:r.id, date:r.fecha, user:r.user_name, negocio:r.negocio||'',
           start:r.start_time, end:r.end_time, hrs:parseFloat(r.hrs)||0,
           obs:r.obs||'', admin:r.admin_name||'', adminHrs:parseFloat(r.admin_hrs)||null,
           status:r.status||'pending', accion:r.accion||''
@@ -1563,13 +1567,30 @@ function submitWorker(){
   document.getElementById('w-obs').value=''; setPendBadge();
   toast('Enviado - pendiente confirmacion del admin');
 }
+function toggleSinPiso(){
+  var checked=document.getElementById('a-sin-piso').checked;
+  document.getElementById('a-negocio-wrap').style.display=checked?'none':'block';
+}
 function submitAdmin(){
   var admin=document.getElementById('a-admin').value, user=document.getElementById('a-user').value;
-  var date=document.getElementById('a-date').value, neg=document.getElementById('a-negocio').value;
+  var date=document.getElementById('a-date').value;
+  var sinPiso=document.getElementById('a-sin-piso').checked;
+  var neg=sinPiso?'':document.getElementById('a-negocio').value;
   var s=document.getElementById('a-start').value, e=document.getElementById('a-end').value;
   var obs=document.getElementById('a-obs').value.trim();
   if(!date) return toast('Selecciona una fecha');
   var hrs=calcHrs(s,e); if(hrs<=0) return toast('Termino debe ser posterior al inicio');
+  if(sinPiso){
+    // Registro sin piso — siempre es una entrada nueva del admin (los
+    // trabajadores no pueden registrar sin piso, no hay pendiente que cuadrar).
+    var rec2={id:getNextId(),date:date,negocio:'',start:s,end:e,hrs:hrs,user:user,obs:obs,adminHrs:hrs,admin:admin,status:'admin-only'};
+    records.push(rec2); sheet(rec2); saveRecToSupa(rec2);
+    addMsg('Registro admin sin piso - '+admin+'<br>'+user+'<br>'+fmtHrs(hrs),admin,'in',true);
+    toast('Registro sin piso guardado');
+    saveRec(); setPendBadge(); document.getElementById('a-obs').value='';
+    document.getElementById('a-sin-piso').checked=false; toggleSinPiso();
+    return;
+  }
   var p=null;
   for(var i=0;i<records.length;i++){if(records[i].date===date&&records[i].negocio===neg&&records[i].user===user&&records[i].status==='pending'){p=records[i];break;}}
   if(p){
@@ -1730,6 +1751,8 @@ function editRec(idx){
   // Populate negocio select
   var nu=document.getElementById('edit-rec-negocio');
   nu.innerHTML=''; var allN=[];
+  var oSin=document.createElement('option'); oSin.value=''; oSin.textContent='— Sin piso —';
+  if(!r.negocio) oSin.selected=true; nu.appendChild(oSin);
   Object.keys(cfg.grupos).forEach(function(g){allN=allN.concat(cfg.grupos[g]);});
   allN.sort().forEach(function(n){
     var o=document.createElement('option'); o.value=n; o.textContent=n;
@@ -1770,7 +1793,7 @@ function saveEditRec(){
   var newEnd=document.getElementById('edit-rec-end').value;
   var newObs=document.getElementById('edit-rec-obs').value;
   var newStatus=document.getElementById('edit-rec-status').value;
-  if(!newDate||!newUser||!newNeg) return toast('Rellena los campos obligatorios');
+  if(!newDate||!newUser) return toast('Rellena los campos obligatorios');
   var newHrs=r.hrs;
   if(newStart&&newEnd){
     var sp=newStart.split(':'),ep=newEnd.split(':');
@@ -1857,7 +1880,7 @@ function renderAudit(){
     var rbg=r.status==='mismatch'?'rgba(243,139,168,0.08)':r.status==='pending'?'rgba(249,226,175,0.05)':'';
     h+='<tr style="background:'+rbg+'">';
     h+='<td style="color:#A6E3A1;white-space:nowrap">'+fmtDate(r.date)+'</td>';
-    h+='<td style="color:#CBA6F7;font-weight:600">'+r.negocio+'</td>';
+    h+='<td style="color:#CBA6F7;font-weight:600">'+(r.negocio||'<i style="opacity:.7">Sin piso</i>')+'</td>';
     h+='<td style="color:#CDD6F4">'+r.user+'</td>';
     h+='<td style="color:#FAB387;font-family:\'DM Mono\',monospace">'+wc+'</td>';
     h+='<td style="color:#F9E2AF;font-family:\'DM Mono\',monospace">'+ac+'</td>';
@@ -1932,6 +1955,7 @@ function renderDashboard(){
     if(negToGroup[normNeg(recNeg)]) return negToGroup[normNeg(recNeg)];
     // Try partial match
     var rn=normNeg(recNeg);
+    if(!rn) return null; // registro sin piso: no pertenece a ningún piso
     var keys=Object.keys(negToGroup);
     for(var i=0;i<keys.length;i++){
       if(keys[i].indexOf(rn)>=0||rn.indexOf(keys[i])>=0) return negToGroup[keys[i]];
@@ -1967,7 +1991,7 @@ function renderDashboard(){
   });
   // Negocios sin clasificar (no estan en ningun grupo) — garantiza cuadratura
   var unclassified={};
-  data.forEach(function(r){if(!matchNeg(r.negocio)&&r.hrs>0) unclassified[r.negocio]=(unclassified[r.negocio]||0)+r.hrs;});
+  data.forEach(function(r){if(r.negocio&&!matchNeg(r.negocio)&&r.hrs>0) unclassified[r.negocio]=(unclassified[r.negocio]||0)+r.hrs;});
   if(Object.keys(unclassified).length>0){
     var uc=Object.keys(unclassified).reduce(function(s,n){return s+unclassified[n];},0);
     ph+='<div style="margin-bottom:20px">';
@@ -1985,6 +2009,16 @@ function renderDashboard(){
       ph+='<div style="font-size:9px;color:#F59E0B;margin-top:4px">Ver en auditoría →</div>';
       ph+='</div>';
     });
+    ph+='</div></div>';
+  }
+  // Horas registradas sin piso (solo entrada/salida) — bloque propio para que el total cuadre
+  var sinPisoHrs=data.reduce(function(s,r){return s+(!r.negocio?(parseFloat(r.hrs)||0):0);},0);
+  if(sinPisoHrs>0){
+    ph+='<div style="margin-bottom:20px">';
+    ph+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #CBD5E1">';
+    ph+='<div style="width:10px;height:10px;border-radius:3px;background:#94A3B8"></div>';
+    ph+='<b style="font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:#475569">Sin piso</b>';
+    ph+='<span style="margin-left:auto;background:#F1F5F9;color:#475569;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">'+sinPisoHrs.toFixed(1)+' hrs</span>';
     ph+='</div></div>';
   }
   document.getElementById('dash-pisos').innerHTML=ph||'<p style="color:#999;font-size:13px">Sin datos</p>';
@@ -2725,9 +2759,9 @@ function renderInforme(){
   var cfg=getCfg();
   var byWorker={};
   data.forEach(function(r){byWorker[r.user]=(byWorker[r.user]||0)+(r.hrs||0);});
-  // By negocio
+  // By negocio (excluye registros sin piso, que tienen su propia sección)
   var byNeg={};
-  data.forEach(function(r){byNeg[r.negocio]=(byNeg[r.negocio]||0)+(r.hrs||0);});
+  data.forEach(function(r){ if(r.negocio) byNeg[r.negocio]=(byNeg[r.negocio]||0)+(r.hrs||0); });
 
   var h='';
 
@@ -2742,6 +2776,21 @@ function renderInforme(){
   h+='<div class="kpi warning"><div class="kpi-icon">&#8987;</div><div class="kpi-value">'+pend+'</div><div class="kpi-label">Pendientes</div></div>';
   h+='<div class="kpi secondary"><div class="kpi-icon">&#128197;</div><div class="kpi-value">'+infUniqD+'</div><div class="kpi-label">Dias del mes</div></div>';
   h+='</div>';
+
+  // Detalle por fecha — registros sin piso (solo entrada/salida, cada bloque aparte)
+  var sinPisoData=data.filter(function(r){return !r.negocio;}).sort(function(a,b){
+    if(a.date!==b.date) return a.date.localeCompare(b.date);
+    return (a.start||'').localeCompare(b.start||'');
+  });
+  if(sinPisoData.length){
+    var sinPisoTotal=sinPisoData.reduce(function(s,r){return s+(parseFloat(r.hrs)||0);},0);
+    h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128337; Detalle por fecha — sin piso</div><div class="card-sub">'+sinPisoData.length+' bloques — '+sinPisoTotal.toFixed(1)+' hrs</div></div></div>';
+    h+='<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Trabajador</th><th>Entrada</th><th>Salida</th><th>Horas</th></tr></thead><tbody>';
+    sinPisoData.forEach(function(r){
+      h+='<tr><td style="font-weight:600">'+fmtDate(r.date)+'</td><td>'+r.user+'</td><td>'+(r.start||'—')+'</td><td>'+(r.end||'—')+'</td><td><b>'+(parseFloat(r.hrs)||0).toFixed(2)+'</b> hrs</td></tr>';
+    });
+    h+='</tbody></table></div></div>';
+  }
 
   // By worker table
   h+='<div class="card" style="margin-bottom:16px"><div class="card-header colored"><div><div class="card-title">&#128101; Por trabajador</div></div></div>';
@@ -2919,7 +2968,7 @@ function renderInforme(){
   h+='<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Trabajador</th><th>Negocio</th><th>Horas</th><th>Estado</th></tr></thead><tbody>';
   data.sort(function(a,b){return a.date.localeCompare(b.date);}).forEach(function(r){
     var badge=r.status==='ok'?'<span class="badge badge-ok">Cuadra</span>':r.status==='pending'?'<span class="badge badge-pending">Pendiente</span>':'<span class="badge badge-mismatch">Conflicto</span>';
-    h+='<tr><td>'+fmtDate(r.date)+'</td><td>'+r.user+'</td><td>'+r.negocio+'</td><td><b>'+fmtHrs(r.hrs||0)+'</b></td><td>'+badge+'</td></tr>';
+    h+='<tr><td>'+fmtDate(r.date)+'</td><td>'+r.user+'</td><td>'+(r.negocio||'<i>Sin piso</i>')+'</td><td><b>'+fmtHrs(r.hrs||0)+'</b></td><td>'+badge+'</td></tr>';
   });
   h+='</tbody></table></div></div>';
 
@@ -2934,7 +2983,7 @@ function exportPDF(){
   var pend=data.filter(function(r){return r.status==='pending';}).length;
   var byWorker={},byNeg={};
   data.forEach(function(r){byWorker[r.user]=(byWorker[r.user]||0)+(r.hrs||0);});
-  data.forEach(function(r){byNeg[r.negocio]=(byNeg[r.negocio]||0)+(r.hrs||0);});
+  data.forEach(function(r){ if(r.negocio) byNeg[r.negocio]=(byNeg[r.negocio]||0)+(r.hrs||0); });
   var mLabel=document.getElementById('inf-month').options[document.getElementById('inf-month').selectedIndex].text;
   var wLabel=document.getElementById('inf-worker').value==='all'?'Todos':document.getElementById('inf-worker').value;
   var nLabel=document.getElementById('inf-negocio').value==='all'?'Todos':document.getElementById('inf-negocio').value;
