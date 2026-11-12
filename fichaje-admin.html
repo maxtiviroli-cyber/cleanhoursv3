@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Servap · Fichajes (administración)</title>
+<meta name="theme-color" content="#1E1E2E">
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon-fichaje-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#1E1E2E;--mantle:#181825;--crust:#11111B;--s0:#313244;--s1:#45475A;--s2:#585B70;
+  --text:#CDD6F4;--sub:#A6ADC8;--muted:#7F849C;
+  --green:#A6E3A1;--red:#F38BA8;--yellow:#F9E2AF;--peach:#FAB387;--mauve:#CBA6F7;--blue:#89B4FA;--teal:#94E2D5;
+  --mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--base);color:var(--text);font-family:var(--sans);font-size:15px}
+button,input,select{font-family:inherit;font-size:15px;color:inherit}
+button{cursor:pointer}
+a{color:var(--blue)}
+.oculto{display:none!important}
+
+/* Login */
+#login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-caja{width:100%;max-width:380px;background:var(--mantle);border:1px solid var(--s0);border-radius:16px;padding:28px 22px}
+.marca{font-family:var(--mono);font-size:13px;letter-spacing:2px;color:var(--mauve);text-transform:uppercase}
+.login-caja h1{font-size:24px;margin:6px 0 20px}
+label.campo{display:block;font-size:13px;color:var(--sub);margin:12px 0 5px}
+.inp,select.inp{width:100%;height:44px;border-radius:10px;border:1px solid var(--s1);background:var(--base);padding:0 12px;outline:none}
+.inp:focus{border-color:var(--mauve)}
+.btn{height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--s1);background:var(--s0);font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--s2)}
+.btn.pri{background:var(--mauve);border-color:var(--mauve);color:var(--crust)}
+.btn.verde{background:var(--green);border-color:var(--green);color:var(--crust)}
+.btn.rojo{background:transparent;border-color:var(--red);color:var(--red)}
+.btn.peq{height:32px;padding:0 10px;font-size:13px;border-radius:8px}
+.btn.ancho{width:100%}
+.err{color:var(--red);font-size:14px;min-height:20px;margin-top:10px}
+
+/* Estructura */
+header{position:sticky;top:0;z-index:20;background:var(--crust);border-bottom:1px solid var(--s0);padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header .tit{font-weight:700;font-size:17px}
+header .usuario{margin-left:auto;font-size:13px;color:var(--sub);display:flex;align-items:center;gap:10px}
+nav.tabs{display:flex;gap:6px;background:var(--mantle);padding:8px 16px;border-bottom:1px solid var(--s0);position:sticky;top:57px;z-index:19;overflow-x:auto}
+nav.tabs button{height:38px;padding:0 16px;border-radius:9px;border:1px solid transparent;background:none;font-weight:600;color:var(--sub);white-space:nowrap}
+nav.tabs button.on{background:var(--s0);border-color:var(--s1);color:var(--text)}
+main{padding:16px;max-width:1400px;margin:0 auto}
+.panel{display:none}.panel.on{display:block}
+.ayuda{font-size:13px;color:var(--sub);line-height:1.5;margin-bottom:14px}
+
+/* Filtros y tarjetas */
+.filtros{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px}
+.filtros > div{display:flex;flex-direction:column;gap:4px}
+.filtros label{font-size:12px;color:var(--sub)}
+.filtros .inp{height:38px;min-width:140px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--mantle);border:1px solid var(--s0);border-radius:12px;padding:12px 14px}
+.kpi .n{font-family:var(--mono);font-size:28px;font-weight:500}
+.kpi .l{font-size:12px;color:var(--sub);margin-top:2px}
+.kpi.k-blue .n{color:var(--blue)}.kpi.k-peach .n{color:var(--peach)}.kpi.k-yellow .n{color:var(--yellow)}.kpi.k-red .n{color:var(--red)}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.caja{background:var(--mantle);border:1px solid var(--s0);border-radius:12px;padding:14px;margin-bottom:14px}
+.caja h3{font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ahora{display:flex;flex-wrap:wrap;gap:10px}
+.ahora .p{background:var(--base);border:1px solid var(--s1);border-radius:10px;padding:10px 12px;min-width:220px;flex:1 1 220px}
+.ahora .p b{font-size:15px}
+.ahora .p .t{font-family:var(--mono);color:var(--peach);font-size:20px;margin:4px 0}
+.ahora .p .l{font-size:13px;color:var(--sub)}
+.barra{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.barra .der{margin-left:auto}
+
+/* Tabla estilo terminal */
+.tabla-wrap{overflow-x:auto;border:1px solid var(--s0);border-radius:12px;background:var(--crust)}
+table.term{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;min-width:920px}
+table.term th{text-align:left;font-weight:500;color:var(--muted);padding:10px;border-bottom:1px solid var(--s0);white-space:nowrap;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+table.term td{padding:9px 10px;border-bottom:1px solid #232336;vertical-align:top}
+table.term tr.sub td{background:var(--mantle);color:var(--sub);font-size:12px;padding:6px 10px}
+table.term tr.sub td b{color:var(--green)}
+table.term .c-fecha{color:var(--green);white-space:nowrap}
+table.term .c-pers{color:var(--text);font-family:var(--sans);font-weight:600;white-space:nowrap}
+table.term .c-hora{color:var(--peach);white-space:nowrap}
+table.term .c-h{color:var(--yellow);white-space:nowrap;text-align:right}
+table.term .acc{white-space:nowrap;text-align:right}
+table.term .acc .btn{margin-left:4px}
+.lug{display:inline-flex;align-items:center;gap:5px;margin:0 8px 3px 0;color:var(--mauve);white-space:nowrap}
+.bd{display:inline-block;font-family:var(--sans);font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap;border:1px solid}
+.bd.verde{color:var(--green);border-color:rgba(166,227,161,.4);background:rgba(166,227,161,.08)}
+.bd.rojo{color:var(--red);border-color:rgba(243,139,168,.45);background:rgba(243,139,168,.08)}
+.bd.amar{color:var(--yellow);border-color:rgba(249,226,175,.4);background:rgba(249,226,175,.08)}
+.bd.naranja{color:var(--peach);border-color:rgba(250,179,135,.45);background:rgba(250,179,135,.08)}
+.bd.azul{color:var(--blue);border-color:rgba(137,180,250,.45);background:rgba(137,180,250,.08)}
+.bd.gris{color:var(--muted);border-color:var(--s1)}
+.vacio{padding:26px;text-align:center;color:var(--sub);font-family:var(--sans)}
+
+/* Personal y lugares */
+.lista td,.lista th{font-family:var(--sans)}
+.sector{background:var(--mantle);border:1px solid var(--s0);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.sector-cab{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--s0);flex-wrap:wrap}
+.sector-cab .nom{font-weight:700;font-size:16px;margin-right:auto}
+.fila-lugar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--s0);flex-wrap:wrap}
+.fila-lugar .nom{font-weight:600;min-width:140px}
+.fila-lugar .info{font-size:13px;color:var(--sub);margin-right:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.flechas{display:inline-flex;gap:4px}
+.flechas .btn{width:32px;padding:0}
+.fila-lugar.inactivo .nom,.sector.inactivo .sector-cab .nom{text-decoration:line-through;color:var(--muted)}
+
+/* Ventana modal */
+.modal-fondo{position:fixed;inset:0;background:rgba(17,17,27,.82);display:none;align-items:flex-start;justify-content:center;padding:40px 14px;z-index:50;overflow-y:auto}
+.modal-fondo.on{display:flex}
+.modal{width:100%;max-width:520px;background:var(--base);border:1px solid var(--s1);border-radius:16px;padding:20px}
+.modal h2{font-size:19px;margin-bottom:4px}
+.modal .sub{font-size:13px;color:var(--sub);margin-bottom:14px;line-height:1.5}
+.modal .pie{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.reparto-fila{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--s0)}
+.reparto-fila .n{flex:1;font-weight:600}
+.reparto-fila input{width:110px;text-align:right;font-family:var(--mono)}
+.suma{font-family:var(--mono);margin-top:10px;font-size:14px}
+.check{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px}
+.check input{width:18px;height:18px}
+.nota{font-size:12px;color:var(--sub);margin-top:5px;line-height:1.45}
+.nota.aviso{color:var(--yellow)}
+.pin-grande{font-family:var(--mono);font-size:44px;letter-spacing:10px;text-align:center;color:var(--mauve);margin:10px 0}
+.gps-prec{font-family:var(--mono);font-size:34px;text-align:center;margin:10px 0 4px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--s0);border:1px solid var(--s2);color:var(--text);padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;display:none;max-width:90vw;text-align:center}
+#toast.on{display:block}
+#toast.error{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- ============ Entrada ============ -->
+<section id="login">
+  <form class="login-caja" id="form-login" autocomplete="on">
+    <div class="marca">Servap · Fichajes</div>
+    <h1>Administración</h1>
+    <label class="campo" for="l-user">Usuario</label>
+    <input class="inp" id="l-user" autocomplete="username" required>
+    <label class="campo" for="l-pass">Contraseña</label>
+    <input class="inp" id="l-pass" type="password" autocomplete="current-password" required>
+    <div class="err" id="l-err"></div>
+    <button class="btn pri ancho" type="submit" id="l-btn" style="margin-top:6px">Entrar</button>
+    <p class="nota" style="margin-top:14px">Usa el mismo usuario y contraseña que en Gestión. Solo pueden entrar administradores y supervisores.</p>
+  </form>
+</section>
+
+<!-- ============ Aplicación ============ -->
+<div id="app" class="oculto">
+  <header>
+    <span class="marca">Servap</span><span class="tit">Fichajes</span>
+    <div class="usuario"><span id="u-nombre"></span><button class="btn peq" id="btn-salir">Salir</button></div>
+  </header>
+  <nav class="tabs">
+    <button data-tab="tramos" class="on">Fichajes</button>
+    <button data-tab="personal">Personal</button>
+    <button data-tab="lugares">Sectores y lugares</button>
+  </nav>
+  <main>
+    <!-- ---------- Fichajes ---------- -->
+    <section class="panel on" id="p-tramos">
+      <div class="filtros">
+        <div><label for="f-desde">Desde</label><input class="inp" type="date" id="f-desde"></div>
+        <div><label for="f-hasta">Hasta</label><input class="inp" type="date" id="f-hasta"></div>
+        <div><label for="f-pers">Persona</label><select class="inp" id="f-pers"><option value="">Todas</option></select></div>
+        <div><label for="f-est">Estado</label><select class="inp" id="f-est">
+          <option value="">Todos</option>
+          <option value="revisar">Por repartir o validar</option>
+          <option value="abierto">Abiertos (trabajando)</option>
+          <option value="validado">Validados</option>
+          <option value="anulado">Anulados</option>
+        </select></div>
+        <div><button class="btn" id="f-act">Actualizar</button></div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="caja" id="caja-ahora"></div>
+      <div class="barra">
+        <span class="ayuda" style="margin:0">Al validar, las horas pasan a CleanHours (registros) como <b>pendientes</b>, igual que un registro normal.</span>
+        <button class="btn verde der" id="btn-val-todos">Validar los listos</button>
+      </div>
+      <div class="tabla-wrap" id="tabla-tramos"></div>
+    </section>
+
+    <!-- ---------- Personal ---------- -->
+    <section class="panel" id="p-personal">
+      <div class="barra">
+        <p class="ayuda" style="margin:0">Cada persona entra en el móvil con su nombre y un PIN. Si cambias el PIN, su móvil le pedirá el nuevo.</p>
+        <button class="btn pri der" id="btn-nueva-pers">+ Nueva persona</button>
+      </div>
+      <div class="tabla-wrap" id="tabla-personal"></div>
+    </section>
+
+    <!-- ---------- Sectores y lugares ---------- -->
+    <section class="panel" id="p-lugares">
+      <div class="barra">
+        <p class="ayuda" style="margin:0">Las flechas cambian el orden en que aparecen en el móvil. Para fijar las coordenadas, abre esta página <b>en el móvil estando en el piso</b> y pulsa «Fijar aquí».</p>
+        <div class="der" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="btn-nuevo-sector">+ Nuevo sector</button>
+          <button class="btn pri" id="btn-nuevo-lugar">+ Nuevo lugar</button>
+        </div>
+      </div>
+      <div id="lista-sectores"></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-fondo" id="modal-fondo"><div class="modal" id="modal"></div></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ================= Configuración ================= */
+var SB_URL = 'https://kellhcuvbvgofgiwbeka.supabase.co';
+var SB_KEY = 'sb_publishable_XybZM-ibMJr_rE2fxWKhnA_6XgnZnH9';
+var TZ = 'Europe/Andorra';
+var HORAS_OLVIDO = 12;   // un tramo abierto más de 12 h probablemente es una salida olvidada
+
+/* ================= Utilidades ================= */
+function $(id) { return document.getElementById(id); }
+function h(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+function r2(n) { return Math.round(n * 100) / 100; }
+function fmtH(n) { return num(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' h'; }
+function partes(ms) {
+  var o = {};
+  new Intl.DateTimeFormat('en-GB', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
+    .formatToParts(new Date(ms)).forEach(function (p) { o[p.type] = p.value; });
+  return o;
+}
+function hoyISO(desplDias) {
+  var o = partes(Date.now() + (desplDias || 0) * 86400000);
+  return o.year + '-' + o.month + '-' + o.day;
+}
+function fmtHora(iso) { if (!iso) return '—'; var o = partes(Date.parse(iso)); return o.hour + ':' + o.minute; }
+function fmtFecha(f) {   // 'YYYY-MM-DD' → 'jue 12/11'
+  var d = new Date(f + 'T12:00:00Z');
+  return d.toLocaleDateString('es-ES', { weekday: 'short', timeZone: 'UTC' }).replace('.', '') + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7);
+}
+function fmtFechaHora(iso) { var o = partes(Date.parse(iso)); return o.day + '/' + o.month + ' ' + o.hour + ':' + o.minute; }
+function fmtDur(ms) { if (ms < 0) ms = 0; var m = Math.floor(ms / 60000); return Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min'; }
+function aInput(iso) { if (!iso) return ''; var o = partes(Date.parse(iso)); return o.year + '-' + o.month + '-' + o.day + 'T' + o.hour + ':' + o.minute; }
+function deInput(txt) {   // 'YYYY-MM-DDTHH:MM' (hora de Andorra) → ISO
+  if (!txt) return null;
+  var p = txt.split('T'), d = p[0].split('-').map(Number), t = p[1].split(':').map(Number);
+  var guess = Date.UTC(d[0], d[1] - 1, d[2], t[0], t[1]);
+  var ms = guess;
+  for (var i = 0; i < 2; i++) {
+    var o = partes(ms);
+    var off = Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour, +o.minute, +o.second) - ms;
+    ms = guess - off;
+  }
+  return new Date(ms).toISOString();
+}
+function mapa(lat, lng) { return 'https://www.google.com/maps?q=' + lat + ',' + lng; }
+
+var toastT;
+function toast(msg, error) {
+  var t = $('toast'); t.textContent = msg; t.className = 'on' + (error ? ' error' : '');
+  clearTimeout(toastT); toastT = setTimeout(function () { t.className = ''; }, error ? 6000 : 3500);
+}
+
+/* ================= Conexión ================= */
+var CRED = null;
+try { CRED = JSON.parse(sessionStorage.getItem('fa_cred')); } catch (e) {}
+var ERRORES = {
+  admin_no_autorizado: 'Usuario o contraseña incorrectos, o sin permiso de administrador.',
+  pin_formato: 'El PIN debe tener entre 4 y 6 números.',
+  motivo_obligatorio: 'Escribe el motivo de la corrección.',
+  ya_validado: 'Ese tramo ya está validado y no se puede corregir.',
+  salida_antes_de_entrada: 'La salida debe ser posterior a la entrada.',
+  entrada_obligatoria: 'Falta la hora de entrada.',
+  estado_no_validable: 'Ese tramo no se puede validar en su estado actual.',
+  reparto_incompleto: 'Falta asignar horas a algún lugar.',
+  reparto_sin_horas: 'Asigna horas al menos a un lugar.',
+  coords_invalidas: 'Coordenadas no válidas.',
+  lugar_no_encontrado: 'Lugar no encontrado.',
+  sector_no_encontrado: 'Sector no encontrado.',
+  tramo_no_encontrado: 'Tramo no encontrado.',
+  tipo_invalido: 'Operación no válida.'
+};
+function textoError(e) {
+  if (!e) return 'Error desconocido';
+  if (e.tipo === 'red') return 'Sin conexión con la base de datos. Inténtalo de nuevo.';
+  if (ERRORES[e.codigo]) return ERRORES[e.codigo];
+  if (/duplicate key/.test(e.codigo || '')) return 'Ya existe uno con ese nombre.';
+  return 'Error: ' + e.codigo;
+}
+function rpc(fn, args) {
+  return fetch(SB_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY },
+    body: JSON.stringify(args || {})
+  }).then(function (res) {
+    return res.text().then(function (txt) {
+      var body = null; try { body = txt ? JSON.parse(txt) : null; } catch (e) {}
+      if (res.ok) return body;
+      throw { tipo: 'servidor', codigo: (body && body.message) || ('HTTP ' + res.status) };
+    });
+  }, function () { throw { tipo: 'red' }; });
+}
+function adm(fn, args) {   // llamada de administración con usuario y contraseña
+  var a = Object.assign({ p_user: CRED.user, p_pass: CRED.pass }, args || {});
+  return rpc(fn, a).catch(function (e) {
+    if (e.codigo === 'admin_no_autorizado') { cerrarSesion(); toast('La sesión ya no es válida. Vuelve a entrar.', true); }
+    throw e;
+  });
+}
+function leerConfigCleanHours() {   // nombres de trabajadoras y pisos de Gestión (solo para avisar de diferencias)
+  return fetch(SB_URL + '/rest/v1/config?select=key,value', {
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }, cache: 'no-store'
+  }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+    var c = {};
+    (rows || []).forEach(function (r) { try { c[r.key] = typeof r.value === 'string' ? JSON.parse(r.value) : r.value; } catch (e) {} });
+    var pisos = [];
+    if (c.grupos && typeof c.grupos === 'object') Object.keys(c.grupos).forEach(function (g) { (c.grupos[g] || []).forEach(function (p) { pisos.push(p); }); });
+    CH.workers = Array.isArray(c.workers) ? c.workers : [];
+    CH.pisos = pisos;
+    CH.cargado = CH.workers.length > 0 || pisos.length > 0;
+  }).catch(function () {});
+}
+
+/* ================= Datos ================= */
+var EST = { sectores: [], personal: [] };
+var TRAMOS = [], ABIERTOS = [];
+var CH = { workers: [], pisos: [], cargado: false };
+function lugaresPlano() {
+  var out = [];
+  EST.sectores.forEach(function (s) { s.lugares.forEach(function (l) { out.push(Object.assign({ sector: s.nombre, sector_id: s.id }, l)); }); });
+  return out;
+}
+function lugarPorId(id) { return lugaresPlano().filter(function (l) { return l.id === id; })[0]; }
+function cargarEstructura() {
+  return adm('fichaje_admin_estructura').then(function (r) { EST.sectores = r.sectores || []; EST.personal = r.personal || []; });
+}
+
+/* ================= Sesión ================= */
+$('form-login').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  var u = $('l-user').value.trim(), p = $('l-pass').value;
+  $('l-err').textContent = ''; $('l-btn').disabled = true; $('l-btn').textContent = 'Comprobando…';
+  rpc('fichaje_admin_estructura', { p_user: u, p_pass: p }).then(function (r) {
+    CRED = { user: u, pass: p };
+    try { sessionStorage.setItem('fa_cred', JSON.stringify(CRED)); } catch (e) {}
+    EST.sectores = r.sectores || []; EST.personal = r.personal || [];
+    entrarApp();
+  }, function (e) {
+    $('l-err').textContent = textoError(e);
+  }).then(function () { $('l-btn').disabled = false; $('l-btn').textContent = 'Entrar'; });
+});
+function cerrarSesion() {
+  CRED = null; try { sessionStorage.removeItem('fa_cred'); } catch (e) {}
+  $('app').classList.add('oculto'); $('login').classList.remove('oculto'); $('l-pass').value = '';
+  cerrarModal();
+}
+$('btn-salir').onclick = cerrarSesion;
+function entrarApp() {
+  $('login').classList.add('oculto'); $('app').classList.remove('oculto');
+  $('u-nombre').textContent = CRED.user;
+  if (!$('f-desde').value) { $('f-desde').value = hoyISO(-6); $('f-hasta').value = hoyISO(0); }
+  leerConfigCleanHours().then(function () { pintarPersonal(); pintarLugares(); });
+  pintarPersonal(); pintarLugares(); rellenarFiltroPersonas(); cargarTramos();
+}
+
+/* ================= Pestañas ================= */
+document.querySelector('nav.tabs').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-tab]'); if (!b) return;
+  document.querySelectorAll('nav.tabs button').forEach(function (x) { x.classList.toggle('on', x === b); });
+  document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('on', p.id === 'p-' + b.getAttribute('data-tab')); });
+  var t = b.getAttribute('data-tab');
+  if (t === 'tramos') cargarTramos();
+  else cargarEstructura().then(t === 'personal' ? pintarPersonal : pintarLugares).catch(function (e) { toast(textoError(e), true); });
+});
+
+/* ================= Modal ================= */
+function abrirModal(html) { $('modal').innerHTML = html; $('modal-fondo').classList.add('on'); }
+function cerrarModal() { $('modal-fondo').classList.remove('on'); $('modal').innerHTML = ''; detenerGps(); }
+$('modal-fondo').addEventListener('click', function (ev) { if (ev.target === $('modal-fondo')) cerrarModal(); });
+function confirmar(titulo, texto, botonTxt, claseBtn) {
+  return new Promise(function (res) {
+    abrirModal('<h2>' + h(titulo) + '</h2><p class="sub">' + texto + '</p><div class="pie">' +
+      '<button class="btn" id="cf-no">Cancelar</button><button class="btn ' + (claseBtn || 'pri') + '" id="cf-si">' + h(botonTxt) + '</button></div>');
+    $('cf-no').onclick = function () { cerrarModal(); res(false); };
+    $('cf-si').onclick = function () { cerrarModal(); res(true); };
+  });
+}
+
+/* =====================================================================
+   FICHAJES (tramos)
+   ===================================================================== */
+function rellenarFiltroPersonas() {
+  var sel = $('f-pers'), v = sel.value;
+  sel.innerHTML = '<option value="">Todas</option>' + EST.personal.map(function (p) {
+    return '<option value="' + h(p.nombre) + '">' + h(p.nombre) + '</option>';
+  }).join('');
+  sel.value = v;
+}
+$('f-act').onclick = cargarTramos;
+['f-desde', 'f-hasta', 'f-pers', 'f-est'].forEach(function (id) { $(id).addEventListener('change', function () { id === 'f-pers' || id === 'f-est' ? pintarTramos() : cargarTramos(); }); });
+
+function cargarTramos() {
+  var d = $('f-desde').value, hh = $('f-hasta').value;
+  if (!d || !hh) return;
+  if (d > hh) return toast('La fecha «Desde» es posterior a «Hasta».', true);
+  $('tabla-tramos').innerHTML = '<div class="vacio">Cargando…</div>';
+  Promise.all([
+    adm('fichaje_admin_listar', { p_desde: d, p_hasta: hh }),
+    adm('fichaje_admin_listar', { p_desde: hoyISO(-45), p_hasta: hoyISO(1) })
+  ]).then(function (r) {
+    TRAMOS = r[0] || [];
+    ABIERTOS = (r[1] || []).filter(function (t) { return t.estado === 'abierto'; });
+    pintarTramos();
+  }).catch(function (e) { $('tabla-tramos').innerHTML = '<div class="vacio">' + h(textoError(e)) + '</div>'; });
+}
+function fueraDeZona(t) { return (t.lugares || []).some(function (l) { return l.fuera_zona === true; }); }
+function listoParaValidar(t) {
+  return t.estado === 'cerrado' && (t.lugares || []).length === 1 && t.lugares[0].horas_asignadas != null;
+}
+function filtrados() {
+  var pers = $('f-pers').value, est = $('f-est').value;
+  return TRAMOS.filter(function (t) {
+    if (pers && t.personal !== pers) return false;
+    if (est === 'revisar') return t.estado === 'cerrado' || t.estado === 'pendiente_reparto';
+    if (est) return t.estado === est;
+    return true;
+  });
+}
+var ESTADOS = {
+  abierto: ['azul', 'Trabajando'], cerrado: ['amar', 'Por validar'], pendiente_reparto: ['naranja', 'Por repartir'],
+  validado: ['verde', 'Validado'], anulado: ['gris', 'Anulado']
+};
+function badgeZona(l) {
+  if (l.fuera_zona === true) {
+    var d = Math.min(l.distancia_marcado_m == null ? Infinity : l.distancia_marcado_m, l.distancia_salida_m == null ? Infinity : l.distancia_salida_m);
+    return '<span class="bd rojo" title="Ninguna de sus ubicaciones cae dentro del radio del lugar">fuera de zona' + (isFinite(d) ? ' · ' + d + ' m' : '') + '</span>';
+  }
+  if (l.fuera_zona === false) return '<span class="bd verde">en zona</span>';
+  return '<span class="bd gris" title="El lugar aún no tiene coordenadas">sin coords</span>';
+}
+function pintarTramos() {
+  var lista = filtrados();
+  var porRepartir = TRAMOS.filter(function (t) { return t.estado === 'pendiente_reparto'; }).length;
+  var porValidar = TRAMOS.filter(function (t) { return t.estado === 'cerrado'; }).length;
+  var fuera = TRAMOS.filter(function (t) { return t.estado !== 'anulado' && fueraDeZona(t); }).length;
+  $('kpis').innerHTML =
+    '<div class="kpi k-blue"><div class="n">' + ABIERTOS.length + '</div><div class="l">Trabajando ahora</div></div>' +
+    '<div class="kpi k-peach"><div class="n">' + porRepartir + '</div><div class="l">Por repartir horas</div></div>' +
+    '<div class="kpi k-yellow"><div class="n">' + porValidar + '</div><div class="l">Por validar</div></div>' +
+    '<div class="kpi k-red"><div class="n">' + fuera + '</div><div class="l">Con fuera de zona</div></div>';
+
+  // Trabajando ahora
+  var ahora = Date.now();
+  $('caja-ahora').innerHTML = '<h3>Trabajando ahora <span class="bd azul">' + ABIERTOS.length + '</span></h3>' +
+    (ABIERTOS.length ? '<div class="ahora">' + ABIERTOS.map(function (t) {
+      var ms = ahora - Date.parse(t.entrada_ts), olvido = ms > HORAS_OLVIDO * 3600000;
+      return '<div class="p"><b>' + h(t.personal) + '</b> ' + (olvido ? '<span class="bd rojo">¿olvidó la salida?</span>' : '') +
+        '<div class="t">' + fmtDur(ms) + '</div>' +
+        '<div class="l">Desde ' + (t.fecha === hoyISO(0) ? fmtHora(t.entrada_ts) : fmtFechaHora(t.entrada_ts)) + ' · ' +
+        (t.lugares || []).map(function (l) { return h(l.nombre); }).join(', ') + '</div>' +
+        (olvido ? '<button class="btn peq" style="margin-top:8px" data-acc="corregir" data-id="' + h(t.id) + '" data-origen="ahora">Cerrar tramo</button>' : '') +
+        '</div>';
+    }).join('') + '</div>' : '<p class="ayuda" style="margin:0">Nadie tiene una entrada abierta.</p>');
+
+  var listos = TRAMOS.filter(listoParaValidar).length;
+  $('btn-val-todos').textContent = 'Validar los listos (' + listos + ')';
+  $('btn-val-todos').style.display = listos ? '' : 'none';
+
+  if (!lista.length) { $('tabla-tramos').innerHTML = '<div class="vacio">No hay fichajes en este periodo con estos filtros.</div>'; return; }
+
+  // Orden: fecha (reciente primero) → persona → hora de entrada
+  lista = lista.slice().sort(function (a, b) {
+    if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1;
+    if (a.personal !== b.personal) return a.personal.localeCompare(b.personal, 'es');
+    return Date.parse(a.entrada_ts) - Date.parse(b.entrada_ts);
+  });
+  var html = '<table class="term"><thead><tr><th>Fecha</th><th>Persona</th><th>Entrada</th><th>Salida</th><th style="text-align:right">Horas</th><th>Lugares</th><th>Estado</th><th></th></tr></thead><tbody>';
+  var i = 0;
+  while (i < lista.length) {
+    var grupo = [lista[i]], j = i + 1;
+    while (j < lista.length && lista[j].fecha === lista[i].fecha && lista[j].personal === lista[i].personal) { grupo.push(lista[j]); j++; }
+    grupo.forEach(function (t) { html += filaTramo(t); });
+    if (grupo.length > 1) {
+      var validos = grupo.filter(function (t) { return t.estado !== 'anulado' && t.horas != null; });
+      var tot = validos.reduce(function (s, t) { return s + num(t.horas); }, 0);
+      html += '<tr class="sub"><td colspan="8">Total del día · ' + h(grupo[0].personal) + ' · ' +
+        validos.map(function (t) { return fmtHora(t.entrada_ts) + '–' + fmtHora(t.salida_ts); }).join(' + ') +
+        ' = <b>' + fmtH(r2(tot)) + '</b></td></tr>';
+    }
+    i = j;
+  }
+  $('tabla-tramos').innerHTML = html + '</tbody></table>';
+}
+function filaTramo(t) {
+  var est = ESTADOS[t.estado] || ['gris', t.estado];
+  var varios = (t.lugares || []).length > 1;
+  var marcas = '';
+  if (t.entrada_offline || t.salida_offline) marcas += ' <span class="bd amar" title="Se fichó sin conexión y se envió después">sin señal</span>';
+  if (t.hora_sospechosa) marcas += ' <span class="bd rojo" title="La hora del móvil no cuadraba con la del servidor">hora dudosa</span>';
+  var lug = (t.lugares || []).map(function (l) {
+    return '<span class="lug">' + h(l.nombre) + ' ' + badgeZona(l) +
+      (varios && l.horas_asignadas != null ? ' <span style="color:var(--yellow)">' + fmtH(l.horas_asignadas) + '</span>' : '') + '</span>';
+  }).join('');
+  var acc = '';
+  if (t.estado === 'cerrado') acc = '<button class="btn peq verde" data-acc="validar" data-id="' + h(t.id) + '">Validar</button>';
+  if (t.estado === 'pendiente_reparto') acc = '<button class="btn peq pri" data-acc="repartir" data-id="' + h(t.id) + '">Repartir</button>';
+  if (t.estado === 'abierto' || t.estado === 'cerrado' || t.estado === 'pendiente_reparto')
+    acc += '<button class="btn peq" data-acc="corregir" data-id="' + h(t.id) + '">Corregir</button>';
+  if (t.estado === 'validado') acc = '<span class="bd verde" title="' + h('Validado por ' + (t.validado_por || '')) + '">en CleanHours</span>';
+  acc += ' <a class="btn peq" href="' + mapa(t.entrada_lat, t.entrada_lng) + '" target="_blank" rel="noopener" title="Ver en el mapa dónde fichó la entrada">Mapa</a>';
+  return '<tr><td class="c-fecha">' + fmtFecha(t.fecha) + '</td><td class="c-pers">' + h(t.personal) + '</td>' +
+    '<td class="c-hora">' + fmtHora(t.entrada_ts) + '</td><td class="c-hora">' + (t.salida_ts ? fmtHora(t.salida_ts) : '<span style="color:var(--blue)">en curso</span>') + '</td>' +
+    '<td class="c-h">' + (t.horas != null ? fmtH(t.horas) : '—') + '</td>' +
+    '<td>' + lug + marcas + '</td><td><span class="bd ' + est[0] + '">' + est[1] + '</span></td><td class="acc">' + acc + '</td></tr>';
+}
+function tramoPorId(id) { return TRAMOS.concat(ABIERTOS).filter(function (t) { return t.id === id; })[0]; }
+
+document.getElementById('p-tramos').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-acc]'); if (!b) return;
+  var t = tramoPorId(b.getAttribute('data-id')); if (!t) return;
+  var a = b.getAttribute('data-acc');
+  if (a === 'validar') validarUno(t);
+  else if (a === 'repartir') abrirReparto(t);
+  else if (a === 'corregir') abrirCorreccion(t);
+});
+
+function validarUno(t) {
+  var l = t.lugares[0];
+  confirmar('Validar tramo', h(t.personal) + ' · ' + fmtFecha(t.fecha) + ' · ' + fmtHora(t.entrada_ts) + '–' + fmtHora(t.salida_ts) +
+    '<br>Se creará 1 registro en CleanHours: <b>' + h(l.nombre) + ' · ' + fmtH(l.horas_asignadas) + '</b> (pendiente de revisión).', 'Validar', 'verde')
+    .then(function (ok) {
+      if (!ok) return;
+      adm('fichaje_admin_validar', { p_fichaje_id: t.id, p_reparto: null }).then(function (r) {
+        toast('Validado · ' + r.registros.length + ' registro(s) creado(s) en CleanHours'); cargarTramos();
+      }, function (e) { toast(textoError(e), true); });
+    });
+}
+$('btn-val-todos').onclick = function () {
+  var listos = TRAMOS.filter(listoParaValidar);
+  if (!listos.length) return;
+  var total = listos.reduce(function (s, t) { return s + num(t.lugares[0].horas_asignadas); }, 0);
+  confirmar('Validar ' + listos.length + ' tramos', 'Se validarán los tramos cerrados con un solo lugar del periodo mostrado (' + fmtH(r2(total)) +
+    ' en total) y se crearán sus registros en CleanHours. Los que tienen varios pisos hay que repartirlos uno a uno.', 'Validar todos', 'verde')
+    .then(function (ok) {
+      if (!ok) return;
+      var hechos = 0, fallos = 0;
+      listos.reduce(function (p, t) {
+        return p.then(function () {
+          return adm('fichaje_admin_validar', { p_fichaje_id: t.id, p_reparto: null }).then(function () { hechos++; }, function () { fallos++; });
+        });
+      }, Promise.resolve()).then(function () {
+        toast(hechos + ' validado(s)' + (fallos ? ' · ' + fallos + ' con error' : ''), fallos > 0); cargarTramos();
+      });
+    });
+};
+
+/* ---------- Reparto de horas ---------- */
+function abrirReparto(t) {
+  var total = num(t.horas), n = t.lugares.length;
+  var base = r2(Math.floor(total / n * 100) / 100);
+  var inicial = t.lugares.map(function (l, i) {
+    if (l.horas_asignadas != null) return num(l.horas_asignadas);
+    return i === n - 1 ? r2(total - base * (n - 1)) : base;
+  });
+  abrirModal('<h2>Repartir horas</h2><p class="sub">' + h(t.personal) + ' · ' + fmtFecha(t.fecha) + ' · ' +
+    fmtHora(t.entrada_ts) + '–' + fmtHora(t.salida_ts) + ' · <b>' + fmtH(total) + '</b><br>Indica cuántas horas corresponden a cada piso.</p>' +
+    t.lugares.map(function (l, i) {
+      return '<div class="reparto-fila"><span class="n">' + h(l.nombre) + ' ' + badgeZona(l) + '</span>' +
+        '<input class="inp rep-h" type="number" min="0" step="0.25" inputmode="decimal" value="' + inicial[i] + '" data-lugar="' + h(l.lugar_id) + '"> h</div>';
+    }).join('') +
+    '<button class="btn peq" id="rep-igual" style="margin-top:10px">Repartir a partes iguales</button>' +
+    '<div class="suma" id="rep-suma"></div>' +
+    '<p class="nota">Se creará un registro en CleanHours por cada piso con horas (pendiente de revisión).</p>' +
+    '<div class="pie"><button class="btn" id="rep-can">Cancelar</button><button class="btn verde" id="rep-ok">Validar y pasar a CleanHours</button></div>');
+  function suma() {
+    var s = 0; document.querySelectorAll('.rep-h').forEach(function (x) { s += num(x.value); });
+    s = r2(s);
+    var ok = Math.abs(s - total) < 0.005;
+    $('rep-suma').innerHTML = 'Asignado <b style="color:' + (ok ? 'var(--green)' : 'var(--red)') + '">' + fmtH(s) + '</b> de ' + fmtH(total) +
+      (ok ? '' : ' <span class="bd rojo">no coincide</span>');
+    return s;
+  }
+  document.querySelectorAll('.rep-h').forEach(function (x) { x.addEventListener('input', suma); });
+  suma();
+  $('rep-igual').onclick = function () {
+    var ins = document.querySelectorAll('.rep-h');
+    ins.forEach(function (x, i) { x.value = i === n - 1 ? r2(total - base * (n - 1)) : base; });
+    suma();
+  };
+  $('rep-can').onclick = cerrarModal;
+  $('rep-ok').onclick = function () {
+    var reparto = [], malo = false;
+    document.querySelectorAll('.rep-h').forEach(function (x) {
+      var v = num(x.value); if (x.value === '' || v < 0) malo = true;
+      reparto.push({ lugar_id: x.getAttribute('data-lugar'), horas: r2(v) });
+    });
+    if (malo) return toast('Revisa las horas: no pueden estar vacías ni ser negativas.', true);
+    var s = suma();
+    if (s <= 0) return toast('Asigna horas al menos a un piso.', true);
+    var seguir = Math.abs(s - total) < 0.005 ? Promise.resolve(true)
+      : confirmar('El reparto no coincide', 'Has asignado <b>' + fmtH(s) + '</b> pero el tramo dura <b>' + fmtH(total) + '</b>. ¿Validar igualmente con ' + fmtH(s) + '?', 'Validar igualmente', 'verde');
+    seguir.then(function (ok) {
+      if (!ok) return abrirReparto(t);
+      adm('fichaje_admin_validar', { p_fichaje_id: t.id, p_reparto: reparto }).then(function (r) {
+        cerrarModal(); toast('Validado · ' + r.registros.length + ' registro(s) creado(s) en CleanHours'); cargarTramos();
+      }, function (e) { toast(textoError(e), true); });
+    });
+  };
+}
+
+/* ---------- Corrección ---------- */
+function abrirCorreccion(t) {
+  abrirModal('<h2>Corregir tramo</h2><p class="sub">' + h(t.personal) + ' · ' + (t.lugares || []).map(function (l) { return h(l.nombre); }).join(', ') +
+    '<br>Hora de Andorra. Queda guardado quién lo corrigió, cuándo y por qué.</p>' +
+    '<label class="campo" for="co-ent">Entrada</label><input class="inp" type="datetime-local" id="co-ent" value="' + aInput(t.entrada_ts) + '">' +
+    '<label class="campo" for="co-sal">Salida</label><input class="inp" type="datetime-local" id="co-sal" value="' + aInput(t.salida_ts) + '">' +
+    '<p class="nota">Si la dejas vacía, el tramo sigue abierto.</p>' +
+    '<label class="campo" for="co-mot">Motivo (obligatorio)</label><input class="inp" id="co-mot" maxlength="300" placeholder="Olvidó fichar la salida">' +
+    '<div class="pie"><button class="btn rojo" id="co-anular" style="margin-right:auto">Anular tramo</button>' +
+    '<button class="btn" id="co-can">Cancelar</button><button class="btn pri" id="co-ok">Guardar</button></div>');
+  $('co-can').onclick = cerrarModal;
+  function enviar(anular) {
+    var mot = $('co-mot').value.trim();
+    if (!mot) { $('co-mot').focus(); return toast('Escribe el motivo.', true); }
+    var ent = deInput($('co-ent').value), sal = deInput($('co-sal').value);
+    if (!anular) {
+      if (!ent) return toast('Falta la hora de entrada.', true);
+      if (sal && Date.parse(sal) <= Date.parse(ent)) return toast('La salida debe ser posterior a la entrada.', true);
+      if (sal && Date.parse(sal) > Date.now() + 60000) return toast('La salida no puede ser una hora futura.', true);
+    }
+    adm('fichaje_admin_corregir', { p_fichaje_id: t.id, p_entrada_ts: ent, p_salida_ts: sal, p_motivo: mot, p_anular: anular })
+      .then(function (r) {
+        cerrarModal(); toast(anular ? 'Tramo anulado' : 'Corrección guardada · ' + (ESTADOS[r.estado] || ['', r.estado])[1]); cargarTramos();
+      }, function (e) { toast(textoError(e), true); });
+  }
+  $('co-ok').onclick = function () { enviar(false); };
+  $('co-anular').onclick = function () {
+    if (!$('co-mot').value.trim()) { $('co-mot').focus(); return toast('Escribe el motivo para anular.', true); }
+    var mot = $('co-mot').value;
+    confirmar('Anular tramo', 'El tramo no contará como horas trabajadas. Queda guardado en el historial.', 'Anular', 'rojo').then(function (ok) {
+      if (!ok) return abrirCorreccion(t);
+      abrirCorreccion(t); $('co-mot').value = mot; enviar(true);
+    });
+  };
+}
+
+/* =====================================================================
+   PERSONAL
+   ===================================================================== */
+var PERFILES = { contratada: 'Contratada (jornada)', parcial_fijo: 'Parcial en lugar fijo', parcial_piso: 'Parcial o extra por piso' };
+function pintarPersonal() {
+  rellenarFiltroPersonas();
+  if (!EST.personal.length) { $('tabla-personal').innerHTML = '<div class="vacio">Todavía no hay nadie. Pulsa «+ Nueva persona».</div>'; return; }
+  $('tabla-personal').innerHTML = '<table class="term lista" style="min-width:720px"><thead><tr><th>Nombre</th><th>Perfil</th><th>Lugar habitual</th><th>PIN</th><th>Estado</th><th></th></tr></thead><tbody>' +
+    EST.personal.map(function (p) {
+      var lug = p.lugar_habitual_id ? lugarPorId(p.lugar_habitual_id) : null;
+      var enCH = !CH.cargado || CH.workers.indexOf(p.nombre) >= 0;
+      return '<tr><td class="c-pers">' + h(p.nombre) + (enCH ? '' : ' <span class="bd amar" title="Este nombre no está en la lista de trabajadores de Gestión">no está en CleanHours</span>') + '</td>' +
+        '<td>' + h(PERFILES[p.perfil] || p.perfil) + '</td><td>' + (lug ? h(lug.nombre) : '<span style="color:var(--muted)">—</span>') + '</td>' +
+        '<td>' + (p.tiene_pin ? '<span class="bd verde">asignado</span>' : '<span class="bd rojo">sin PIN</span>') + '</td>' +
+        '<td>' + (!p.activo ? '<span class="bd gris">desactivada</span>' : p.bloqueado ? '<span class="bd rojo" title="5 PIN incorrectos: espera 15 min o asigna un PIN nuevo">bloqueada</span>' : '<span class="bd verde">activa</span>') + '</td>' +
+        '<td class="acc"><button class="btn peq" data-pers="' + h(p.id) + '">Editar</button></td></tr>';
+    }).join('') + '</tbody></table>';
+}
+$('btn-nueva-pers').onclick = function () { abrirPersona(null); };
+$('tabla-personal').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-pers]'); if (!b) return;
+  abrirPersona(EST.personal.filter(function (p) { return p.id === b.getAttribute('data-pers'); })[0]);
+});
+function opcionesLugares(sel) {
+  return '<option value="">Ninguno</option>' + EST.sectores.map(function (s) {
+    if (!s.lugares.length) return '';
+    return '<optgroup label="' + h(s.nombre) + '">' + s.lugares.map(function (l) {
+      return '<option value="' + h(l.id) + '"' + (l.id === sel ? ' selected' : '') + '>' + h(l.nombre) + (l.activo ? '' : ' (inactivo)') + '</option>';
+    }).join('') + '</optgroup>';
+  }).join('');
+}
+function pinAleatorio() {
+  var a = new Uint32Array(1); crypto.getRandomValues(a);
+  return String(1000 + (a[0] % 9000));
+}
+function abrirPersona(p) {
+  var nueva = !p;
+  abrirModal('<h2>' + (nueva ? 'Nueva persona' : h(p.nombre)) + '</h2>' +
+    '<p class="sub">' + (nueva ? 'Escribe el nombre exactamente igual que en CleanHours, para que las horas vayan a la misma persona.' : 'El nombre no se puede cambiar.') + '</p>' +
+    (nueva ? '<label class="campo" for="pe-nom">Nombre</label><input class="inp" id="pe-nom" list="dl-workers" maxlength="80">' +
+      '<datalist id="dl-workers">' + CH.workers.map(function (w) { return '<option value="' + h(w) + '">'; }).join('') + '</datalist><div class="nota aviso" id="pe-nom-aviso"></div>' : '') +
+    '<label class="campo" for="pe-perfil">Perfil</label><select class="inp" id="pe-perfil">' +
+    Object.keys(PERFILES).map(function (k) { return '<option value="' + k + '"' + ((p ? p.perfil : 'parcial_piso') === k ? ' selected' : '') + '>' + PERFILES[k] + '</option>'; }).join('') + '</select>' +
+    '<label class="campo" for="pe-lug">Lugar habitual</label><select class="inp" id="pe-lug">' + opcionesLugares(p ? p.lugar_habitual_id : null) + '</select>' +
+    '<p class="nota">Aparece ya marcado al fichar la entrada; la persona puede cambiarlo.</p>' +
+    '<label class="campo" for="pe-pin">PIN (4 a 6 números)</label>' +
+    '<div style="display:flex;gap:8px"><input class="inp" id="pe-pin" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="' + (nueva ? '' : 'Déjalo vacío para no cambiarlo') + '">' +
+    '<button class="btn" id="pe-gen" type="button">Generar</button></div>' +
+    (!nueva && p.bloqueado ? '<p class="nota aviso">Está bloqueada por PIN incorrectos. Asigna un PIN nuevo para desbloquearla.</p>' : '') +
+    (!nueva ? '<p class="nota">Si cambias el PIN, su móvil le pedirá el nuevo.</p>' : '') +
+    '<label class="check"><input type="checkbox" id="pe-act"' + (!p || p.activo ? ' checked' : '') + '> Activa (puede fichar)</label>' +
+    (!nueva ? '<p class="nota">Si la desactivas, se cierra su sesión en el móvil y no podrá fichar. Sus fichajes anteriores se conservan.</p>' : '') +
+    '<div class="pie"><button class="btn" id="pe-can">Cancelar</button><button class="btn pri" id="pe-ok">Guardar</button></div>');
+  $('pe-can').onclick = cerrarModal;
+  $('pe-gen').onclick = function () { $('pe-pin').value = pinAleatorio(); };
+  if (nueva) $('pe-nom').addEventListener('input', function () {
+    var v = this.value.trim();
+    $('pe-nom-aviso').textContent = v && CH.cargado && CH.workers.indexOf(v) < 0 ? 'Este nombre no está en la lista de trabajadores de CleanHours.' : '';
+  });
+  $('pe-ok').onclick = function () {
+    var nombre = nueva ? $('pe-nom').value.trim() : p.nombre;
+    var pin = $('pe-pin').value.trim();
+    if (!nombre) return toast('Escribe el nombre.', true);
+    if (nueva && EST.personal.some(function (x) { return x.nombre.toLowerCase() === nombre.toLowerCase(); })) return toast('Ya existe una persona con ese nombre.', true);
+    if (nueva && !pin) return toast('Asigna un PIN (puedes pulsar «Generar»).', true);
+    if (pin && !/^[0-9]{4,6}$/.test(pin)) return toast('El PIN debe tener entre 4 y 6 números.', true);
+    adm('fichaje_admin_guardar_personal', {
+      p_nombre: nombre, p_perfil: $('pe-perfil').value, p_lugar_habitual_id: $('pe-lug').value || null,
+      p_pin: pin || null, p_activo: $('pe-act').checked
+    }).then(function () {
+      return cargarEstructura();
+    }).then(function () {
+      pintarPersonal();
+      if (pin) {
+        abrirModal('<h2>PIN de ' + h(nombre) + '</h2><p class="sub">Anótalo y dáselo en persona. Por seguridad no se puede volver a consultar; si se olvida, asigna uno nuevo.</p>' +
+          '<div class="pin-grande">' + h(pin) + '</div><p class="sub">Para fichar: <b>servapturistics.com/fichaje.html</b></p>' +
+          '<div class="pie"><button class="btn pri" id="pin-ok">Hecho</button></div>');
+        $('pin-ok').onclick = cerrarModal;
+      } else { cerrarModal(); toast('Guardado'); }
+    }, function (e) { toast(textoError(e), true); });
+  };
+}
+
+/* =====================================================================
+   SECTORES Y LUGARES
+   ===================================================================== */
+function pintarLugares() {
+  if (!EST.sectores.length) { $('lista-sectores').innerHTML = '<div class="vacio">No hay sectores. Pulsa «+ Nuevo sector».</div>'; return; }
+  var n = EST.sectores.length;
+  $('lista-sectores').innerHTML = EST.sectores.map(function (s, i) {
+    return '<div class="sector' + (s.activo ? '' : ' inactivo') + '"><div class="sector-cab">' +
+      '<span class="flechas"><button class="btn peq" data-acc="sec-sube" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' aria-label="Subir">▲</button>' +
+      '<button class="btn peq" data-acc="sec-baja" data-i="' + i + '"' + (i === n - 1 ? ' disabled' : '') + ' aria-label="Bajar">▼</button></span>' +
+      '<span class="nom">' + h(s.nombre) + '</span>' + (s.activo ? '' : '<span class="bd gris">oculto en el móvil</span>') +
+      '<span class="bd gris">' + s.lugares.length + ' lugar(es)</span>' +
+      '<button class="btn peq" data-acc="sec-edit" data-i="' + i + '">Editar</button></div>' +
+      (s.lugares.length ? s.lugares.map(function (l, k) { return filaLugar(s, i, l, k); }).join('')
+        : '<div class="fila-lugar"><span class="ayuda" style="margin:0">Sin lugares todavía.</span></div>') +
+      '</div>';
+  }).join('');
+}
+function filaLugar(s, i, l, k) {
+  var nl = s.lugares.length;
+  var enCH = !CH.cargado || CH.pisos.indexOf(l.nombre) >= 0;
+  var coords = l.lat != null
+    ? '<a class="bd verde" href="' + mapa(l.lat, l.lng) + '" target="_blank" rel="noopener" style="text-decoration:none">📍 coordenadas fijadas' + (l.coords_fijadas_en ? ' · ' + fmtFechaHora(l.coords_fijadas_en).slice(0, 5) : '') + '</a>'
+    : '<span class="bd rojo">sin coordenadas</span>';
+  return '<div class="fila-lugar' + (l.activo ? '' : ' inactivo') + '">' +
+    '<span class="flechas"><button class="btn peq" data-acc="lug-sube" data-i="' + i + '" data-k="' + k + '"' + (k === 0 ? ' disabled' : '') + ' aria-label="Subir">▲</button>' +
+    '<button class="btn peq" data-acc="lug-baja" data-i="' + i + '" data-k="' + k + '"' + (k === nl - 1 ? ' disabled' : '') + ' aria-label="Bajar">▼</button></span>' +
+    '<span class="nom">' + h(l.nombre) + '</span>' +
+    '<span class="info">' + coords + '<span class="bd gris">radio ' + l.radio_m + ' m</span>' +
+    (l.activo ? '' : '<span class="bd gris">oculto en el móvil</span>') +
+    (enCH ? '' : '<span class="bd amar" title="Las horas se guardarán en CleanHours con este nombre, que no coincide con ningún piso de Gestión">no está en CleanHours</span>') + '</span>' +
+    '<button class="btn peq pri" data-acc="lug-gps" data-id="' + h(l.id) + '">📍 Fijar aquí</button>' +
+    '<button class="btn peq" data-acc="lug-edit" data-id="' + h(l.id) + '">Editar</button></div>';
+}
+function reordenar(tipo, ids) {
+  return adm('fichaje_admin_ordenar', { p_tipo: tipo, p_ids: ids }).then(cargarEstructura).then(pintarLugares)
+    .catch(function (e) { toast(textoError(e), true); });
+}
+$('lista-sectores').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-acc]'); if (!b || b.disabled) return;
+  var a = b.getAttribute('data-acc'), i = +b.getAttribute('data-i'), k = +b.getAttribute('data-k');
+  var ids;
+  if (a === 'sec-sube' || a === 'sec-baja') {
+    ids = EST.sectores.map(function (s) { return s.id; });
+    var j = a === 'sec-sube' ? i - 1 : i + 1; var x = ids[i]; ids[i] = ids[j]; ids[j] = x;
+    return reordenar('sectores', ids);
+  }
+  if (a === 'lug-sube' || a === 'lug-baja') {
+    ids = EST.sectores[i].lugares.map(function (l) { return l.id; });
+    var m = a === 'lug-sube' ? k - 1 : k + 1; var y = ids[k]; ids[k] = ids[m]; ids[m] = y;
+    return reordenar('lugares', ids);
+  }
+  if (a === 'sec-edit') return abrirSector(EST.sectores[i]);
+  if (a === 'lug-edit') return abrirLugar(lugarPorId(b.getAttribute('data-id')));
+  if (a === 'lug-gps') return fijarAqui(lugarPorId(b.getAttribute('data-id')));
+});
+$('btn-nuevo-sector').onclick = function () { abrirSector(null); };
+$('btn-nuevo-lugar').onclick = function () {
+  if (!EST.sectores.length) return toast('Crea primero un sector.', true);
+  abrirLugar(null);
+};
+function abrirSector(s) {
+  abrirModal('<h2>' + (s ? 'Editar sector' : 'Nuevo sector') + '</h2><p class="sub">Los sectores agrupan los lugares en la pantalla del móvil (por ejemplo: Pas de la Casa, Tarter Izard, Circuito).</p>' +
+    '<label class="campo" for="se-nom">Nombre</label><input class="inp" id="se-nom" maxlength="60" value="' + h(s ? s.nombre : '') + '">' +
+    '<label class="check"><input type="checkbox" id="se-act"' + (!s || s.activo ? ' checked' : '') + '> Visible en el móvil</label>' +
+    '<div class="pie"><button class="btn" id="se-can">Cancelar</button><button class="btn pri" id="se-ok">Guardar</button></div>');
+  $('se-can').onclick = cerrarModal;
+  $('se-ok').onclick = function () {
+    var nom = $('se-nom').value.trim(); if (!nom) return toast('Escribe el nombre.', true);
+    adm('fichaje_admin_guardar_sector', { p_id: s ? s.id : null, p_nombre: nom, p_activo: $('se-act').checked })
+      .then(cargarEstructura).then(function () { cerrarModal(); pintarLugares(); toast('Sector guardado'); }, function (e) { toast(textoError(e), true); });
+  };
+}
+function abrirLugar(l) {
+  abrirModal('<h2>' + (l ? 'Editar lugar' : 'Nuevo lugar') + '</h2><p class="sub">El nombre debe ser igual que el piso en CleanHours, porque las horas se guardan con este nombre.' +
+    (l ? ' Cambiar el nombre no modifica los registros ya creados.' : '') + '</p>' +
+    '<label class="campo" for="lu-nom">Nombre</label><input class="inp" id="lu-nom" maxlength="80" list="dl-pisos" value="' + h(l ? l.nombre : '') + '">' +
+    '<datalist id="dl-pisos">' + CH.pisos.map(function (p) { return '<option value="' + h(p) + '">'; }).join('') + '</datalist><div class="nota aviso" id="lu-aviso"></div>' +
+    '<label class="campo" for="lu-sec">Sector</label><select class="inp" id="lu-sec">' + EST.sectores.map(function (s) {
+      return '<option value="' + h(s.id) + '"' + (l && l.sector_id === s.id ? ' selected' : '') + '>' + h(s.nombre) + '</option>';
+    }).join('') + '</select>' +
+    '<label class="campo" for="lu-rad">Radio de la zona (metros)</label><input class="inp" id="lu-rad" type="number" min="20" max="5000" step="10" value="' + (l ? l.radio_m : 150) + '">' +
+    '<p class="nota">Si alguien ficha a más distancia que este radio, el fichaje se marca «fuera de zona» para que lo revises (no se bloquea). En la montaña el GPS puede desviarse; 150 m suele ir bien.</p>' +
+    '<label class="check"><input type="checkbox" id="lu-act"' + (!l || l.activo ? ' checked' : '') + '> Visible en el móvil</label>' +
+    '<div class="pie"><button class="btn" id="lu-can">Cancelar</button><button class="btn pri" id="lu-ok">Guardar</button></div>');
+  function avisar() {
+    var v = $('lu-nom').value.trim();
+    $('lu-aviso').textContent = v && CH.cargado && CH.pisos.indexOf(v) < 0 ? 'Este nombre no coincide con ningún piso de CleanHours.' : '';
+  }
+  $('lu-nom').addEventListener('input', avisar); avisar();
+  $('lu-can').onclick = cerrarModal;
+  $('lu-ok').onclick = function () {
+    var nom = $('lu-nom').value.trim(), rad = parseInt($('lu-rad').value, 10);
+    if (!nom) return toast('Escribe el nombre.', true);
+    if (!(rad >= 20 && rad <= 5000)) return toast('El radio debe estar entre 20 y 5000 metros.', true);
+    adm('fichaje_admin_guardar_lugar', { p_id: l ? l.id : null, p_nombre: nom, p_sector_id: $('lu-sec').value, p_radio_m: rad, p_activo: $('lu-act').checked })
+      .then(cargarEstructura).then(function () { cerrarModal(); pintarLugares(); pintarPersonal(); toast('Lugar guardado'); }, function (e) { toast(textoError(e), true); });
+  };
+}
+
+/* ---------- Fijar coordenadas con el GPS del móvil ---------- */
+var GPS = { wid: null, mejor: null };
+function detenerGps() { if (GPS.wid != null && navigator.geolocation) navigator.geolocation.clearWatch(GPS.wid); GPS.wid = null; }
+function distanciaM(a, b) {
+  var R = 6371000, toR = Math.PI / 180, dLa = (b.lat - a.lat) * toR, dLo = (b.lng - a.lng) * toR;
+  var x = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a.lat * toR) * Math.cos(b.lat * toR) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+  return Math.round(2 * R * Math.asin(Math.sqrt(x)));
+}
+function fijarAqui(l) {
+  if (!('geolocation' in navigator)) return toast('Este dispositivo no permite obtener la ubicación.', true);
+  GPS.mejor = null;
+  abrirModal('<h2>Fijar coordenadas · ' + h(l.nombre) + '</h2>' +
+    '<p class="sub">Ponte en la puerta del piso o lugar. Espera a que la precisión baje (cuanto menor, mejor) y pulsa Guardar.</p>' +
+    '<div class="gps-prec" id="gp-prec">…</div><p class="sub" style="text-align:center" id="gp-txt">Buscando ubicación…</p>' +
+    '<div id="gp-extra" class="nota" style="text-align:center"></div>' +
+    '<div class="pie"><button class="btn" id="gp-can">Cancelar</button><button class="btn pri" id="gp-ok" disabled>Guardar</button></div>');
+  $('gp-can').onclick = cerrarModal;
+  GPS.wid = navigator.geolocation.watchPosition(function (p) {
+    var c = { lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy) };
+    if (!GPS.mejor || c.acc <= GPS.mejor.acc) GPS.mejor = c;
+    var m = GPS.mejor;
+    if (!$('gp-prec')) return;
+    $('gp-prec').textContent = '±' + m.acc + ' m';
+    $('gp-prec').style.color = m.acc <= 20 ? 'var(--green)' : m.acc <= 50 ? 'var(--yellow)' : 'var(--red)';
+    $('gp-txt').textContent = m.acc <= 20 ? 'Precisión buena.' : m.acc <= 50 ? 'Aceptable. Si puedes, espera unos segundos más.' : 'Precisión baja: sal al exterior o espera.';
+    $('gp-extra').innerHTML = (l.lat != null ? 'Está a ' + distanciaM(l, m) + ' m de las coordenadas actuales. ' : '') +
+      '<a href="' + mapa(m.lat, m.lng) + '" target="_blank" rel="noopener">Ver en el mapa</a>';
+    $('gp-ok').disabled = false; $('gp-ok').textContent = 'Guardar (±' + m.acc + ' m)';
+  }, function (err) {
+    if (!$('gp-txt')) return;
+    $('gp-txt').textContent = err.code === 1 ? 'Permiso de ubicación denegado. Actívalo en el navegador y vuelve a intentarlo.' : 'Aún sin señal GPS…';
+  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 60000 });
+  $('gp-ok').onclick = function () {
+    var m = GPS.mejor; if (!m) return;
+    var guardar = function () {
+      adm('fichaje_admin_fijar_coords', { p_lugar_id: l.id, p_lat: m.lat, p_lng: m.lng, p_precision_m: m.acc, p_radio_m: null })
+        .then(cargarEstructura).then(function () { cerrarModal(); pintarLugares(); toast('Coordenadas de ' + l.nombre + ' guardadas (±' + m.acc + ' m)'); },
+          function (e) { toast(textoError(e), true); });
+    };
+    if (m.acc > 50) {
+      detenerGps();
+      confirmar('Precisión baja', 'La ubicación tiene un margen de ±' + m.acc + ' m. ¿Guardarla igualmente? Puedes volver a fijarla más tarde.', 'Guardar igualmente').then(function (ok) { if (ok) guardar(); });
+    } else guardar();
+  };
+}
+
+/* ================= Arranque ================= */
+if (CRED) {
+  cargarEstructura().then(entrarApp, function () { cerrarSesion(); });
+}
+</script>
+</body>
+</html>
