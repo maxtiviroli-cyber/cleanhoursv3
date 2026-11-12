@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Servap · Fichaje</title>
+<meta name="theme-color" content="#1E1E2E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fichaje">
+<link rel="manifest" href="fichaje.webmanifest">
+<link rel="icon" href="icon-fichaje-192.png">
+<link rel="apple-touch-icon" href="icon-fichaje-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#1E1E2E;--mantle:#181825;--crust:#11111B;--s0:#313244;--s1:#45475A;--s2:#585B70;
+  --text:#CDD6F4;--sub:#A6ADC8;--muted:#7F849C;
+  --green:#A6E3A1;--red:#F38BA8;--yellow:#F9E2AF;--peach:#FAB387;--mauve:#CBA6F7;--blue:#89B4FA;
+  --mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--base);color:var(--text);font-family:var(--sans)}
+body{overscroll-behavior:none}
+button{font-family:inherit;color:inherit;border:none;background:none;cursor:pointer;touch-action:manipulation}
+.scr{display:none;min-height:100dvh;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 16px)}
+.scr.on{display:flex}
+.titulo{font-size:26px;font-weight:700;text-align:center;margin:12px 0 4px}
+.subt{font-size:17px;color:var(--sub);text-align:center;margin-bottom:20px;line-height:1.4}
+.marca{font-family:var(--mono);font-size:14px;color:var(--mauve);text-align:center;letter-spacing:2px;text-transform:uppercase}
+
+/* Botones grandes genéricos */
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:64px;
+  border-radius:16px;font-size:21px;font-weight:600;padding:12px 16px;background:var(--s0);border:2px solid var(--s1)}
+.btn:active{transform:scale(.98)}
+.btn.pri{background:var(--mauve);color:var(--crust);border-color:var(--mauve)}
+.btn.verde{background:var(--green);color:var(--crust);border-color:var(--green)}
+.btn.rojo{background:var(--red);color:var(--crust);border-color:var(--red)}
+.btn.lin{background:transparent}
+.fila{display:flex;gap:12px}
+.fila>.btn{flex:1}
+
+/* Nombres */
+#lista-nombres{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+#lista-nombres .btn{font-size:24px;justify-content:flex-start;padding-left:22px}
+
+/* PIN */
+#pin-dots{display:flex;justify-content:center;gap:16px;margin:8px 0 10px;min-height:28px}
+#pin-dots span{width:22px;height:22px;border-radius:50%;border:3px solid var(--s2)}
+#pin-dots span.lleno{background:var(--mauve);border-color:var(--mauve)}
+#pin-msg{min-height:26px;text-align:center;font-size:18px;color:var(--red);margin-bottom:8px}
+.teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:420px;width:100%;margin:0 auto}
+.teclado button{height:76px;border-radius:18px;background:var(--s0);font-family:var(--mono);font-size:34px;font-weight:500}
+.teclado button:active{background:var(--s1)}
+.teclado .tk-ok{background:var(--mauve);color:var(--crust);font-family:var(--sans);font-size:22px;font-weight:700}
+.teclado .tk-bor{font-family:var(--sans);font-size:20px}
+.sacude{animation:sac .35s}
+@keyframes sac{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+
+/* Inicio */
+.cab{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cab-nombre{font-size:22px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cab-menu{width:52px;height:52px;border-radius:14px;background:var(--s0);font-size:26px;flex-shrink:0}
+.estado-red{display:inline-flex;align-items:center;gap:8px;font-size:15px;color:var(--sub);margin-top:4px}
+.estado-red i{width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block}
+.estado-red.off i{background:var(--yellow)}
+.pend{font-size:15px;color:var(--yellow);margin-top:4px}
+.reloj{font-family:var(--mono);font-size:72px;font-weight:500;text-align:center;line-height:1;margin-top:18px}
+.fecha{font-size:19px;color:var(--sub);text-align:center;margin-top:6px}
+.centro{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px 0}
+.circulo{width:min(68vw,250px);height:min(68vw,250px);border-radius:50%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;font-size:30px;font-weight:800;letter-spacing:1px;color:var(--crust)}
+.circulo small{font-size:16px;font-weight:600;letter-spacing:0}
+.circulo.verde{background:var(--green);box-shadow:0 0 0 10px rgba(166,227,161,.15)}
+.circulo.rojo{background:var(--red);box-shadow:0 0 0 10px rgba(243,139,168,.15)}
+.circulo:active{transform:scale(.97)}
+.circulo .ico{font-size:44px;line-height:1}
+.trabajando{text-align:center}
+.trabajando .desde{font-size:19px;color:var(--sub)}
+.trabajando .crono{font-family:var(--mono);font-size:60px;font-weight:500;color:var(--peach);line-height:1.1}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:520px}
+.chip{background:var(--s0);border:2px solid var(--s1);border-radius:999px;padding:8px 16px;font-size:19px;font-weight:600}
+.btn-anadir{min-height:58px;font-size:20px;width:auto;padding:10px 26px;border-radius:999px;background:var(--s0);border:2px dashed var(--mauve);color:var(--mauve)}
+.aviso{background:rgba(243,139,168,.12);border:2px solid var(--red);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:16px;line-height:1.4}
+.aviso b{color:var(--red)}
+.aviso button{margin-top:10px;min-height:48px;font-size:17px}
+.instalar{background:var(--s0);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:15px;color:var(--sub);line-height:1.45;display:flex;gap:10px;align-items:flex-start}
+.instalar button{color:var(--muted);font-size:22px;line-height:1;padding:0 4px}
+
+/* Selector de lugares */
+#scr-lugares{padding-bottom:0}
+#lug-scroll{flex:1;overflow-y:auto;padding-bottom:120px}
+.sector{border:2px solid var(--s1);border-radius:18px;margin-bottom:12px;overflow:hidden;background:var(--mantle)}
+.sector-cab{width:100%;min-height:72px;display:flex;align-items:center;gap:12px;padding:12px 18px;text-align:left;font-size:23px;font-weight:700;background:var(--s0)}
+.sector-cab .flecha{margin-left:auto;font-size:22px;color:var(--sub);transition:transform .15s}
+.sector.abierto .sector-cab .flecha{transform:rotate(90deg)}
+.sector-cab .cuenta{background:var(--mauve);color:var(--crust);border-radius:999px;font-size:16px;padding:2px 10px;font-weight:700}
+.sector-lista{display:none;flex-direction:column;gap:10px;padding:12px}
+.sector.abierto .sector-lista{display:flex}
+.lugar{width:100%;min-height:68px;border-radius:14px;border:2px solid var(--s1);background:var(--base);
+  font-size:24px;font-weight:600;display:flex;align-items:center;gap:14px;padding:10px 16px;text-align:left}
+.lugar .marca-sel{width:34px;height:34px;border-radius:10px;border:3px solid var(--s2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--crust)}
+.lugar.sel{border-color:var(--mauve);background:rgba(203,166,247,.14)}
+.lugar.sel .marca-sel{background:var(--mauve);border-color:var(--mauve)}
+.lugar.ya{opacity:.45}
+.barra-fija{position:fixed;left:0;right:0;bottom:0;background:var(--crust);border-top:2px solid var(--s0);
+  padding:12px 16px calc(env(safe-area-inset-bottom) + 12px);display:flex;gap:12px}
+.barra-fija .btn{flex:1}
+.barra-fija .btn.pri{flex:2}
+
+/* Capa (GPS, confirmaciones, mensajes) */
+.capa{position:fixed;inset:0;background:rgba(17,17,27,.94);display:none;align-items:center;justify-content:center;padding:24px;z-index:50}
+.capa.on{display:flex}
+.caja{width:100%;max-width:440px;background:var(--base);border:2px solid var(--s1);border-radius:22px;padding:24px 20px;text-align:center}
+.caja h2{font-size:25px;margin-bottom:10px}
+.caja p{font-size:18px;color:var(--sub);line-height:1.45;margin-bottom:14px}
+.caja .grande{font-family:var(--mono);font-size:54px;font-weight:500;margin:6px 0 4px}
+.caja .btn{margin-top:10px}
+.caja ol{text-align:left;font-size:17px;line-height:1.5;color:var(--text);margin:0 0 12px 22px}
+.giro{width:64px;height:64px;border-radius:50%;border:6px solid var(--s1);border-top-color:var(--mauve);margin:6px auto 16px;animation:gira 1s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.ok-ico{font-size:72px;line-height:1;margin-bottom:6px}
+/* Móviles con pantalla baja: todo cabe sin desplazar */
+@media (max-height:720px){
+  .reloj{font-size:54px;margin-top:8px}
+  .fecha{font-size:17px}
+  .centro{gap:10px;padding:8px 0}
+  .circulo{width:min(54vw,190px);height:min(54vw,190px);font-size:26px}
+  .circulo .ico{font-size:34px}
+  .trabajando .crono{font-size:46px}
+  .btn-anadir{min-height:52px;font-size:18px}
+  .instalar{margin-top:6px;font-size:14px}
+}
+.vacio{text-align:center;color:var(--sub);font-size:18px;padding:30px 10px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<!-- 1 · ¿Quién eres? -->
+<section class="scr" id="scr-nombres">
+  <div class="marca">Servap · Fichaje</div>
+  <h1 class="titulo">¿Quién eres?</h1>
+  <p class="subt">Toca tu nombre</p>
+  <div id="lista-nombres"><div class="vacio">Cargando…</div></div>
+</section>
+
+<!-- 2 · PIN -->
+<section class="scr" id="scr-pin">
+  <div class="marca">Servap · Fichaje</div>
+  <h1 class="titulo" id="pin-nombre"></h1>
+  <p class="subt">Escribe tu PIN</p>
+  <div id="pin-dots"></div>
+  <div id="pin-msg"></div>
+  <div class="teclado" id="teclado"></div>
+  <button class="btn lin" id="pin-cambiar" style="margin-top:18px;min-height:54px;font-size:18px">No soy yo</button>
+</section>
+
+<!-- 3 · Inicio -->
+<section class="scr" id="scr-inicio">
+  <div class="cab">
+    <div style="min-width:0">
+      <div class="cab-nombre" id="ini-nombre"></div>
+      <div class="estado-red" id="ini-red"><i></i><span></span></div>
+      <div class="pend" id="ini-pend"></div>
+    </div>
+    <button class="cab-menu" id="btn-menu" aria-label="Menú">⋯</button>
+  </div>
+  <div id="ini-avisos"></div>
+  <div class="reloj" id="ini-reloj">--:--</div>
+  <div class="fecha" id="ini-fecha"></div>
+  <div class="centro" id="ini-centro"></div>
+  <div id="ini-instalar"></div>
+</section>
+
+<!-- 4 · ¿Dónde estás? -->
+<section class="scr" id="scr-lugares">
+  <h1 class="titulo" id="lug-titulo">¿Dónde estás?</h1>
+  <p class="subt" id="lug-subt">Toca el sector y marca el piso o lugar</p>
+  <div id="lug-scroll"></div>
+  <div class="barra-fija">
+    <button class="btn lin" id="lug-cancelar">Cancelar</button>
+    <button class="btn pri" id="lug-confirmar">Confirmar</button>
+  </div>
+</section>
+
+<div class="capa" id="capa"><div class="caja" id="capa-caja"></div></div>
+
+<script>
+'use strict';
+/* ================= Configuración ================= */
+var SB_URL = 'https://kellhcuvbvgofgiwbeka.supabase.co';
+var SB_KEY = 'sb_publishable_XybZM-ibMJr_rE2fxWKhnA_6XgnZnH9';
+var TZ = 'Europe/Andorra';
+var ENVIO_TARDIO_MS = 60000;   // si un fichaje se envía más tarde, cuenta como "sin conexión"
+
+/* ================= Utilidades ================= */
+var LS = {
+  get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+function $(id) { return document.getElementById(id); }
+function h(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function uuid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  var b = new Uint8Array(16); crypto.getRandomValues(b);
+  b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+  var x = Array.prototype.map.call(b, function (n) { return (n + 256).toString(16).slice(1); }).join('');
+  return x.slice(0, 8) + '-' + x.slice(8, 12) + '-' + x.slice(12, 16) + '-' + x.slice(16, 20) + '-' + x.slice(20);
+}
+function ahora() { return Date.now() + (S.desfase || 0); }   // hora corregida con el servidor
+function fmtHora(ms) { return new Date(ms).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: TZ }); }
+function fmtFecha(ms) {
+  var t = new Date(ms).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+function fmtDur(ms, conSeg) {
+  if (ms < 0) ms = 0;
+  var s = Math.floor(ms / 1000), hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60;
+  if (conSeg) return hh + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0');
+  return hh + ' h ' + String(mm).padStart(2, '0') + ' min';
+}
+
+/* ================= Estado guardado en el móvil ================= */
+var S = {
+  token: LS.get('fich_token', null),
+  nombre: LS.get('fich_nombre', null),
+  info: LS.get('fich_info', null),          // { perfil, lugar_habitual_id, sectores }
+  abierto: LS.get('fich_abierto', null),    // { client_id, entrada_ms, lugares:[{id,nombre}] }
+  cola: LS.get('fich_cola', []),            // fichajes pendientes de enviar, en orden
+  desfase: LS.get('fich_desfase', 0),
+  avisos: LS.get('fich_avisos', []),
+  online: navigator.onLine,
+  sincronizando: false
+};
+function guardar() {
+  LS.set('fich_token', S.token); LS.set('fich_nombre', S.nombre); LS.set('fich_info', S.info);
+  LS.set('fich_abierto', S.abierto); LS.set('fich_cola', S.cola); LS.set('fich_desfase', S.desfase);
+  LS.set('fich_avisos', S.avisos);
+}
+
+/* ================= Conexión con Supabase ================= */
+function rpc(fn, args) {
+  var ctrl = window.AbortController ? new AbortController() : null;
+  var t = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
+  return fetch(SB_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST', cache: 'no-store', signal: ctrl ? ctrl.signal : undefined,
+    headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY },
+    body: JSON.stringify(args || {})
+  }).then(function (res) {
+    if (t) clearTimeout(t);
+    return res.text().then(function (txt) {
+      var body = null; try { body = txt ? JSON.parse(txt) : null; } catch (e) {}
+      if (res.ok) return body;
+      if (body && body.code === 'P0001') throw { tipo: 'negocio', codigo: body.message };
+      if (res.status >= 500 || res.status === 408 || res.status === 429) throw { tipo: 'red' };
+      throw { tipo: 'servidor', codigo: (body && body.message) || ('HTTP ' + res.status) };
+    });
+  }, function () {
+    if (t) clearTimeout(t);
+    throw { tipo: 'red' };
+  });
+}
+
+var MENSAJES = {
+  sesion_invalida: 'Tu sesión ha caducado. Vuelve a escribir tu PIN.',
+  ya_tiene_entrada: 'Ya tenías una entrada abierta.',
+  lugar_obligatorio: 'Tienes que elegir al menos un piso o lugar.',
+  ubicacion_obligatoria: 'Falta la ubicación.',
+  tramo_no_encontrado: 'No se encontró la entrada correspondiente.',
+  tramo_cerrado: 'Esa entrada ya estaba cerrada.',
+  bloqueado: 'Demasiados intentos. Espera 15 minutos.',
+  pin_incorrecto: 'PIN incorrecto.'
+};
+function textoError(e) { return (e && MENSAJES[e.codigo]) || 'Error: ' + ((e && e.codigo) || 'desconocido'); }
+
+/* ================= Pantallas ================= */
+function mostrar(id) {
+  ['scr-nombres', 'scr-pin', 'scr-inicio', 'scr-lugares'].forEach(function (s) { $(s).classList.toggle('on', s === id); });
+  window.scrollTo(0, 0);
+}
+function capa(html) { $('capa-caja').innerHTML = html; $('capa').classList.add('on'); }
+function cerrarCapa() { $('capa').classList.remove('on'); $('capa-caja').innerHTML = ''; }
+
+/* ---------- 1 · Nombres ---------- */
+function pantallaNombres() {
+  mostrar('scr-nombres');
+  var cont = $('lista-nombres');
+  cont.innerHTML = '<div class="vacio">Cargando…</div>';
+  rpc('fichaje_nombres').then(function (lista) {
+    if (!lista || !lista.length) {
+      cont.innerHTML = '<div class="vacio">Todavía no hay nadie dado de alta.<br>Pide a la oficina que te registre.</div>';
+      return;
+    }
+    cont.innerHTML = lista.map(function (n) {
+      return '<button class="btn" data-nombre="' + h(n) + '">' + h(n) + '</button>';
+    }).join('');
+  }, function (e) {
+    cont.innerHTML = '<div class="vacio">' + (e.tipo === 'red'
+      ? 'Sin conexión.<br>La primera vez necesitas internet para entrar.'
+      : h(textoError(e))) + '</div><button class="btn" id="nom-reint">Reintentar</button>';
+    $('nom-reint').onclick = pantallaNombres;
+  });
+}
+$('lista-nombres').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-nombre]');
+  if (b) pantallaPin(b.getAttribute('data-nombre'));
+});
+
+/* ---------- 2 · PIN ---------- */
+var pinBuf = '', pinNombre = '', pinEnviando = false;
+(function montarTeclado() {
+  var t = '';
+  ['1', '2', '3', '4', '5', '6', '7', '8', '9'].forEach(function (d) { t += '<button data-d="' + d + '">' + d + '</button>'; });
+  t += '<button class="tk-bor" data-d="del" aria-label="Borrar">Borrar</button><button data-d="0">0</button><button class="tk-ok" data-d="ok">Entrar</button>';
+  $('teclado').innerHTML = t;
+})();
+function pintarPin() {
+  var n = Math.max(4, pinBuf.length), s = '';
+  for (var i = 0; i < n; i++) s += '<span class="' + (i < pinBuf.length ? 'lleno' : '') + '"></span>';
+  $('pin-dots').innerHTML = s;
+}
+function pantallaPin(nombre) {
+  pinNombre = nombre; pinBuf = ''; $('pin-msg').textContent = '';
+  $('pin-nombre').textContent = nombre;
+  // Con fichajes pendientes de otra sesión no se puede cambiar de persona
+  $('pin-cambiar').style.display = S.cola.length ? 'none' : '';
+  pintarPin(); mostrar('scr-pin');
+}
+$('teclado').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-d]'); if (!b || pinEnviando) return;
+  var d = b.getAttribute('data-d');
+  $('pin-msg').textContent = '';
+  if (d === 'del') pinBuf = pinBuf.slice(0, -1);
+  else if (d === 'ok') return enviarPin();
+  else if (pinBuf.length < 6) pinBuf += d;
+  pintarPin();
+});
+$('pin-cambiar').onclick = function () { S.nombre = null; guardar(); pantallaNombres(); };
+function errorPin(msg) {
+  $('pin-msg').textContent = msg; pinBuf = ''; pintarPin();
+  var el = $('pin-dots'); el.classList.remove('sacude'); void el.offsetWidth; el.classList.add('sacude');
+}
+function enviarPin() {
+  if (pinBuf.length < 4) return errorPin('El PIN tiene al menos 4 números.');
+  pinEnviando = true; $('pin-msg').textContent = 'Comprobando…'; $('pin-msg').style.color = 'var(--sub)';
+  rpc('fichaje_login', { p_nombre: pinNombre, p_pin: pinBuf }).then(function (r) {
+    pinEnviando = false; $('pin-msg').style.color = '';
+    if (!r || !r.ok) return errorPin('PIN incorrecto.');
+    S.token = r.token; S.nombre = r.nombre; guardar();
+    pantallaInicio(); sincronizar();
+  }, function (e) {
+    pinEnviando = false; $('pin-msg').style.color = '';
+    errorPin(e.tipo === 'red' ? 'Sin conexión. Inténtalo con internet.' : textoError(e));
+  });
+}
+
+/* ---------- 3 · Inicio ---------- */
+function pantallaInicio() { mostrar('scr-inicio'); pintarInicio(); }
+function pintarInicio() {
+  $('ini-nombre').textContent = S.nombre || '';
+  var red = $('ini-red');
+  red.classList.toggle('off', !S.online);
+  red.querySelector('span').textContent = S.online ? 'Conectado' : 'Sin conexión · se guarda en el móvil';
+  $('ini-pend').textContent = S.cola.length
+    ? (S.cola.length === 1 ? '1 fichaje pendiente de enviar' : S.cola.length + ' fichajes pendientes de enviar') : '';
+
+  $('ini-avisos').innerHTML = S.avisos.length
+    ? '<div class="aviso"><b>Atención</b><br>' + S.avisos.map(h).join('<br>') +
+      '<br>Avisa a la oficina.<button class="btn" id="avisos-ok">Entendido</button></div>' : '';
+  if (S.avisos.length) $('avisos-ok').onclick = function () { S.avisos = []; guardar(); pintarInicio(); };
+
+  var c = $('ini-centro');
+  if (!S.abierto) {
+    c.innerHTML = '<button class="circulo verde" id="btn-entrada"><span class="ico">▶</span>ENTRADA<small>Empezar a trabajar</small></button>';
+    $('btn-entrada').onclick = function () { abrirLugares('entrada'); };
+  } else {
+    var a = S.abierto;
+    c.innerHTML =
+      '<div class="trabajando"><div class="desde">Trabajando desde las ' + fmtHora(a.entrada_ms) + '</div>' +
+      '<div class="crono" id="ini-crono">' + fmtDur(ahora() - a.entrada_ms, true) + '</div></div>' +
+      '<div class="chips">' + a.lugares.map(function (l) { return '<span class="chip">' + h(l.nombre) + '</span>'; }).join('') + '</div>' +
+      '<button class="btn-anadir" id="btn-anadir">+ Añadir otro piso</button>' +
+      '<button class="circulo rojo" id="btn-salida"><span class="ico">■</span>SALIDA<small>Terminar</small></button>';
+    $('btn-anadir').onclick = function () { abrirLugares('agregar'); };
+    $('btn-salida').onclick = confirmarSalida;
+  }
+  pintarInstalar();
+  tic();
+}
+function tic() {
+  var t = ahora();
+  $('ini-reloj').textContent = fmtHora(t);
+  $('ini-fecha').textContent = fmtFecha(t);
+  var cr = $('ini-crono');
+  if (cr && S.abierto) cr.textContent = fmtDur(t - S.abierto.entrada_ms, true);
+}
+setInterval(function () { if ($('scr-inicio').classList.contains('on')) tic(); }, 1000);
+
+function pintarInstalar() {
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
+  if (standalone || LS.get('fich_no_instalar', false)) { $('ini-instalar').innerHTML = ''; return; }
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  $('ini-instalar').innerHTML = '<div class="instalar"><div style="flex:1">Guárdala en tu pantalla de inicio para abrirla como una app: ' +
+    (ios ? 'toca <b>Compartir</b> y luego <b>Añadir a pantalla de inicio</b>.' : 'abre el menú <b>⋮</b> del navegador y toca <b>Instalar app</b> o <b>Añadir a pantalla de inicio</b>.') +
+    '</div><button id="inst-x" aria-label="Cerrar">×</button></div>';
+  $('inst-x').onclick = function () { LS.set('fich_no_instalar', true); pintarInstalar(); };
+}
+
+$('btn-menu').onclick = function () {
+  capa('<h2>' + h(S.nombre || '') + '</h2>' +
+    '<button class="btn" id="m-act">Actualizar</button>' +
+    '<button class="btn" id="m-salir">Cerrar sesión</button>' +
+    '<button class="btn lin" id="m-cerrar">Volver</button>');
+  $('m-act').onclick = function () { cerrarCapa(); sincronizar(); };
+  $('m-cerrar').onclick = cerrarCapa;
+  $('m-salir').onclick = function () {
+    if (S.cola.length) {
+      capa('<h2>Todavía no</h2><p>Tienes fichajes guardados en el móvil que aún no se han enviado. Conéctate a internet y espera a que se envíen antes de cerrar sesión.</p><button class="btn pri" id="m-ok">Entendido</button>');
+      $('m-ok').onclick = cerrarCapa; return;
+    }
+    if (S.abierto) {
+      capa('<h2>¿Cerrar sesión?</h2><p>Tienes una entrada abierta. Seguirá abierta y podrás fichar la salida al volver a entrar.</p>' +
+        '<div class="fila"><button class="btn lin" id="m-no">No</button><button class="btn rojo" id="m-si">Cerrar sesión</button></div>');
+      $('m-no').onclick = cerrarCapa; $('m-si').onclick = salirSesion; return;
+    }
+    salirSesion();
+  };
+};
+function salirSesion() {
+  cerrarCapa();
+  S.token = null; S.nombre = null; S.abierto = null; S.info = null; S.avisos = [];
+  guardar(); pantallaNombres();
+}
+
+/* ---------- 4 · ¿Dónde estás? ---------- */
+var LUG = { modo: 'entrada', sel: [], abiertos: {} };
+function todosLosLugares() {
+  var out = [];
+  ((S.info && S.info.sectores) || []).forEach(function (s) { (s.lugares || []).forEach(function (l) { out.push(l); }); });
+  return out;
+}
+function abrirLugares(modo) {
+  LUG.modo = modo; LUG.sel = []; LUG.abiertos = {};
+  var sectores = (S.info && S.info.sectores) || [];
+  if (!sectores.length) {
+    capa('<h2>Faltan los lugares</h2><p>El móvil todavía no tiene la lista de pisos. Conéctate a internet un momento y vuelve a intentarlo.</p><button class="btn pri" id="l-ok">Entendido</button>');
+    $('l-ok').onclick = function () { cerrarCapa(); sincronizar(); };
+    return;
+  }
+  // Preselección: lugar habitual (solo al entrar)
+  var hab = S.info.lugar_habitual_id;
+  if (modo === 'entrada' && hab && todosLosLugares().some(function (l) { return l.id === hab; })) LUG.sel = [hab];
+  sectores.forEach(function (s) {
+    if ((s.lugares || []).some(function (l) { return LUG.sel.indexOf(l.id) >= 0; })) LUG.abiertos[s.id] = true;
+  });
+  if (sectores.length === 1) LUG.abiertos[sectores[0].id] = true;
+  $('lug-titulo').textContent = modo === 'entrada' ? '¿Dónde estás?' : 'Añadir piso';
+  $('lug-subt').textContent = modo === 'entrada'
+    ? 'Toca el sector y marca el piso o lugar. Puedes marcar varios.'
+    : 'Marca el piso o lugar que vas a hacer ahora.';
+  pintarLugares(); mostrar('scr-lugares');
+}
+function pintarLugares() {
+  var ya = S.abierto ? S.abierto.lugares.map(function (l) { return l.id; }) : [];
+  var html = ((S.info && S.info.sectores) || []).map(function (s) {
+    var lug = s.lugares || [];
+    if (!lug.length) return '';
+    var n = lug.filter(function (l) { return LUG.sel.indexOf(l.id) >= 0; }).length;
+    return '<div class="sector' + (LUG.abiertos[s.id] ? ' abierto' : '') + '">' +
+      '<button class="sector-cab" data-sector="' + h(s.id) + '"><span>' + h(s.nombre) + '</span>' +
+      (n ? '<span class="cuenta">' + n + '</span>' : '') + '<span class="flecha">›</span></button>' +
+      '<div class="sector-lista">' + lug.map(function (l) {
+        var marcado = LUG.modo === 'agregar' && ya.indexOf(l.id) >= 0;
+        var sel = LUG.sel.indexOf(l.id) >= 0;
+        return '<button class="lugar' + (sel ? ' sel' : '') + (marcado ? ' ya' : '') + '" data-lugar="' + h(l.id) + '"' + (marcado ? ' data-ya="1"' : '') + '>' +
+          '<span class="marca-sel">' + (sel ? '✓' : '') + '</span><span>' + h(l.nombre) + (marcado ? ' · ya marcado' : '') + '</span></button>';
+      }).join('') + '</div></div>';
+  }).join('');
+  $('lug-scroll').innerHTML = html || '<div class="vacio">No hay lugares activos.</div>';
+  $('lug-confirmar').textContent = LUG.sel.length ? 'Confirmar (' + LUG.sel.length + ')' : 'Confirmar';
+}
+$('lug-scroll').addEventListener('click', function (ev) {
+  var cab = ev.target.closest('[data-sector]');
+  if (cab) { var id = cab.getAttribute('data-sector'); LUG.abiertos[id] = !LUG.abiertos[id]; pintarLugares(); return; }
+  var b = ev.target.closest('[data-lugar]');
+  if (!b || b.getAttribute('data-ya')) return;
+  var lid = b.getAttribute('data-lugar'), i = LUG.sel.indexOf(lid);
+  if (i >= 0) LUG.sel.splice(i, 1); else LUG.sel.push(lid);
+  pintarLugares();
+});
+$('lug-cancelar').onclick = pantallaInicio;
+$('lug-confirmar').onclick = function () {
+  if (!LUG.sel.length) {
+    capa('<h2>Elige un lugar</h2><p>Abre un sector y toca al menos un piso o lugar.</p><button class="btn pri" id="c-ok">Entendido</button>');
+    $('c-ok').onclick = cerrarCapa; return;
+  }
+  var mapa = {}; todosLosLugares().forEach(function (l) { mapa[l.id] = l; });
+  var elegidos = LUG.sel.map(function (id) { return { id: id, nombre: mapa[id] ? mapa[id].nombre : '?' }; });
+  conUbicacion(function (pos) {
+    if (LUG.modo === 'entrada') hacerEntrada(elegidos, pos); else hacerAgregar(elegidos, pos);
+  }, function () { mostrar('scr-lugares'); });
+};
+
+/* ================= Ubicación (obligatoria) ================= */
+function obtenerUbicacion(progreso) {
+  return new Promise(function (resolve, reject) {
+    if (!('geolocation' in navigator)) return reject('no_soportado');
+    var mejor = null, hecho = false, wid = null, t1, t2;
+    function fin(ok, motivo) {
+      if (hecho) return; hecho = true;
+      if (wid != null) navigator.geolocation.clearWatch(wid);
+      clearTimeout(t1); clearTimeout(t2);
+      if (ok) resolve(mejor); else reject(motivo);
+    }
+    function nueva(p) {
+      var c = { lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy) };
+      if (!mejor || c.acc < mejor.acc) { mejor = c; if (progreso) progreso(c.acc); }
+      if (c.acc <= 25) fin(true);
+    }
+    wid = navigator.geolocation.watchPosition(nueva, function (err) {
+      if (err.code === 1) fin(false, 'denegado');      // permiso denegado: no esperar
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+    t1 = setTimeout(function () { if (mejor) fin(true); }, 12000);   // 12 s: nos quedamos con la mejor
+    t2 = setTimeout(function () {                                     // 30 s sin nada: último intento
+      if (hecho) return;
+      if (mejor) return fin(true);
+      if (wid != null) { navigator.geolocation.clearWatch(wid); wid = null; }
+      navigator.geolocation.getCurrentPosition(function (p) { nueva(p); fin(true); },
+        function (e) { fin(false, e.code === 1 ? 'denegado' : 'sin_senal'); },
+        { enableHighAccuracy: false, maximumAge: 300000, timeout: 15000 });
+    }, 30000);
+  });
+}
+var cancelGps = null;
+function conUbicacion(ok, cancelar) {
+  var vivo = true;
+  capa('<div class="giro"></div><h2>Buscando tu ubicación…</h2><p id="gps-prec">Puede tardar unos segundos.</p><button class="btn lin" id="gps-can">Cancelar</button>');
+  $('gps-can').onclick = function () { vivo = false; cerrarCapa(); if (cancelar) cancelar(); };
+  obtenerUbicacion(function (acc) {
+    var p = $('gps-prec'); if (p) p.textContent = 'Precisión: ±' + acc + ' m';
+  }).then(function (pos) {
+    if (!vivo) return; cerrarCapa(); ok(pos);
+  }, function (motivo) {
+    if (!vivo) return;
+    var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (motivo === 'denegado') {
+      capa('<h2>Activa la ubicación</h2><p>Para fichar es obligatorio compartir tu ubicación. Solo se guarda en el momento de fichar.</p>' +
+        (ios
+          ? '<ol><li>Abre <b>Ajustes</b> → <b>Privacidad y seguridad</b> → <b>Localización</b>.</li><li>Activa <b>Localización</b>.</li><li>Entra en <b>Safari</b> (o en la app) y elige <b>Mientras se usa</b>.</li><li>Vuelve aquí y toca Reintentar.</li></ol>'
+          : '<ol><li>Activa la <b>Ubicación</b> en el panel de arriba del móvil.</li><li>Toca el <b>candado</b> junto a la dirección de la página → <b>Permisos</b> → <b>Ubicación</b> → <b>Permitir</b>.</li><li>Vuelve aquí y toca Reintentar.</li></ol>') +
+        '<button class="btn pri" id="gps-re">Reintentar</button><button class="btn lin" id="gps-can2">Cancelar</button>');
+    } else {
+      capa('<h2>Sin ubicación</h2><p>No se pudo obtener tu ubicación. Sal al exterior o acércate a una ventana y vuelve a intentarlo.</p>' +
+        '<button class="btn pri" id="gps-re">Reintentar</button><button class="btn lin" id="gps-can2">Cancelar</button>');
+    }
+    $('gps-re').onclick = function () { conUbicacion(ok, cancelar); };
+    $('gps-can2').onclick = function () { cerrarCapa(); if (cancelar) cancelar(); };
+  });
+}
+
+/* ================= Acciones ================= */
+function nuevaOp(o) {
+  o.creado_ms = Date.now(); o.ts_movil = new Date().toISOString(); o.desfase = Math.round(S.desfase || 0);
+  S.cola.push(o); guardar();
+}
+function confirmacion(titulo, grande, detalle) {
+  capa('<div class="ok-ico">✅</div><h2>' + h(titulo) + '</h2><div class="grande">' + h(grande) + '</div>' +
+    '<p>' + detalle + '</p><button class="btn pri" id="ok-ok">Hecho</button>');
+  $('ok-ok').onclick = cerrarCapa;
+  setTimeout(function () { if ($('ok-ok')) cerrarCapa(); }, 6000);
+}
+function textoEnvio() { return S.online ? '' : 'Sin conexión: se enviará solo cuando vuelva la señal.'; }
+
+function hacerEntrada(lugares, pos) {
+  var cid = uuid();
+  nuevaOp({ tipo: 'entrada', client_id: cid, lugares: lugares.map(function (l) { return l.id; }), lat: pos.lat, lng: pos.lng, acc: pos.acc });
+  S.abierto = { client_id: cid, entrada_ms: ahora(), lugares: lugares };
+  guardar(); pantallaInicio();
+  confirmacion('Entrada registrada', fmtHora(S.abierto.entrada_ms),
+    h(lugares.map(function (l) { return l.nombre; }).join(' · ')) + '<br>' + textoEnvio());
+  sincronizar();
+}
+function hacerAgregar(lugares, pos) {
+  if (!S.abierto) return pantallaInicio();
+  lugares.forEach(function (l) {
+    nuevaOp({ tipo: 'agregar', client_id: S.abierto.client_id, lugar_id: l.id, lat: pos.lat, lng: pos.lng, acc: pos.acc });
+    S.abierto.lugares.push(l);
+  });
+  guardar(); pantallaInicio();
+  confirmacion(lugares.length > 1 ? 'Pisos añadidos' : 'Piso añadido', fmtHora(ahora()),
+    h(lugares.map(function (l) { return l.nombre; }).join(' · ')) + '<br>' + textoEnvio());
+  sincronizar();
+}
+function confirmarSalida() {
+  capa('<h2>¿Fichar la salida?</h2><p>Terminas tu tramo de trabajo ahora.</p>' +
+    '<div class="fila"><button class="btn lin" id="s-no">No</button><button class="btn rojo" id="s-si">Sí, salir</button></div>');
+  $('s-no').onclick = cerrarCapa;
+  $('s-si').onclick = function () {
+    cerrarCapa();
+    conUbicacion(function (pos) {
+      if (!S.abierto) return pantallaInicio();
+      var a = S.abierto, fin = ahora();
+      nuevaOp({ tipo: 'salida', client_id: a.client_id, lat: pos.lat, lng: pos.lng, acc: pos.acc });
+      S.abierto = null; guardar(); pantallaInicio();
+      confirmacion('Salida registrada', fmtHora(fin),
+        'Desde las ' + fmtHora(a.entrada_ms) + ' · ' + fmtDur(fin - a.entrada_ms) + '<br>' + textoEnvio());
+      sincronizar();
+    });
+  };
+}
+
+/* ================= Envío y sincronización ================= */
+function enviarOp(op) {
+  var tarde = Date.now() - op.creado_ms > ENVIO_TARDIO_MS;
+  var hora = { p_offline: tarde, p_ts_movil: tarde ? op.ts_movil : null, p_desfase_ms: tarde ? op.desfase : null };
+  if (op.tipo === 'entrada') return rpc('fichaje_entrada', Object.assign({
+    p_token: S.token, p_client_id: op.client_id, p_lugares: op.lugares,
+    p_lat: op.lat, p_lng: op.lng, p_precision_m: op.acc }, hora));
+  if (op.tipo === 'agregar') return rpc('fichaje_agregar_lugar', {
+    p_token: S.token, p_client_id: op.client_id, p_lugar_id: op.lugar_id,
+    p_lat: op.lat, p_lng: op.lng, p_precision_m: op.acc });
+  return rpc('fichaje_salida', Object.assign({
+    p_token: S.token, p_client_id: op.client_id,
+    p_lat: op.lat, p_lng: op.lng, p_precision_m: op.acc }, hora));
+}
+function describirOp(op) {
+  return op.tipo === 'entrada' ? 'la entrada' : op.tipo === 'salida' ? 'la salida' : 'un piso añadido';
+}
+function vaciarCola() {
+  if (!S.cola.length) return Promise.resolve();
+  var op = S.cola[0];
+  return enviarOp(op).then(function (resp) {
+    S.online = true;
+    S.cola.shift();
+    if (op.tipo === 'entrada' && resp && resp.entrada_ts && S.abierto && S.abierto.client_id === op.client_id)
+      S.abierto.entrada_ms = Date.parse(resp.entrada_ts);
+    guardar();
+    return vaciarCola();
+  }, function (e) {
+    if (e.tipo === 'red') { S.online = false; throw e; }
+    if (e.codigo === 'sesion_invalida') throw e;
+    // Rechazado por el servidor: se descarta y se avisa
+    S.online = true;
+    S.cola.shift();
+    if (op.tipo === 'entrada')   // lo que dependía de esa entrada ya no se puede enviar
+      S.cola = S.cola.filter(function (o) { return o.client_id !== op.client_id; });
+    S.avisos.push('No se pudo guardar ' + describirOp(op) + ' (' + fmtHora(op.creado_ms + (op.desfase || 0)) + '): ' + textoError(e));
+    guardar();
+    return vaciarCola();
+  });
+}
+function cargarEstado() {
+  var t0 = Date.now();
+  return rpc('fichaje_estado', { p_token: S.token }).then(function (r) {
+    var t1 = Date.now();
+    S.online = true;
+    if (r.servidor_ts) S.desfase = Math.round(Date.parse(r.servidor_ts) - (t0 + t1) / 2);
+    S.nombre = r.nombre;
+    S.info = { perfil: r.perfil, lugar_habitual_id: r.lugar_habitual_id, sectores: r.sectores || [] };
+    if (!S.cola.length) {   // sin pendientes, manda lo que dice el servidor
+      var a = r.abierto;
+      S.abierto = a ? { client_id: a.client_id, entrada_ms: Date.parse(a.entrada_ts),
+        lugares: (a.lugares || []).map(function (l) { return { id: l.id, nombre: l.nombre }; }) } : null;
+    }
+    guardar();
+  });
+}
+function sincronizar() {
+  if (!S.token || S.sincronizando) return;
+  S.sincronizando = true;
+  vaciarCola().then(cargarEstado).catch(function (e) {
+    if (e && e.codigo === 'sesion_invalida') {
+      S.token = null; guardar();
+      if (S.nombre) { pantallaPin(S.nombre); $('pin-msg').textContent = MENSAJES.sesion_invalida; }
+      else pantallaNombres();
+    } else if (e && e.tipo === 'red') {
+      S.online = false;
+    } else if (e) {
+      S.avisos.push(textoError(e)); guardar();
+    }
+  }).then(function () {
+    S.sincronizando = false;
+    if ($('scr-inicio').classList.contains('on') && !$('capa').classList.contains('on')) pintarInicio();
+    else if ($('scr-inicio').classList.contains('on')) { pintarCabecera(); }
+  });
+}
+function pintarCabecera() {
+  var red = $('ini-red');
+  red.classList.toggle('off', !S.online);
+  red.querySelector('span').textContent = S.online ? 'Conectado' : 'Sin conexión · se guarda en el móvil';
+  $('ini-pend').textContent = S.cola.length
+    ? (S.cola.length === 1 ? '1 fichaje pendiente de enviar' : S.cola.length + ' fichajes pendientes de enviar') : '';
+}
+window.addEventListener('online', function () { S.online = true; sincronizar(); });
+window.addEventListener('offline', function () { S.online = false; if ($('scr-inicio').classList.contains('on')) pintarCabecera(); });
+document.addEventListener('visibilitychange', function () { if (!document.hidden) sincronizar(); });
+setInterval(function () { if (S.cola.length) sincronizar(); }, 20000);
+
+/* ================= Arranque ================= */
+(function arrancar() {
+  if (S.token) { pantallaInicio(); sincronizar(); }
+  else if (S.nombre) pantallaPin(S.nombre);
+  else pantallaNombres();
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw-fichaje.js', { scope: './fichaje' }).catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>

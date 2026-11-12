@@ -1,0 +1,15 @@
+{
+  "name": "Servap Fichaje",
+  "short_name": "Fichaje",
+  "description": "Registro de entrada y salida del personal de Servap Turístics",
+  "start_url": "fichaje.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1E1E2E",
+  "theme_color": "#1E1E2E",
+  "lang": "es",
+  "icons": [
+    { "src": "icon-fichaje-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-fichaje-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
