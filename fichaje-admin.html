@@ -122,6 +122,8 @@ table.term .acc .btn{margin-left:4px}
 .check input{width:18px;height:18px}
 .nota{font-size:12px;color:var(--sub);margin-top:5px;line-height:1.45}
 .nota.aviso{color:var(--yellow)}
+textarea.inp{height:auto;min-height:110px;padding:10px 12px;line-height:1.45;resize:vertical}
+.nota-txt{font-family:var(--sans);font-size:12px;color:var(--peach);margin-top:4px;max-width:420px;white-space:normal}
 .pin-grande{font-family:var(--mono);font-size:44px;letter-spacing:10px;text-align:center;color:var(--mauve);margin:10px 0}
 .gps-prec{font-family:var(--mono);font-size:34px;text-align:center;margin:10px 0 4px}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--s0);border:1px solid var(--s2);color:var(--text);padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;display:none;max-width:90vw;text-align:center}
@@ -282,13 +284,15 @@ var ERRORES = {
   lugar_no_encontrado: 'Lugar no encontrado.',
   sector_no_encontrado: 'Sector no encontrado.',
   tramo_no_encontrado: 'Tramo no encontrado.',
-  tipo_invalido: 'Operación no válida.'
+  tipo_invalido: 'Operación no válida.',
+  nota_larga: 'La nota no puede pasar de 500 caracteres.'
 };
 function textoError(e) {
   if (!e) return 'Error desconocido';
   if (e.tipo === 'red') return 'Sin conexión con la base de datos. Inténtalo de nuevo.';
   if (ERRORES[e.codigo]) return ERRORES[e.codigo];
   if (/duplicate key/.test(e.codigo || '')) return 'Ya existe uno con ese nombre.';
+  if (/fichaje_admin_nota|Could not find the function/.test(e.codigo || '')) return 'Falta ejecutar fichaje_v2.sql en Supabase.';
   return 'Error: ' + e.codigo;
 }
 function rpc(fn, args) {
@@ -501,6 +505,9 @@ function filaTramo(t) {
   var marcas = '';
   if (t.entrada_offline || t.salida_offline) marcas += ' <span class="bd amar" title="Se fichó sin conexión y se envió después">sin señal</span>';
   if (t.hora_sospechosa) marcas += ' <span class="bd rojo" title="La hora del móvil no cuadraba con la del servidor">hora dudosa</span>';
+  if (t.nota) marcas += '<div class="nota-txt">📝 ' + h(t.nota) + ' · ' + (t.nota_leida_en
+      ? '<span style="color:var(--green)">leída ' + h(fmtFechaHora(t.nota_leida_en)) + '</span>'
+      : '<span style="color:var(--yellow)">sin leer</span>') + '</div>';
   var lug = (t.lugares || []).map(function (l) {
     return '<span class="lug">' + h(l.nombre) + ' ' + badgeZona(l) +
       (varios && l.horas_asignadas != null ? ' <span style="color:var(--yellow)">' + fmtH(l.horas_asignadas) + '</span>' : '') + '</span>';
@@ -511,6 +518,7 @@ function filaTramo(t) {
   if (t.estado === 'abierto' || t.estado === 'cerrado' || t.estado === 'pendiente_reparto')
     acc += '<button class="btn peq" data-acc="corregir" data-id="' + h(t.id) + '">Corregir</button>';
   if (t.estado === 'validado') acc = '<span class="bd verde" title="' + h('Validado por ' + (t.validado_por || '')) + '">en CleanHours</span>';
+  acc += ' <button class="btn peq" data-acc="nota" data-id="' + h(t.id) + '" title="Nota para la trabajadora">' + (t.nota ? 'Editar nota' : 'Nota') + '</button>';
   acc += ' <a class="btn peq" href="' + mapa(t.entrada_lat, t.entrada_lng) + '" target="_blank" rel="noopener" title="Ver en el mapa dónde fichó la entrada">Mapa</a>';
   return '<tr><td class="c-fecha">' + fmtFecha(t.fecha) + '</td><td class="c-pers">' + h(t.personal) + '</td>' +
     '<td class="c-hora">' + fmtHora(t.entrada_ts) + '</td><td class="c-hora">' + (t.salida_ts ? fmtHora(t.salida_ts) : '<span style="color:var(--blue)">en curso</span>') + '</td>' +
@@ -526,7 +534,31 @@ document.getElementById('p-tramos').addEventListener('click', function (ev) {
   if (a === 'validar') validarUno(t);
   else if (a === 'repartir') abrirReparto(t);
   else if (a === 'corregir') abrirCorreccion(t);
+  else if (a === 'nota') abrirNota(t);
 });
+
+/* ---------- Nota para la trabajadora ---------- */
+function abrirNota(t) {
+  abrirModal('<h2>Nota para ' + h(t.personal) + '</h2><p class="sub">' + fmtFecha(t.fecha) + ' · ' + fmtHora(t.entrada_ts) + '–' + (t.salida_ts ? fmtHora(t.salida_ts) : 'en curso') + ' · ' +
+    (t.lugares || []).map(function (l) { return h(l.nombre); }).join(', ') +
+    '<br>La verá en «Mis horas» de su móvil, con un aviso en la pantalla principal, y podrá marcarla como leída. Si cambias el texto, vuelve a aparecer como no leída.</p>' +
+    '<label class="campo" for="no-txt">Nota (máx. 500 caracteres)</label><textarea class="inp" id="no-txt" maxlength="500" placeholder="¿Marcaste B21? El piso de hoy era D12; avísame si me equivoco.">' + h(t.nota || '') + '</textarea>' +
+    (t.nota ? '<p class="nota">' + (t.nota_leida_en ? 'Leída el ' + h(fmtFechaHora(t.nota_leida_en)) : 'Todavía no la ha leído') + '.</p>' : '') +
+    '<div class="pie">' + (t.nota ? '<button class="btn rojo" id="no-quitar" style="margin-right:auto">Quitar nota</button>' : '') +
+    '<button class="btn" id="no-can">Cancelar</button><button class="btn pri" id="no-ok">Guardar nota</button></div>');
+  $('no-can').onclick = cerrarModal;
+  function enviar(texto) {
+    adm('fichaje_admin_nota', { p_fichaje_id: t.id, p_nota: texto }).then(function () {
+      cerrarModal(); toast(texto ? 'Nota guardada' : 'Nota quitada'); cargarTramos();
+    }, function (e) { toast(textoError(e), true); });
+  }
+  $('no-ok').onclick = function () {
+    var v = $('no-txt').value.trim();
+    if (!v) { $('no-txt').focus(); return toast('Escribe la nota (o pulsa «Quitar nota»).', true); }
+    enviar(v);
+  };
+  if (t.nota) $('no-quitar').onclick = function () { enviar(''); };
+}
 
 function validarUno(t) {
   var l = t.lugares[0];

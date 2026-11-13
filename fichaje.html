@@ -134,7 +134,47 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
   .btn-anadir{min-height:52px;font-size:18px}
   .instalar{margin-top:6px;font-size:14px}
 }
+.oculto{display:none!important}
 .vacio{text-align:center;color:var(--sub);font-size:18px;padding:30px 10px;line-height:1.5}
+/* Mis horas */
+.cab-der{display:flex;gap:8px;flex-shrink:0}
+.cab-horas{height:52px;padding:0 14px;border-radius:14px;background:var(--s0);font-size:16px;font-weight:700;position:relative;white-space:nowrap}
+.punto{position:absolute;top:-6px;right:-6px;min-width:24px;height:24px;border-radius:12px;background:var(--red);color:var(--crust);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 6px}
+.aviso-nota{background:rgba(250,179,135,.12);border:2px solid var(--peach);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:17px;display:flex;align-items:center;gap:12px;width:100%;text-align:left}
+.aviso-nota b{color:var(--peach)}
+.horas-cab{display:flex;align-items:center;gap:10px}
+.horas-cab .btn{width:56px;flex-shrink:0;padding:0;font-size:26px}
+.horas-mes{flex:1;text-align:center;font-size:22px;font-weight:700}
+.totales{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 6px}
+.total{background:var(--mantle);border:2px solid var(--s1);border-radius:16px;padding:12px;text-align:center}
+.total .n{font-family:var(--mono);font-size:min(5.6vw,26px);font-weight:500;line-height:1.2;white-space:nowrap}
+.total .l{font-size:15px;color:var(--sub);margin-top:2px}
+.total.conf{border-color:rgba(166,227,161,.5)}.total.conf .n{color:var(--green)}
+.total.pend{border-color:rgba(249,226,175,.5)}.total.pend .n{color:var(--yellow)}
+.leyenda{font-size:14px;color:var(--sub);line-height:1.45;margin:6px 2px 12px}
+.nota-card{background:rgba(250,179,135,.10);border:2px solid var(--peach);border-radius:16px;padding:14px;margin-bottom:12px}
+.nota-card .q{font-size:14px;color:var(--peach);font-weight:700;margin-bottom:6px}
+.nota-card .t{font-size:18px;line-height:1.45;white-space:pre-wrap;margin-bottom:10px}
+.nota-card .btn{min-height:54px;font-size:19px}
+.dia{background:var(--mantle);border:1px solid var(--s0);border-radius:16px;margin-bottom:10px;overflow:hidden}
+.dia-cab{display:flex;justify-content:space-between;align-items:baseline;padding:10px 14px;background:var(--s0);font-size:17px;font-weight:700}
+.dia-cab span:last-child{font-family:var(--mono);color:var(--peach);font-weight:500}
+.tramo{padding:10px 14px;border-top:1px solid var(--s0)}
+.tramo:first-of-type{border-top:none}
+.tramo .l1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tramo .hor{font-family:var(--mono);font-size:20px}
+.tramo .hrs{font-family:var(--mono);font-size:17px;color:var(--sub);white-space:nowrap}
+.tramo .lug{font-size:16px;color:var(--mauve);margin:4px 0}
+.tramo .bds{display:flex;flex-wrap:wrap;gap:6px}
+.tramo.anulado .hor,.tramo.anulado .lug{text-decoration:line-through;color:var(--muted)}
+.tramo .nl{font-size:15px;color:var(--sub);margin-top:6px;white-space:pre-wrap}
+.bd{display:inline-block;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;border:1px solid}
+.bd.verde{color:var(--green);border-color:rgba(166,227,161,.5)}
+.bd.amar{color:var(--yellow);border-color:rgba(249,226,175,.5)}
+.bd.azul{color:var(--blue);border-color:rgba(137,180,250,.5)}
+.bd.gris{color:var(--muted);border-color:var(--s1)}
+.bd.nar{color:var(--peach);border-color:rgba(250,179,135,.5)}
+.horas-pie{position:sticky;bottom:0;padding:12px 0 calc(env(safe-area-inset-bottom) + 4px);background:var(--base)}
 </style>
 </head>
 <body>
@@ -166,8 +206,12 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
       <div class="estado-red" id="ini-red"><i></i><span></span></div>
       <div class="pend" id="ini-pend"></div>
     </div>
-    <button class="cab-menu" id="btn-menu" aria-label="Menú">⋯</button>
+    <div class="cab-der">
+      <button class="cab-horas" id="btn-horas">Mis horas<span class="punto oculto" id="ini-punto"></span></button>
+      <button class="cab-menu" id="btn-menu" aria-label="Menú">⋯</button>
+    </div>
   </div>
+  <div id="ini-notas"></div>
   <div id="ini-avisos"></div>
   <div class="reloj" id="ini-reloj">--:--</div>
   <div class="fecha" id="ini-fecha"></div>
@@ -184,6 +228,17 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
     <button class="btn lin" id="lug-cancelar">Cancelar</button>
     <button class="btn pri" id="lug-confirmar">Confirmar</button>
   </div>
+</section>
+
+<!-- 5 · Mis horas -->
+<section class="scr" id="scr-horas">
+  <div class="horas-cab">
+    <button class="btn" id="hor-ant" aria-label="Mes anterior">‹</button>
+    <div class="horas-mes" id="hor-mes"></div>
+    <button class="btn" id="hor-sig" aria-label="Mes siguiente">›</button>
+  </div>
+  <div id="hor-cuerpo"></div>
+  <div class="horas-pie"><button class="btn pri" id="hor-volver">Volver</button></div>
 </section>
 
 <div class="capa" id="capa"><div class="caja" id="capa-caja"></div></div>
@@ -237,13 +292,15 @@ var S = {
   cola: LS.get('fich_cola', []),            // fichajes pendientes de enviar, en orden
   desfase: LS.get('fich_desfase', 0),
   avisos: LS.get('fich_avisos', []),
+  notas: LS.get('fich_notas', 0),            // notas de la oficina sin leer
+  notaMes: LS.get('fich_nota_mes', null),   // mes de la nota más reciente sin leer
   online: navigator.onLine,
   sincronizando: false
 };
 function guardar() {
   LS.set('fich_token', S.token); LS.set('fich_nombre', S.nombre); LS.set('fich_info', S.info);
   LS.set('fich_abierto', S.abierto); LS.set('fich_cola', S.cola); LS.set('fich_desfase', S.desfase);
-  LS.set('fich_avisos', S.avisos);
+  LS.set('fich_avisos', S.avisos); LS.set('fich_notas', S.notas); LS.set('fich_nota_mes', S.notaMes);
 }
 
 /* ================= Conexión con Supabase ================= */
@@ -283,7 +340,7 @@ function textoError(e) { return (e && MENSAJES[e.codigo]) || 'Error: ' + ((e && 
 
 /* ================= Pantallas ================= */
 function mostrar(id) {
-  ['scr-nombres', 'scr-pin', 'scr-inicio', 'scr-lugares'].forEach(function (s) { $(s).classList.toggle('on', s === id); });
+  ['scr-nombres', 'scr-pin', 'scr-inicio', 'scr-lugares', 'scr-horas'].forEach(function (s) { $(s).classList.toggle('on', s === id); });
   window.scrollTo(0, 0);
 }
 function capa(html) { $('capa-caja').innerHTML = html; $('capa').classList.add('on'); }
@@ -376,6 +433,7 @@ function pintarInicio() {
     ? '<div class="aviso"><b>Atención</b><br>' + S.avisos.map(h).join('<br>') +
       '<br>Avisa a la oficina.<button class="btn" id="avisos-ok">Entendido</button></div>' : '';
   if (S.avisos.length) $('avisos-ok').onclick = function () { S.avisos = []; guardar(); pintarInicio(); };
+  pintarNotasInicio();
 
   var c = $('ini-centro');
   if (!S.abierto) {
@@ -436,9 +494,125 @@ $('btn-menu').onclick = function () {
 };
 function salirSesion() {
   cerrarCapa();
-  S.token = null; S.nombre = null; S.abierto = null; S.info = null; S.avisos = [];
+  S.token = null; S.nombre = null; S.abierto = null; S.info = null; S.avisos = []; S.notas = 0;
+  LS.del('fich_horas');
   guardar(); pantallaNombres();
 }
+
+/* ---------- 5 · Mis horas ---------- */
+function pintarNotasInicio() {
+  var n = S.notas || 0;
+  $('ini-punto').textContent = n; $('ini-punto').classList.toggle('oculto', !n);
+  $('ini-notas').innerHTML = n
+    ? '<button class="aviso-nota" id="ini-ver-notas"><span style="font-size:26px">📝</span><span><b>' +
+      (n === 1 ? 'Tienes 1 nota de la oficina' : 'Tienes ' + n + ' notas de la oficina') + '</b><br>Toca para leerla en «Mis horas».</span></button>'
+    : '';
+  if (n) $('ini-ver-notas').onclick = function () { pantallaHoras(S.notaMes); };
+}
+$('btn-horas').onclick = function () { pantallaHoras(null); };
+$('hor-volver').onclick = function () { pantallaInicio(); sincronizar(); };
+var HOR = { mes: null, datos: null, guardado: null, cargando: false };
+function mesActualLocal() { var o = new Date(ahora()).toLocaleDateString('en-CA', { timeZone: TZ }); return o.slice(0, 8) + '01'; }
+function mesMas(mes, n) { var y = +mes.slice(0, 4), m = +mes.slice(5, 7) - 1 + n; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; return y + '-' + String(m + 1).padStart(2, '0') + '-01'; }
+function nombreMes(mes) {
+  var t = new Date(mes + 'T12:00:00Z').toLocaleDateString('es-ES', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+function fmtHM(horas) {
+  var min = Math.round(parseFloat(horas || 0) * 60);
+  return Math.floor(min / 60) + ' h ' + String(min % 60).padStart(2, '0') + ' min';
+}
+function fmtDia(f) {
+  var t = new Date(f + 'T12:00:00Z').toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'UTC' });
+  return t.charAt(0).toUpperCase() + t.slice(1) + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7);
+}
+function cacheHoras() { return LS.get('fich_horas', {}) || {}; }
+function pantallaHoras(mes) {
+  HOR.mes = mes || mesActualLocal();
+  var c = cacheHoras()[HOR.mes];
+  HOR.datos = c ? c.datos : null; HOR.guardado = c ? c.guardado : null;
+  mostrar('scr-horas'); pintarHoras();
+  cargarHoras();
+}
+function cargarHoras() {
+  if (!S.token) return;
+  var mes = HOR.mes;
+  HOR.cargando = true; pintarHoras();
+  rpc('fichaje_mis_fichajes', { p_token: S.token, p_mes: mes }).then(function (r) {
+    if (HOR.mes !== mes) return;
+    S.online = true;
+    HOR.datos = r; HOR.guardado = Date.now();
+    var cache = cacheHoras(); cache[mes] = { datos: r, guardado: HOR.guardado };
+    Object.keys(cache).forEach(function (k) { if (k < r.mes_minimo) delete cache[k]; });
+    LS.set('fich_horas', cache);
+  }, function (e) {
+    if (HOR.mes !== mes) return;
+    if (e.tipo === 'red') S.online = false;
+    else if (e.codigo === 'sesion_invalida') { S.token = null; guardar(); pantallaPin(S.nombre); $('pin-msg').textContent = MENSAJES.sesion_invalida; }
+    else HOR.error = e;
+  }).then(function () { HOR.cargando = false; if ($('scr-horas').classList.contains('on')) pintarHoras(); });
+}
+function pintarHoras() {
+  var d = HOR.datos, actual = (d && d.mes_actual) || mesActualLocal(), minimo = (d && d.mes_minimo) || mesMas(actual, -2);
+  $('hor-mes').textContent = nombreMes(HOR.mes);
+  $('hor-ant').style.visibility = HOR.mes > minimo ? 'visible' : 'hidden';
+  $('hor-sig').style.visibility = HOR.mes < actual ? 'visible' : 'hidden';
+  var cu = $('hor-cuerpo');
+  if (!d) {
+    var err = HOR.error; HOR.error = null;
+    cu.innerHTML = '<div class="vacio">' + (HOR.cargando ? 'Cargando…'
+      : err && /mis_fichajes|function|PGRST/.test(err.codigo || '') ? 'Esta función todavía no está activada. Avisa a la oficina.'
+      : S.online ? 'No se pudieron cargar tus horas.' : 'Sin conexión. Conéctate a internet para ver tus horas de este mes.') + '</div>';
+    return;
+  }
+  var html = '<div class="totales"><div class="total conf"><div class="n">' + fmtHM(d.confirmadas) + '</div><div class="l">Confirmadas</div></div>' +
+    '<div class="total pend"><div class="n">' + fmtHM(d.por_confirmar) + '</div><div class="l">Por confirmar</div></div></div>' +
+    '<p class="leyenda"><b>Confirmadas:</b> revisadas por la oficina. <b>Por confirmar:</b> aún sin revisar; pueden cambiar si hay que corregir algo.' +
+    (!S.online && HOR.guardado ? '<br><span style="color:var(--yellow)">Sin conexión: datos del ' + new Date(HOR.guardado).toLocaleString('es-ES', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: TZ }) + '.</span>' : '') +
+    (S.cola.length ? '<br><span style="color:var(--yellow)">Tienes ' + S.cola.length + ' fichaje(s) sin enviar; aparecerán al enviarse.</span>' : '') + '</p>';
+
+  var pendientes = d.tramos.filter(function (t) { return t.nota && !t.nota_leida; });
+  html += pendientes.map(function (t) {
+    return '<div class="nota-card"><div class="q">📝 Nota de la oficina · ' + h(fmtDia(t.fecha)) + ' · ' + fmtHora(Date.parse(t.entrada_ts)) +
+      (t.salida_ts ? '–' + fmtHora(Date.parse(t.salida_ts)) : '') + '</div><div class="t">' + h(t.nota) + '</div>' +
+      '<button class="btn pri" data-leida="' + h(t.id) + '">Entendido</button></div>';
+  }).join('');
+
+  if (!d.tramos.length) html += '<div class="vacio">No tienes fichajes en este mes.</div>';
+  var dias = {}, orden = [];
+  d.tramos.forEach(function (t) { if (!dias[t.fecha]) { dias[t.fecha] = []; orden.push(t.fecha); } dias[t.fecha].push(t); });
+  orden.sort().reverse();
+  var EST = { confirmado: ['verde', 'Confirmado'], por_confirmar: ['amar', 'Por confirmar'], en_curso: ['azul', 'En curso'], anulado: ['gris', 'Anulado'] };
+  html += orden.map(function (f) {
+    var ts = dias[f], tot = ts.reduce(function (s, t) { return s + parseFloat(t.horas || 0); }, 0);
+    return '<div class="dia"><div class="dia-cab"><span>' + h(fmtDia(f)) + '</span><span>' + fmtHM(tot) + '</span></div>' +
+      ts.map(function (t) {
+        var e = EST[t.estado] || ['gris', t.estado];
+        return '<div class="tramo' + (t.estado === 'anulado' ? ' anulado' : '') + '"><div class="l1"><span class="hor">' + fmtHora(Date.parse(t.entrada_ts)) + ' – ' +
+          (t.salida_ts ? fmtHora(Date.parse(t.salida_ts)) : '…') + '</span><span class="hrs">' + (t.estado === 'en_curso' ? '' : fmtHM(t.horas)) + '</span></div>' +
+          '<div class="lug">' + t.lugares.map(h).join(' · ') + '</div>' +
+          '<div class="bds"><span class="bd ' + e[0] + '">' + e[1] + '</span>' + (t.corregido ? '<span class="bd nar">Corregido por la oficina</span>' : '') + '</div>' +
+          (t.nota && t.nota_leida ? '<div class="nl">📝 ' + h(t.nota) + '</div>' : '') + '</div>';
+      }).join('') + '</div>';
+  }).join('');
+  cu.innerHTML = html;
+}
+$('hor-cuerpo').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-leida]'); if (!b) return;
+  var id = b.getAttribute('data-leida');
+  b.disabled = true; b.textContent = 'Guardando…';
+  rpc('fichaje_nota_leida', { p_token: S.token, p_fichaje_id: id }).then(function () {
+    HOR.datos.tramos.forEach(function (t) { if (t.id === id) t.nota_leida = true; });
+    var cache = cacheHoras(); if (cache[HOR.mes]) { cache[HOR.mes].datos = HOR.datos; LS.set('fich_horas', cache); }
+    S.notas = Math.max(0, (S.notas || 0) - 1); guardar(); pintarHoras();
+  }, function (e) {
+    b.disabled = false; b.textContent = 'Entendido';
+    capa('<h2>No se pudo guardar</h2><p>' + (e.tipo === 'red' ? 'Necesitas conexión para marcar la nota como leída.' : h(textoError(e))) + '</p><button class="btn pri" id="nl-ok">Entendido</button>');
+    $('nl-ok').onclick = cerrarCapa;
+  });
+});
+$('hor-ant').onclick = function () { pantallaHoras(mesMas(HOR.mes, -1)); };
+$('hor-sig').onclick = function () { pantallaHoras(mesMas(HOR.mes, 1)); };
 
 /* ---------- 4 · ¿Dónde estás? ---------- */
 var LUG = { modo: 'entrada', sel: [], abiertos: {} };
@@ -665,6 +839,7 @@ function cargarEstado() {
     if (r.servidor_ts) S.desfase = Math.round(Date.parse(r.servidor_ts) - (t0 + t1) / 2);
     S.nombre = r.nombre;
     S.info = { perfil: r.perfil, lugar_habitual_id: r.lugar_habitual_id, sectores: r.sectores || [] };
+    S.notas = r.notas_sin_leer || 0; S.notaMes = r.nota_mes || null;
     if (!S.cola.length) {   // sin pendientes, manda lo que dice el servidor
       var a = r.abierto;
       S.abierto = a ? { client_id: a.client_id, entrada_ms: Date.parse(a.entrada_ts),
@@ -690,6 +865,7 @@ function sincronizar() {
     S.sincronizando = false;
     if ($('scr-inicio').classList.contains('on') && !$('capa').classList.contains('on')) pintarInicio();
     else if ($('scr-inicio').classList.contains('on')) { pintarCabecera(); }
+    pintarNotasInicio();
   });
 }
 function pintarCabecera() {
