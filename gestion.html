@@ -337,7 +337,7 @@ tbody tr:hover{background:#F8F9FC}
     </div>
 
     <div class="card">
-      <div class="card-body" style="padding:0;overflow-x:auto">
+      <div class="card-body" id="plan-scroll" style="padding:0;overflow:auto;max-height:calc(100vh - 230px);min-height:320px">
         <div id="plan-grid"></div>
       </div>
     </div>
@@ -356,14 +356,8 @@ tbody tr:hover{background:#F8F9FC}
     <!-- Filtros -->
     <div style="position:sticky;top:60px;z-index:40;margin-bottom:8px;background:var(--bg);padding:4px 0">
       <div style="display:flex;gap:6px;flex-wrap:nowrap">
-        <select id="res-filter-piso" onchange="renderReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0"><option value="">Todos los pisos</option>
-          <option>Madriu 45</option><option>Dolsa 3</option><option>Morera 5C</option>
-            <option>Sapporo 20</option><option>Nevada 32</option><option>Nevada 33</option>
-            <option>Nuria 3A</option><option>Chamois 47</option>
-            <option disabled>&#9472;&#9472; Tarter &#9472;&#9472;</option>
-            <option>A01</option><option>B21</option><option>B24</option><option>C22</option>
-            <option>D12</option><option>D13</option><option>D43</option><option>D11 (Kristine)</option>
-        </select>
+        <select id="res-filter-sector" onchange="onResFilterSector()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0"><option value="">Todos los sectores</option></select>
+        <select id="res-filter-piso" onchange="renderReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0"><option value="">Todos los pisos</option></select>
         <select id="res-filter-mes" onchange="renderReservas()" style="font-size:11px;padding:4px 8px;flex:1;min-width:0">
           <option value="">Todos los meses</option>
           <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
@@ -3292,11 +3286,13 @@ function exportAuditoriaPDF(){
 //=== RESERVAS EXPORT ========================================================
 function exportReservasExcel(){
   var fp  = document.getElementById('res-filter-piso').value;
+  var fsecPisos = resSectorPisos();
   var fm  = document.getElementById('res-filter-mes').value;
   var fpl = document.getElementById('res-filter-plat').value;
   var froat = document.getElementById('res-filter-roat') ? document.getElementById('res-filter-roat').value : '';
   var data = reservas.filter(function(r){
     return (!fp||r.piso===fp)
+      && (!fsecPisos||fsecPisos.indexOf(r.piso)>=0)
       && (!fm||r.fecha_entrada.indexOf(fm)===0||r.fecha_salida.indexOf(fm)===0)
       && (!fpl||r.plataforma===fpl)
       && (!froat||(froat==='pendiente'&&!r.roat_registrado)||(froat==='ok'&&r.roat_registrado));
@@ -3874,8 +3870,35 @@ function planSetOptions(sel, ps, withAll){
   sel.innerHTML=h;
   for(var i=0;i<sel.options.length;i++){ if(sel.options[i].value===prev && !sel.options[i].disabled){ sel.selectedIndex=i; return; } }
 }
+function resSectorPisos(){
+  var el=document.getElementById('res-filter-sector'); if(!el || !el.value) return null;
+  var found=null; getPlanSectores().forEach(function(sx){ if(sx.nombre===el.value) found=sx.pisos.slice(); });
+  return found || [];
+}
+function buildResFilterSelects(){
+  var ps=getPlanSectores();
+  var ss=document.getElementById('res-filter-sector');
+  if(ss){
+    var prevS=ss.value;
+    ss.innerHTML='<option value="">Todos los sectores</option>'+ps.map(function(sx){ return '<option value="'+planEscHtml(sx.nombre)+'">'+planEscHtml(sx.nombre)+'</option>'; }).join('');
+    ss.value=prevS; if(ss.selectedIndex<0) ss.value='';
+  }
+  var sp=document.getElementById('res-filter-piso');
+  if(sp){
+    var prevP=sp.value, sec=ss?ss.value:'', h='<option value="">Todos los pisos</option>';
+    ps.forEach(function(sx,i){
+      if(sec && sx.nombre!==sec) return;
+      if(!sx.pisos.length) return;
+      if(!sec) h+='<option disabled>&#9472;&#9472; '+planEscHtml(sx.nombre)+' &#9472;&#9472;</option>';
+      sx.pisos.forEach(function(p){ h+='<option value="'+planEscHtml(p)+'">'+planEscHtml(p)+'</option>'; });
+    });
+    sp.innerHTML=h; sp.value=prevP; if(sp.selectedIndex<0 || (sp.options[sp.selectedIndex]&&sp.options[sp.selectedIndex].disabled)) sp.value='';
+  }
+}
+function onResFilterSector(){ buildResFilterSelects(); renderReservas(); }
 function buildPlanPisoSelects(){
   var ps=getPlanSectores();
+  buildResFilterSelects();
   planSetOptions(document.getElementById('res-piso'), ps, null);
   planSetOptions(document.getElementById('inf-res-piso'), ps, true);
   var ss=document.getElementById('inp-plan-piso-sector');
@@ -4098,6 +4121,7 @@ async function saveReserva(){
 
 function renderReservas(){
   var fp = document.getElementById('res-filter-piso').value;
+  var fsecPisos = resSectorPisos();
   var fm = document.getElementById('res-filter-mes').value;
   var fpl = document.getElementById('res-filter-plat').value;
   var fper = document.getElementById('res-filter-periodo') ? document.getElementById('res-filter-periodo').value : '';
@@ -4105,6 +4129,7 @@ function renderReservas(){
   var froat = document.getElementById('res-filter-roat') ? document.getElementById('res-filter-roat').value : '';
   var data = reservas.filter(function(r){
     return (!fp||r.piso===fp)
+      && (!fsecPisos||fsecPisos.indexOf(r.piso)>=0)
       && (!fm||r.fecha_entrada.indexOf(fm)===0||r.fecha_salida.indexOf(fm)===0)
       && (!fpl||r.plataforma===fpl)
       && (!fper||r.periodo===fper)
@@ -4269,14 +4294,16 @@ function renderPlanning(){
   // Build grid
   var cellW=38; // px per day (ancho suficiente para mostrar '10P' completo)
   var rowH=40;
-  var labelW=110;
+  // Ancho de la columna PISO según el nombre más largo (entre 110 y 240 px)
+  var _maxLen=0; getPlanSectores().forEach(function(sx){ sx.pisos.forEach(function(p){ if(String(p).length>_maxLen) _maxLen=String(p).length; }); });
+  var labelW=Math.max(110, Math.min(240, Math.round(26+_maxLen*7.6)));
   var totalW=labelW+(daysInMonth*cellW);
 
   var h='<div style="min-width:'+totalW+'px">';
 
   // Header — days (día de la semana arriba, número del día abajo)
-  h+='<div style="display:flex;border-bottom:1px solid #C7CCD9;background:#EEF0F5">';
-  h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:8px 12px;font-size:11px;font-weight:600;color:var(--text2);align-self:flex-end;position:sticky;left:0;z-index:12;background:#F8F9FC;box-shadow:2px 0 3px -1px rgba(0,0,0,0.06)">PISO</div>';
+  h+='<div style="display:flex;border-bottom:1px solid #C7CCD9;background:#EEF0F5;position:sticky;top:0;z-index:14;min-width:'+totalW+'px">';
+  h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:8px 12px;font-size:11px;font-weight:600;color:var(--text2);align-self:stretch;display:flex;align-items:flex-end;position:sticky;left:0;z-index:15;background:#F8F9FC;box-shadow:2px 0 3px -1px rgba(0,0,0,0.06)">PISO</div>';
   for(var d=1;d<=daysInMonth;d++){
     var ds=planYear+'-'+(planMonth<9?'0':'')+(planMonth+1)+'-'+(d<10?'0':'')+d;
     var isToday=ds===todayStr;
@@ -4292,7 +4319,7 @@ function renderPlanning(){
 
   function renderPisoRow(piso){
     h+='<div style="display:flex;border-bottom:1px solid #C7CCD9;position:relative;height:'+rowH+'px;align-items:center">';
-    h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:0 12px;font-size:12px;font-weight:600;color:#1A1D27;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:sticky;left:0;z-index:11;background:#fff;box-shadow:2px 0 3px -1px rgba(0,0,0,0.06)">'+piso+'</div>';
+    h+='<div style="width:'+labelW+'px;flex-shrink:0;padding:0 12px;font-size:12px;font-weight:600;color:#1A1D27;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:sticky;left:0;z-index:11;background:#fff;box-shadow:2px 0 3px -1px rgba(0,0,0,0.06)" title="'+planEscHtml(piso)+'">'+planEscHtml(piso)+'</div>';
 
     // Day cells background
     var cellsH='<div style="display:flex;flex:1;height:100%">';
