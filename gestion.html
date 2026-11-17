@@ -996,6 +996,26 @@ tbody tr:hover{background:#F8F9FC}
     </div>
 
     <div class="card">
+      <div class="card-header"><div><div class="card-title">&#128197; Sectores del Planning</div><div class="card-sub">Sectores y pisos que aparecen en el Planning y en Reservas</div></div></div>
+      <div class="card-body">
+        <div id="cfg-plan-sectores" style="min-height:42px;margin-bottom:20px"></div>
+        <div style="padding-top:16px;border-top:1px solid #F0F2F7">
+          <div style="font-size:12px;font-weight:600;margin-bottom:10px;color:#1A1D27">Nuevo sector</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+            <input type="text" id="inp-plan-sector" placeholder="Nombre del sector" style="max-width:200px">
+            <button class="btn btn-primary" onclick="planCfgAddSector()">+ Agregar sector</button>
+          </div>
+          <div style="font-size:12px;font-weight:600;margin-bottom:10px;color:#1A1D27">Nuevo piso en el Planning</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <input type="text" id="inp-plan-piso" placeholder="Nombre del piso" style="max-width:200px">
+            <select id="inp-plan-piso-sector" style="max-width:180px"></select>
+            <button class="btn btn-primary" onclick="planCfgAddPiso()">+ Agregar piso</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-header"><div><div class="card-title">&#127968; Pisos por grupo</div><div class="card-sub">Agrega pisos a cada grupo</div></div></div>
       <div class="card-body">
         <div id="cfg-grupos" style="min-height:42px;margin-bottom:20px"></div>
@@ -1292,7 +1312,8 @@ async function loadFromSupabase(){
           workers: cfg.workers,
           grupos: cfg.grupos || JSON.parse(JSON.stringify(GRUPOS_BASE)),
           admins: cfg.admins || ADMINS_BASE.slice(),
-          disabled: cfg.disabled || []
+          disabled: cfg.disabled || [],
+          plan_sectores: cfg.plan_sectores || planSectoresBase()
         };
         // Force overwrite localStorage with Supabase data
         try{localStorage.removeItem('horas_config');}catch(e){}
@@ -1379,7 +1400,7 @@ function getCfg(){
 function saveCfg(c){
   try{localStorage.setItem('horas_config',JSON.stringify(c));}catch(e){}
   if(supa){
-    var saves = ['workers','admins','grupos','disabled'].map(function(key){
+    var saves = ['workers','admins','grupos','disabled','plan_sectores'].map(function(key){
       if(c[key]===undefined) return Promise.resolve();
       var val = c[key];
       // Ensure value is a plain JS object/array (not a string)
@@ -1507,6 +1528,7 @@ function showTab(name){
 
 //=== SELECTS ================================================================
 function buildSelects(){
+  if(typeof buildPlanPisoSelects==='function') buildPlanPisoSelects();
   var cfg=getCfg();
   var disabled=cfg.disabled||[];
   var activeW=cfg.workers.filter(function(w){return disabled.indexOf(w)<0;});
@@ -2072,6 +2094,7 @@ function renderDashboard(){
 //=== CONFIG =================================================================
 function renderConfig(){
   var cfg=getCfg();
+  if(typeof renderPlanSectoresCfg==='function') renderPlanSectoresCfg();
 
   var wEl=document.getElementById('cfg-workers');
   if(wEl){
@@ -3817,6 +3840,154 @@ var PISOS_TARTER = ['A01','B21','B24','C22','D12','D13','D43','D11 (Kristine)'];
 var PISOS_SOLO_LIMPIEZA = ['Nevada 32','Nevada 33','Nuria 3A'];
 var PISOS_SIN_TARIFA = PISOS_SOLO_LIMPIEZA.concat(PISOS_TARTER);
 function pisoTieneTarifa(piso){ return PISOS_SIN_TARIFA.indexOf(piso)<0; }
+
+//=== SECTORES DEL PLANNING (configurables) ==================================
+function planSectoresBase(){
+  return [
+    {nombre:'Pas de la Casa', pisos:(typeof PISOS_PAS!=='undefined'&&PISOS_PAS?PISOS_PAS:['Madriu 45','Dolsa 3','Morera 5C','Sapporo 20','Nevada 32','Nevada 33','Nuria 3A','Chamois 47']).slice()},
+    {nombre:'Tarter', pisos:(typeof PISOS_TARTER!=='undefined'&&PISOS_TARTER?PISOS_TARTER:['A01','B21','B24','C22','D12','D13','D43','D11 (Kristine)']).slice()}
+  ];
+}
+function getPlanSectores(){
+  var cfg=getCfg();
+  var ps=cfg.plan_sectores;
+  if(typeof ps==='string'){ try{ ps=JSON.parse(ps); }catch(e){ ps=null; } }
+  if(!Array.isArray(ps) || !ps.length) return planSectoresBase();
+  return ps.map(function(sx){ return {nombre:String(sx.nombre||''), pisos:Array.isArray(sx.pisos)?sx.pisos.slice():[]}; });
+}
+function savePlanSectores(ps){
+  var cfg=getCfg(); cfg.plan_sectores=ps; saveCfg(cfg);
+  buildPlanPisoSelects(); renderPlanSectoresCfg();
+  if(document.getElementById('plan-grid')) renderPlanning();
+}
+function planEscHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function planAllPisos(ps){ var all=[]; (ps||getPlanSectores()).forEach(function(sx){ all=all.concat(sx.pisos); }); return all; }
+function planSetOptions(sel, ps, withAll){
+  if(!sel) return;
+  var prev=sel.value, h='';
+  if(withAll) h+='<option value="all">Todos los pisos</option>';
+  ps.forEach(function(sx,i){
+    if(!sx.pisos.length) return;
+    if(i>0 || withAll===false) h+='<option disabled>&#9472;&#9472; '+planEscHtml(sx.nombre)+' &#9472;&#9472;</option>';
+    sx.pisos.forEach(function(p){ h+='<option value="'+planEscHtml(p)+'">'+planEscHtml(p)+'</option>'; });
+  });
+  sel.innerHTML=h;
+  for(var i=0;i<sel.options.length;i++){ if(sel.options[i].value===prev && !sel.options[i].disabled){ sel.selectedIndex=i; return; } }
+}
+function buildPlanPisoSelects(){
+  var ps=getPlanSectores();
+  planSetOptions(document.getElementById('res-piso'), ps, null);
+  planSetOptions(document.getElementById('inf-res-piso'), ps, true);
+  var ss=document.getElementById('inp-plan-piso-sector');
+  if(ss){ var prev=ss.value; ss.innerHTML=ps.map(function(sx){ return '<option value="'+planEscHtml(sx.nombre)+'">'+planEscHtml(sx.nombre)+'</option>'; }).join(''); if(prev) ss.value=prev; if(ss.selectedIndex<0) ss.selectedIndex=0; }
+}
+function renderPlanSectoresCfg(){
+  var el=document.getElementById('cfg-plan-sectores'); if(!el) return;
+  var ps=getPlanSectores(), h='';
+  var btn='background:#EEF3FF;border:none;cursor:pointer;color:#3B5BDB;font-weight:700;font-size:11px;padding:3px 8px;border-radius:10px;margin-left:4px';
+  var ib='background:none;border:none;cursor:pointer;color:#6B7280;font-size:11px;padding:0 3px';
+  ps.forEach(function(sx,i){
+    h+='<div style="margin-bottom:14px;padding:10px 12px;border:1px solid #E3E7EF;border-radius:8px">';
+    h+='<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:8px">';
+    h+='<b style="font-size:13px;text-transform:uppercase;letter-spacing:.04em;margin-right:6px">'+planEscHtml(sx.nombre)+'</b>';
+    h+='<span style="font-size:11px;color:#888">('+sx.pisos.length+' pisos)</span>';
+    h+='<button data-pact="secUp" data-i="'+i+'" title="Subir" style="'+btn+'"'+(i===0?' disabled':'')+'>&#9650;</button>';
+    h+='<button data-pact="secDown" data-i="'+i+'" title="Bajar" style="'+btn+'"'+(i===ps.length-1?' disabled':'')+'>&#9660;</button>';
+    h+='<button data-pact="secRen" data-i="'+i+'" title="Renombrar sector" style="'+btn+'">&#9998; Renombrar</button>';
+    h+='<button data-pact="secDel" data-i="'+i+'" title="Eliminar sector" style="'+btn+';background:#FDECEC;color:#DC3545">&#215; Eliminar</button>';
+    h+='</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    if(!sx.pisos.length) h+='<span style="font-size:11px;color:#999">Sin pisos todavía</span>';
+    sx.pisos.forEach(function(p,j){
+      h+='<span style="display:inline-flex;align-items:center;background:#F5F6F9;border:1px solid #E3E7EF;border-radius:14px;padding:3px 6px 3px 10px;font-size:12px"><span style="margin-right:4px">'+planEscHtml(p)+'</span>';
+      h+='<button data-pact="pUp" data-i="'+i+'" data-j="'+j+'" title="Mover antes" style="'+ib+'"'+(j===0?' disabled':'')+'>&#9664;</button>';
+      h+='<button data-pact="pDown" data-i="'+i+'" data-j="'+j+'" title="Mover después" style="'+ib+'"'+(j===sx.pisos.length-1?' disabled':'')+'>&#9654;</button>';
+      h+='<button data-pact="pMove" data-i="'+i+'" data-j="'+j+'" title="Cambiar de sector" style="'+ib+'">&#8644;</button>';
+      h+='<button data-pact="pRen" data-i="'+i+'" data-j="'+j+'" title="Renombrar piso" style="'+ib+'">&#9998;</button>';
+      h+='<button data-pact="pDel" data-i="'+i+'" data-j="'+j+'" title="Quitar del Planning" style="background:none;border:none;cursor:pointer;color:#DC3545;font-weight:900;font-size:15px;padding:0 4px">&#215;</button>';
+      h+='</span>';
+    });
+    h+='</div></div>';
+  });
+  el.innerHTML=h;
+  if(!el.dataset.bound){
+    el.dataset.bound='1';
+    el.addEventListener('click',function(ev){
+      var b=ev.target.closest('button[data-pact]'); if(!b || b.disabled) return;
+      var i=parseInt(b.getAttribute('data-i'),10), j=parseInt(b.getAttribute('data-j'),10);
+      planCfgAction(b.getAttribute('data-pact'), i, j);
+    });
+  }
+}
+function planCountReservas(piso){ return (reservas||[]).filter(function(r){ return r.piso===piso; }).length; }
+function planCfgAction(act,i,j){
+  var ps=getPlanSectores(), sx=ps[i]; if(!sx) return;
+  if(act==='secUp' && i>0){ var t=ps[i-1]; ps[i-1]=ps[i]; ps[i]=t; savePlanSectores(ps); logConfig('planning_ordenar_sector',sx.nombre,'',''); return; }
+  if(act==='secDown' && i<ps.length-1){ var t2=ps[i+1]; ps[i+1]=ps[i]; ps[i]=t2; savePlanSectores(ps); logConfig('planning_ordenar_sector',sx.nombre,'',''); return; }
+  if(act==='secRen'){
+    var nn=prompt('Nuevo nombre para el sector "'+sx.nombre+'":', sx.nombre);
+    if(!nn || !nn.trim() || nn.trim()===sx.nombre) return; nn=nn.trim();
+    if(ps.some(function(o,k){ return k!==i && o.nombre.toLowerCase()===nn.toLowerCase(); })) return toast('Ya existe un sector con ese nombre');
+    var old=sx.nombre; sx.nombre=nn; savePlanSectores(ps); logConfig('planning_renombrar_sector',old+' → '+nn,old,nn); toast('Sector renombrado'); return;
+  }
+  if(act==='secDel'){
+    if(sx.pisos.length) return toast('Primero mueve o quita los '+sx.pisos.length+' pisos de "'+sx.nombre+'"');
+    if(!confirm('¿Eliminar el sector "'+sx.nombre+'"?')) return;
+    ps.splice(i,1); savePlanSectores(ps); logConfig('planning_eliminar_sector',sx.nombre,sx.nombre,''); toast('Sector eliminado'); return;
+  }
+  var p=sx.pisos[j]; if(p===undefined) return;
+  if(act==='pUp' && j>0){ sx.pisos.splice(j,1); sx.pisos.splice(j-1,0,p); savePlanSectores(ps); return; }
+  if(act==='pDown' && j<sx.pisos.length-1){ sx.pisos.splice(j,1); sx.pisos.splice(j+1,0,p); savePlanSectores(ps); return; }
+  if(act==='pMove'){
+    var otros=ps.map(function(o){return o.nombre;}).filter(function(n){return n!==sx.nombre;});
+    if(!otros.length) return toast('Crea primero otro sector');
+    var dest=prompt('¿A qué sector mueves "'+p+'"?\nEscribe uno de estos:\n- '+otros.join('\n- '), otros[0]);
+    if(!dest) return; dest=dest.trim();
+    var di=-1; ps.forEach(function(o,k){ if(o.nombre.toLowerCase()===dest.toLowerCase()) di=k; });
+    if(di<0 || di===i) return toast('Sector no encontrado');
+    sx.pisos.splice(j,1); ps[di].pisos.push(p); savePlanSectores(ps);
+    logConfig('planning_mover_piso',p+': '+sx.nombre+' → '+ps[di].nombre,sx.nombre,ps[di].nombre); toast(p+' movido a '+ps[di].nombre); return;
+  }
+  if(act==='pRen'){
+    var np=prompt('Nuevo nombre para el piso "'+p+'":\n(las reservas de este piso también se actualizarán)', p);
+    if(!np || !np.trim() || np.trim()===p) return; np=np.trim();
+    if(planAllPisos(ps).indexOf(np)>=0) return toast('Ya existe un piso con ese nombre en el Planning');
+    sx.pisos[j]=np;
+    var n=0; (reservas||[]).forEach(function(r){ if(r.piso===p){ r.piso=np; n++; } });
+    if(supa && n>0){
+      supa.from('reservas').update({piso:np}).eq('piso',p).then(function(res){
+        if(res.error){ console.error('planning rename reservas:',res.error); toast('Error actualizando reservas: '+res.error.message); }
+      });
+    }
+    savePlanSectores(ps); logConfig('planning_renombrar_piso',p+' → '+np+(n?' ('+n+' reservas)':''),p,np);
+    toast('Piso renombrado'+(n?' ('+n+' reservas actualizadas)':'')); return;
+  }
+  if(act==='pDel'){
+    var nr=planCountReservas(p);
+    var msg='¿Quitar "'+p+'" del Planning?'+(nr?'\n\nTiene '+nr+' reservas: NO se borran, pero el piso dejará de verse en el Planning hasta que lo vuelvas a añadir con el mismo nombre.':'');
+    if(!confirm(msg)) return;
+    sx.pisos.splice(j,1); savePlanSectores(ps); logConfig('planning_quitar_piso',p+' de '+sx.nombre,p,''); toast('Piso quitado del Planning'); return;
+  }
+}
+function planCfgAddSector(){
+  var inp=document.getElementById('inp-plan-sector'), name=(inp.value||'').trim();
+  if(!name) return toast('Escribe el nombre del sector');
+  var ps=getPlanSectores();
+  if(ps.some(function(o){ return o.nombre.toLowerCase()===name.toLowerCase(); })) return toast('Ese sector ya existe');
+  ps.push({nombre:name, pisos:[]}); savePlanSectores(ps); inp.value='';
+  var ss=document.getElementById('inp-plan-piso-sector'); if(ss) ss.value=name;
+  logConfig('planning_agregar_sector',name,'',name); toast('Sector '+name+' creado');
+}
+function planCfgAddPiso(){
+  var inp=document.getElementById('inp-plan-piso'), name=(inp.value||'').trim();
+  var sec=document.getElementById('inp-plan-piso-sector').value;
+  if(!name) return toast('Escribe el nombre del piso');
+  var ps=getPlanSectores();
+  if(planAllPisos(ps).indexOf(name)>=0) return toast('Ese piso ya está en el Planning');
+  var target=null; ps.forEach(function(o){ if(o.nombre===sec) target=o; });
+  if(!target) return toast('Elige un sector');
+  target.pisos.push(name); savePlanSectores(ps); inp.value='';
+  logConfig('planning_agregar_piso',name+' -> '+sec,'',name); toast('Piso '+name+' agregado a '+sec);
+}
 var PLAT_COLORS = {'Airbnb':'#FF5A5F','Booking':'#003580','Directo':'#22C55E','Propietario':'#9CA3AF','default':'#6B7280'};
 
 async function loadReservas(){
@@ -3849,7 +4020,7 @@ function openNuevaReserva(){
   document.getElementById('modal-res-title').textContent = 'Nueva Reserva';
   ['res-nombre','res-pais','res-obs'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
   ['res-precio','res-taxa'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
-  document.getElementById('res-piso').value=PISOS_PAS[0];
+  var _ps=getPlanSectores(); var _first=null; _ps.some(function(sx){ if(sx.pisos.length){_first=sx.pisos[0];return true;} return false; }); if(_first) document.getElementById('res-piso').value=_first;
   document.getElementById('res-personas').value='2';
   document.getElementById('res-entrada').value='';
   document.getElementById('res-salida').value='';
@@ -4184,13 +4355,12 @@ function renderPlanning(){
     h+='</div>';
   }
 
-  // Grupo: Pas de la Casa
-  h+='<div style="padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:#F8F9FC;border-bottom:1px solid #F0F2F7;position:sticky;left:0;z-index:11">Pas de la Casa</div>';
-  PISOS_PAS.forEach(renderPisoRow);
-
-  // Grupo: Tarter
-  h+='<div style="padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:#F8F9FC;border-bottom:1px solid #F0F2F7;position:sticky;left:0;z-index:11">Tarter</div>';
-  PISOS_TARTER.forEach(renderPisoRow);
+  // Sectores configurables (Configuración > Sectores del Planning)
+  getPlanSectores().forEach(function(sec){
+    if(!sec.pisos || !sec.pisos.length) return;
+    h+='<div style="padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);background:#F8F9FC;border-bottom:1px solid #F0F2F7;position:sticky;left:0;z-index:11">'+planEscHtml(sec.nombre)+'</div>';
+    sec.pisos.forEach(renderPisoRow);
+  });
 
   h+='</div>';
 
