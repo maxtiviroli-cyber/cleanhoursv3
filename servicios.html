@@ -155,6 +155,7 @@ select.inp{appearance:auto}
 .lista-cli{display:flex;flex-direction:column;gap:8px;max-height:52dvh;overflow-y:auto}
 #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translateX(-50%);background:var(--s0);border:2px solid var(--green);color:var(--text);padding:12px 18px;border-radius:14px;font-size:17px;font-weight:600;z-index:60;display:none;max-width:92vw;text-align:center}
 #toast.on{display:block}#toast.error{border-color:var(--red);color:var(--red)}
+body.solo-ver #flotante, body.solo-ver [data-facturar] { display: none !important; }
 </style>
 </head>
 <body>
@@ -172,7 +173,7 @@ select.inp{appearance:auto}
       <div class="err" id="l-err"></div>
       <button class="btn pri" type="submit" id="l-btn" style="margin-top:8px">Entrar</button>
     </form>
-    <p class="vacio" style="padding:18px 0 0;font-size:15px">El mismo usuario que en Gestión. La sesión queda guardada en este dispositivo 60 días.</p>
+    <p class="vacio" style="padding:18px 0 0;font-size:15px">El mismo usuario que en Gestión y Facturación. La sesión queda guardada en este dispositivo 30 días.</p>
   </div>
 </section>
 
@@ -279,6 +280,10 @@ $('capa').addEventListener('click', function (ev) { if (ev.target === $('capa'))
 /* ================= Conexión ================= */
 var ERRORES = {
   admin_no_autorizado: 'Usuario o contraseña incorrectos, o sin permiso.',
+  credenciales: 'Usuario o contraseña incorrectos.',
+  sin_permiso: 'Tu usuario no tiene permiso para esto.',
+  solo_admin: 'Solo el administrador puede borrar.',
+  sin_acceso: 'Tu usuario no tiene acceso a Servicios.',
   sesion_invalida: 'La sesión ha caducado. Vuelve a entrar.',
   cliente_no_encontrado: 'Ese cliente ya no existe en Facturación.',
   cliente_obligatorio: 'Falta elegir el cliente de algún piso.',
@@ -324,7 +329,8 @@ function api(fn, args) {   // con la sesión guardada
 
 /* ================= Estado ================= */
 var S = {
-  token: LS.get('srv_token', null), nombre: LS.get('srv_nombre', null),
+  token: (function () { try { return localStorage.getItem('servap_sesion'); } catch (e) { return null; } })(),
+  nombre: null, nivel: 'no', admin: false,
   cat: LS.get('srv_cat', null),            // catálogo: clientes, servicios, sectores, recordados
   dia: hoy(), mes: hoy().slice(0, 7), tab: 'dia',
   registrosDia: [], pendientes: [], historial: []
@@ -341,18 +347,33 @@ function cargarCatalogo() {
 $('form-login').addEventListener('submit', function (ev) {
   ev.preventDefault();
   $('l-err').textContent = ''; $('l-btn').disabled = true; $('l-btn').textContent = 'Comprobando…';
-  rpc('srv_login', { p_user: $('l-user').value.trim(), p_pass: $('l-pass').value }).then(function (r) {
-    S.token = r.token; S.nombre = r.nombre; LS.set('srv_token', S.token); LS.set('srv_nombre', S.nombre);
+  rpc('acc_login', { p_user: $('l-user').value.trim().toLowerCase(), p_pass: $('l-pass').value }).then(function (r) {
     $('l-pass').value = '';
-    arrancarApp();
+    try { localStorage.setItem('servap_sesion', r.token); } catch (e) {}
+    S.token = r.token; aplicarPerfil(r);
   }, function (e) { $('l-err').textContent = textoError(e); })
     .then(function () { $('l-btn').disabled = false; $('l-btn').textContent = 'Entrar'; });
 });
+var RANGO = { no: 0, ver: 1, editar: 2, admin: 3 };
+function puede(n) { return (RANGO[S.nivel] || 0) >= RANGO[n]; }
+function aplicarPerfil(p) {
+  S.nombre = p.nombre; S.admin = !!p.admin; S.nivel = (p.permisos && p.permisos.servicios) || 'no';
+  if (!puede('ver')) {
+    mostrar('scr-login');
+    $('l-err').innerHTML = h(ERRORES.sin_acceso) + ' <a href="#" id="l-salir" style="color:inherit">Salir</a>';
+    $('l-salir').onclick = function (ev) { ev.preventDefault(); salir(false); };
+    return;
+  }
+  document.body.classList.toggle('solo-ver', !puede('editar'));
+  arrancarApp();
+}
 function salir(silencioso) {
-  if (S.token && !silencioso) rpc('srv_logout', { p_token: S.token }).catch(function () {});
-  S.token = null; S.nombre = null; S.cat = null;
+  if (S.token && !silencioso) rpc('acc_logout', { p_token: S.token }).catch(function () {});
+  S.token = null; S.nombre = null; S.cat = null; S.nivel = 'no'; S.admin = false;
+  try { localStorage.removeItem('servap_sesion'); } catch (e) {}
   LS.del('srv_token'); LS.del('srv_nombre'); LS.del('srv_cat');
-  cerrarCapa(); mostrar('scr-login');
+  document.body.classList.remove('solo-ver');
+  cerrarCapa(); mostrar('scr-login'); $('l-err').textContent = '';
 }
 function mostrar(id) { ['scr-login', 'scr-main', 'scr-wiz'].forEach(function (s) { $(s).classList.toggle('oculto', s !== id); }); window.scrollTo(0, 0); }
 $('btn-menu').onclick = function () {
@@ -604,11 +625,17 @@ function abrirEdicion(r) {
     capa('<h2>' + h(r.lugar_nombre || 'Sin piso') + '</h2><p>' + h(r.cliente_nombre) + '<br>' + h(r.concepto) + ' · ' + cant(r.cantidad) + ' ' + h(r.unidad) + ' × ' + eur(r.precio) + ' = <b>' + eur(r.importe) + '</b><br>' +
       fechaLarga(r.fecha) + '</p><p><span class="bd verde">Facturado · ' + h(r.factura_numero || '') + '</span></p>' +
       '<p style="font-size:15px">Para cambiarlo, vuélvelo primero a pendiente (por ejemplo, si la factura se anuló).</p>' +
-      '<button class="btn rojo" id="e-desm">Volver a pendiente</button><button class="btn lin" id="e-no">Cerrar</button>');
+      (puede('editar') ? '<button class="btn rojo" id="e-desm">Volver a pendiente</button>' : '') + '<button class="btn lin" id="e-no">Cerrar</button>');
     $('e-no').onclick = cerrarCapa;
-    $('e-desm').onclick = function () {
+    if ($('e-desm')) $('e-desm').onclick = function () {
       api('srv_desmarcar', { p_ids: [r.id] }).then(function () { cerrarCapa(); toast('Vuelve a estar pendiente'); refrescar(); cargarPendientes(); }, function (e) { toast(textoError(e), true); });
     };
+    return;
+  }
+  if (!puede('editar')) {
+    capa('<h2>' + h(r.lugar_nombre || 'Sin piso') + '</h2><p>' + h(r.cliente_nombre) + '<br>' + h(r.concepto) + ' · ' + cant(r.cantidad) + ' ' + h(r.unidad) + ' × ' + eur(r.precio) + ' = <b>' + eur(r.importe) + '</b><br>' +
+      fechaLarga(r.fecha) + (r.nota ? '<br>📝 ' + h(r.nota) : '') + '</p><p><span class="bd">Pendiente de facturar</span></p><button class="btn lin" id="e-no">Cerrar</button>');
+    $('e-no').onclick = cerrarCapa;
     return;
   }
   var opsLug = '<option value="">Sin piso</option>' + (S.cat.sectores || []).map(function (s) {
@@ -626,7 +653,7 @@ function abrirEdicion(r) {
     '<div class="fila"><div><label class="campo" for="e-cant">Cantidad</label><input class="inp" id="e-cant" inputmode="decimal" value="' + cant(r.cantidad) + '"></div>' +
     '<div><label class="campo" for="e-precio">Precio (€)</label><input class="inp" id="e-precio" inputmode="decimal" value="' + cant(r.precio) + '"></div></div>' +
     '<label class="campo" for="e-nota">Nota</label><textarea class="inp" id="e-nota" maxlength="300">' + h(r.nota || '') + '</textarea>' +
-    '<button class="btn verde" id="e-ok">Guardar cambios</button><button class="btn rojo" id="e-borrar">Borrar</button><button class="btn lin" id="e-no">Cancelar</button>');
+    '<button class="btn verde" id="e-ok">Guardar cambios</button>' + (S.admin ? '<button class="btn rojo" id="e-borrar">Borrar</button>' : '') + '<button class="btn lin" id="e-no">Cancelar</button>');
   $('e-srv').addEventListener('change', function () {
     var s = S.cat.servicios.filter(function (x) { return x.id === $('e-srv').value; })[0];
     if (s) { $('e-conc').value = s.nombre; $('e-precio').value = cant(s.precio); }
@@ -644,7 +671,7 @@ function abrirEdicion(r) {
       p_cantidad: r2(cantidad), p_precio: r2(precio), p_nota: $('e-nota').value.trim() || null
     }).then(function () { cerrarCapa(); toast('Cambios guardados'); refrescar(); cargarPendientes(); }, function (e) { toast(textoError(e), true); });
   };
-  $('e-borrar').onclick = function () {
+  if ($('e-borrar')) $('e-borrar').onclick = function () {
     capa('<h2>¿Borrar este servicio?</h2><p>' + h(r.lugar_nombre || 'Sin piso') + ' · ' + h(r.concepto) + ' · ' + eur(r.importe) + '</p>' +
       '<div class="fila"><button class="btn lin" id="b-no">No</button><button class="btn rojo" id="b-si">Borrar</button></div>');
     $('b-no').onclick = function () { abrirEdicion(r); };
@@ -790,8 +817,16 @@ function cargarHistorial() {
 }
 
 /* ================= Arranque ================= */
-if (S.token) arrancarApp(); else mostrar('scr-login');
-document.addEventListener('visibilitychange', function () { if (!document.hidden && S.token) { refrescar(); cargarPendientes(); } });
+LS.del('srv_token'); LS.del('srv_nombre');   // sesión antigua de Servicios
+if (S.token) {
+  mostrar('scr-login'); $('l-err').textContent = 'Recuperando sesión…';
+  rpc('acc_yo', { p_token: S.token }).then(function (p) { $('l-err').textContent = ''; aplicarPerfil(p); }, function (e) {
+    if (e.tipo === 'red' && S.cat) { $('l-err').textContent = ''; arrancarApp(); return; }
+    if (e.tipo === 'red') { $('l-err').textContent = textoError(e); return; }
+    salir(true);
+  });
+} else { LS.del('srv_cat'); mostrar('scr-login'); }
+document.addEventListener('visibilitychange', function () { if (!document.hidden && S.token && puede('ver')) { refrescar(); cargarPendientes(); } });
 </script>
 </body>
 </html>

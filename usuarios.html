@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Servap · Usuarios y accesos</title>
+<meta name="theme-color" content="#1E1E2E">
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon-fichaje-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#1E1E2E;--mantle:#181825;--crust:#11111B;--s0:#313244;--s1:#45475A;--s2:#585B70;
+  --text:#CDD6F4;--sub:#A6ADC8;--muted:#7F849C;
+  --green:#A6E3A1;--red:#F38BA8;--yellow:#F9E2AF;--peach:#FAB387;--mauve:#CBA6F7;--blue:#89B4FA;
+  --mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--base);color:var(--text);font-family:var(--sans);font-size:16px}
+button,input,select{font-family:inherit;font-size:16px;color:inherit}
+button{cursor:pointer}
+a{color:var(--blue)}
+.oculto{display:none!important}
+#login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px 16px}
+.login-caja{width:100%;max-width:400px;background:var(--mantle);border:1px solid var(--s0);border-radius:16px;padding:28px 22px}
+.marca{font-family:var(--mono);font-size:13px;letter-spacing:2px;color:var(--mauve);text-transform:uppercase}
+.login-caja h1{font-size:25px;margin:6px 0 18px}
+label.campo{display:block;font-size:14px;color:var(--sub);margin:14px 0 6px}
+.inp{width:100%;height:48px;border-radius:10px;border:1px solid var(--s1);background:var(--base);padding:0 12px;outline:none}
+.inp:focus{border-color:var(--mauve)}
+.btn{height:46px;padding:0 18px;border-radius:10px;border:1px solid var(--s1);background:var(--s0);font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn:hover{border-color:var(--s2)}
+.btn.pri{background:var(--mauve);border-color:var(--mauve);color:var(--crust)}
+.btn.rojo{background:transparent;border-color:var(--red);color:var(--red)}
+.btn.peq{height:36px;padding:0 12px;font-size:14px;border-radius:8px}
+.btn.ancho{width:100%}
+.err{color:var(--red);font-size:15px;min-height:20px;margin-top:10px}
+header{position:sticky;top:0;z-index:20;background:var(--crust);border-bottom:1px solid var(--s0);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header .tit{font-weight:700;font-size:18px}
+header .usuario{margin-left:auto;font-size:14px;color:var(--sub);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+main{padding:16px;max-width:900px;margin:0 auto}
+.ayuda{font-size:15px;color:var(--sub);line-height:1.55;margin-bottom:16px}
+.barra{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.tarjeta{background:var(--mantle);border:1px solid var(--s0);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+.tarjeta.inactivo{opacity:.6}
+.t-cab{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.t-nom{font-weight:700;font-size:18px}
+.t-usu{font-family:var(--mono);font-size:14px;color:var(--mauve);margin-top:2px}
+.t-cab .btn{margin-left:auto}
+.mods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.mod{background:var(--base);border:1px solid var(--s0);border-radius:10px;padding:8px 10px}
+.mod .l{font-size:12px;color:var(--sub)}
+.mod .v{font-weight:600;font-size:15px;margin-top:2px}
+.v-no{color:var(--muted)}.v-ver{color:var(--blue)}.v-editar{color:var(--green)}.v-admin{color:var(--mauve)}
+.t-pie{font-size:13px;color:var(--muted);margin-top:10px}
+@media (max-width:620px){.mods{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.bd{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px;border:1px solid;vertical-align:middle;margin-left:6px}
+.bd.adm{color:var(--mauve);border-color:rgba(203,166,247,.5)}
+.bd.gris{color:var(--muted);border-color:var(--s1)}
+.bd.yo{color:var(--yellow);border-color:rgba(249,226,175,.45)}
+.vacio{padding:26px;text-align:center;color:var(--sub)}
+.modal-fondo{position:fixed;inset:0;background:rgba(17,17,27,.84);display:none;align-items:flex-start;justify-content:center;padding:30px 12px;z-index:50;overflow-y:auto}
+.modal-fondo.on{display:flex}
+.modal{width:100%;max-width:540px;background:var(--base);border:1px solid var(--s1);border-radius:16px;padding:20px 18px}
+.modal h2{font-size:21px;margin-bottom:4px}
+.modal .sub{font-size:14px;color:var(--sub);margin-bottom:6px;line-height:1.5}
+.modal .pie{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.check{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:16px}
+.check input{width:22px;height:22px}
+.permiso{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--s0);flex-wrap:wrap}
+.permiso .n{flex:1 1 120px;font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--s1);border-radius:10px;overflow:hidden}
+.seg button{height:42px;min-width:74px;padding:0 12px;border:0;background:none;color:var(--sub);font-weight:600}
+.seg button+button{border-left:1px solid var(--s1)}
+.seg button.on[data-v="no"]{background:var(--s0);color:var(--text)}
+.seg button.on[data-v="ver"]{background:rgba(137,180,250,.18);color:var(--blue)}
+.seg button.on[data-v="editar"]{background:rgba(166,227,161,.18);color:var(--green)}
+.nota{font-size:13px;color:var(--sub);margin-top:6px;line-height:1.45}
+.fila-clave{display:flex;gap:8px}
+.fila-clave .inp{flex:1;font-family:var(--mono)}
+.clave-grande{font-family:var(--mono);font-size:30px;text-align:center;color:var(--mauve);margin:10px 0;word-break:break-all}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--s0);border:1px solid var(--s2);color:var(--text);padding:12px 18px;border-radius:12px;font-size:15px;z-index:60;display:none;max-width:90vw;text-align:center}
+#toast.on{display:block}
+#toast.error{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+
+<section id="login">
+  <form class="login-caja" id="form-login" autocomplete="on">
+    <div class="marca">Servap</div>
+    <h1>Usuarios y accesos</h1>
+    <label class="campo" for="l-user">Usuario</label>
+    <input class="inp" id="l-user" autocomplete="username" autocapitalize="none" required>
+    <label class="campo" for="l-pass">Contraseña</label>
+    <input class="inp" id="l-pass" type="password" autocomplete="current-password" required>
+    <div class="err" id="l-err"></div>
+    <button class="btn pri ancho" type="submit" id="l-btn" style="margin-top:6px">Entrar</button>
+    <p class="nota" style="margin-top:14px">El mismo usuario que en Gestión y Facturación.</p>
+  </form>
+</section>
+
+<div id="app" class="oculto">
+  <header>
+    <div class="tit">Usuarios y accesos</div>
+    <div class="usuario"><span id="u-nombre"></span><button class="btn peq" id="btn-mi-clave">Mi contraseña</button><button class="btn peq" id="btn-salir">Salir</button></div>
+  </header>
+  <main>
+    <div id="solo-yo" class="oculto">
+      <p class="ayuda">Desde aquí puedes cambiar tu contraseña. Los permisos los gestiona el administrador.</p>
+    </div>
+    <div id="zona-admin" class="oculto">
+      <p class="ayuda">Cada persona tiene un usuario y contraseña para entrar a Gestión, Facturación, Servicios y Personal (fichajes).
+        En cada sección puede tener <b class="v-no">Sin acceso</b>, <b class="v-ver">Ver</b> (consulta, sin cambiar nada) o <b class="v-editar">Editar</b> (crear y modificar).
+        <b>Eliminar</b> solo lo pueden hacer los administradores.</p>
+      <div class="barra"><button class="btn pri" id="btn-nuevo">+ Nuevo usuario</button></div>
+      <div id="lista"><div class="vacio">Cargando…</div></div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-fondo" id="modal"><div class="modal" id="modal-caja"></div></div>
+<div id="toast"></div>
+
+<script>
+var SB_URL = 'https://kellhcuvbvgofgiwbeka.supabase.co';
+var SB_KEY = 'sb_publishable_XybZM-ibMJr_rE2fxWKhnA_6XgnZnH9';
+var MODULOS = [['gestion', 'Gestión'], ['facturacion', 'Facturación'], ['servicios', 'Servicios'], ['personal', 'Personal']];
+var NIVEL_TXT = { no: 'Sin acceso', ver: 'Ver', editar: 'Editar', admin: 'Todo' };
+
+function $(id) { return document.getElementById(id); }
+function h(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+var tt = null;
+function toast(msg, error) {
+  var t = $('toast'); t.textContent = msg; t.className = 'on' + (error ? ' error' : '');
+  clearTimeout(tt); tt = setTimeout(function () { t.className = ''; }, error ? 5000 : 3000);
+}
+function abrirModal(html) { $('modal-caja').innerHTML = html; $('modal').classList.add('on'); }
+function cerrarModal() { $('modal').classList.remove('on'); $('modal-caja').innerHTML = ''; }
+
+var ERRORES = {
+  credenciales: 'Usuario o contraseña incorrectos.',
+  sesion_invalida: 'La sesión ha caducado. Vuelve a entrar.',
+  solo_admin: 'Solo un administrador puede gestionar usuarios.',
+  sin_permiso: 'Solo un administrador puede gestionar usuarios.',
+  usuario_formato: 'El usuario solo puede llevar minúsculas, números, punto o guion (3 a 30).',
+  usuario_repetido: 'Ese usuario ya existe.',
+  nombre_obligatorio: 'Escribe el nombre.',
+  clave_corta: 'La contraseña debe tener al menos 6 caracteres.',
+  clave_obligatoria: 'Escribe una contraseña para el usuario nuevo.',
+  clave_actual_incorrecta: 'La contraseña actual no es correcta.',
+  no_a_ti_mismo: 'No puedes quitarte a ti mismo la administración, desactivarte ni borrarte.',
+  sin_admin: 'Tiene que quedar al menos un administrador activo.',
+  usuario_no_encontrado: 'Ese usuario ya no existe.'
+};
+function textoError(e) {
+  if (!e) return 'Error desconocido';
+  if (e.tipo === 'red') return 'Sin conexión. Inténtalo de nuevo.';
+  if (ERRORES[e.codigo]) return ERRORES[e.codigo];
+  if (/acc_|Could not find the function/.test(e.codigo || '')) return 'Falta ejecutar accesos_v1.sql en Supabase.';
+  return 'Error: ' + e.codigo;
+}
+function rpc(fn, args) {
+  return fetch(SB_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST', cache: 'no-store',
+    headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY },
+    body: JSON.stringify(args || {})
+  }).then(function (res) {
+    return res.text().then(function (txt) {
+      var body = null; try { body = txt ? JSON.parse(txt) : null; } catch (e) {}
+      if (res.ok) return body;
+      throw { tipo: 'servidor', codigo: (body && body.message) || ('HTTP ' + res.status) };
+    });
+  }, function () { throw { tipo: 'red' }; });
+}
+var TOKEN = null, YO = null, USUARIOS = [];
+function api(fn, args) {
+  return rpc(fn, Object.assign({ p_token: TOKEN }, args || {})).catch(function (e) {
+    if (e.codigo === 'sesion_invalida') { salir(true); toast(ERRORES.sesion_invalida, true); }
+    throw e;
+  });
+}
+
+/* ---------- Entrar / salir ---------- */
+$('form-login').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  $('l-err').textContent = ''; $('l-btn').disabled = true; $('l-btn').textContent = 'Comprobando…';
+  rpc('acc_login', { p_user: $('l-user').value.trim().toLowerCase(), p_pass: $('l-pass').value }).then(function (r) {
+    $('l-pass').value = '';
+    try { localStorage.setItem('servap_sesion', r.token); } catch (e) {}
+    entrar(r, r.token);
+  }, function (e) { $('l-err').textContent = textoError(e); })
+    .then(function () { $('l-btn').disabled = false; $('l-btn').textContent = 'Entrar'; });
+});
+function entrar(p, token) {
+  TOKEN = token; YO = p;
+  $('login').classList.add('oculto'); $('app').classList.remove('oculto');
+  $('u-nombre').textContent = p.nombre + (p.admin ? ' · administrador' : '');
+  $('zona-admin').classList.toggle('oculto', !p.admin);
+  $('solo-yo').classList.toggle('oculto', !!p.admin);
+  if (p.admin) cargar();
+}
+function salir(silencioso) {
+  if (TOKEN && !silencioso) rpc('acc_logout', { p_token: TOKEN }).catch(function () {});
+  try { localStorage.removeItem('servap_sesion'); } catch (e) {}
+  TOKEN = null; YO = null; USUARIOS = [];
+  cerrarModal();
+  $('app').classList.add('oculto'); $('login').classList.remove('oculto');
+}
+$('btn-salir').onclick = function () { salir(false); };
+
+/* ---------- Lista ---------- */
+function cargar() {
+  return api('acc_usuarios').then(function (l) { USUARIOS = l || []; pintar(); }, function (e) {
+    $('lista').innerHTML = '<div class="vacio">' + h(textoError(e)) + '</div>';
+  });
+}
+function fechaHora(ts) {
+  if (!ts) return 'nunca';
+  try { return new Date(ts).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ts; }
+}
+function pintar() {
+  if (!USUARIOS.length) { $('lista').innerHTML = '<div class="vacio">No hay usuarios.</div>'; return; }
+  $('lista').innerHTML = USUARIOS.map(function (u) {
+    return '<div class="tarjeta' + (u.activo ? '' : ' inactivo') + '"><div class="t-cab"><div><div class="t-nom">' + h(u.nombre) +
+      (u.admin ? '<span class="bd adm">Administrador</span>' : '') + (u.activo ? '' : '<span class="bd gris">Desactivado</span>') +
+      (YO && u.id === YO.id ? '<span class="bd yo">Tú</span>' : '') + '</div>' +
+      '<div class="t-usu">' + h(u.username) + '</div></div>' +
+      '<button class="btn peq" data-edit="' + u.id + '">Editar</button></div>' +
+      '<div class="mods">' + MODULOS.map(function (m) {
+        var v = (u.permisos && u.permisos[m[0]]) || 'no';
+        return '<div class="mod"><div class="l">' + m[1] + '</div><div class="v v-' + v + '">' + NIVEL_TXT[v] + '</div></div>';
+      }).join('') + '</div>' +
+      '<div class="t-pie">Última entrada: ' + h(fechaHora(u.ultima_entrada)) + (u.tiene_clave ? '' : ' · <span style="color:var(--yellow)">sin contraseña</span>') + '</div></div>';
+  }).join('');
+}
+$('lista').addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-edit]'); if (!b) return;
+  var id = Number(b.getAttribute('data-edit'));
+  editar(USUARIOS.filter(function (u) { return u.id === id; })[0]);
+});
+$('btn-nuevo').onclick = function () { editar(null); };
+
+/* ---------- Crear / editar ---------- */
+function claveAleatoria() {
+  var c = 'abcdefghjkmnpqrstuvwxyz23456789', b = new Uint32Array(8), s = '';
+  crypto.getRandomValues(b); for (var i = 0; i < 8; i++) s += c[b[i] % c.length];
+  return s;
+}
+function sinAcentos(t) { return t.normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function usuarioSugerido(nombre) {
+  var p = sinAcentos(nombre.toLowerCase()).replace(/[^a-z\s]/g, '').split(/\s+/).filter(function (x) { return x && ['de', 'del', 'la', 'las', 'los', 'y', 'i'].indexOf(x) < 0; });
+  if (!p.length) return '';
+  return p.length === 1 ? p[0] : p[0][0] + p[1];
+}
+function editar(u) {
+  var nuevo = !u, esYo = u && YO && u.id === YO.id;
+  var perm = {};
+  MODULOS.forEach(function (m) { var v = u && u.permisos ? u.permisos[m[0]] : 'no'; perm[m[0]] = (v === 'admin' ? 'editar' : (v || 'no')); });
+  var adminInicial = u ? !!u.admin : false;
+  abrirModal('<h2>' + (nuevo ? 'Nuevo usuario' : 'Editar · ' + h(u.nombre)) + '</h2>' +
+    '<label class="campo" for="ed-nom">Nombre</label><input class="inp" id="ed-nom" maxlength="80" value="' + h(u ? u.nombre : '') + '">' +
+    '<label class="campo" for="ed-usu">Usuario (para entrar)</label><input class="inp" id="ed-usu" autocapitalize="none" maxlength="30" style="font-family:var(--mono)" value="' + h(u ? u.username : '') + '">' +
+    '<label class="check"><input type="checkbox" id="ed-admin"' + (adminInicial ? ' checked' : '') + (esYo ? ' disabled' : '') + '> Administrador (todo, incluido eliminar y gestionar usuarios)</label>' +
+    '<div id="ed-perms"' + (adminInicial ? ' class="oculto"' : '') + '><label class="campo" style="margin-top:18px">Acceso por sección</label>' +
+    MODULOS.map(function (m) {
+      return '<div class="permiso"><span class="n">' + m[1] + '</span><span class="seg" data-mod="' + m[0] + '">' +
+        ['no', 'ver', 'editar'].map(function (v) { return '<button type="button" data-v="' + v + '"' + (perm[m[0]] === v ? ' class="on"' : '') + '>' + (v === 'no' ? 'No' : NIVEL_TXT[v]) + '</button>'; }).join('') +
+        '</span></div>';
+    }).join('') + '<p class="nota">«Ver» permite consultar todo sin cambiar nada. «Editar» permite crear y modificar, pero no eliminar.</p></div>' +
+    '<label class="check"><input type="checkbox" id="ed-act"' + (!u || u.activo ? ' checked' : '') + (esYo ? ' disabled' : '') + '> Activo (puede entrar)</label>' +
+    '<label class="campo" for="ed-clave">' + (nuevo ? 'Contraseña' : 'Nueva contraseña (déjalo vacío para no cambiarla)') + '</label>' +
+    '<div class="fila-clave"><input class="inp" id="ed-clave" autocomplete="new-password" maxlength="60"><button class="btn" type="button" id="ed-gen">Generar</button></div>' +
+    '<p class="nota">Mínimo 6 caracteres. Al cambiarla, se cierran sus sesiones abiertas.</p>' +
+    '<div class="pie">' + (nuevo || esYo ? '' : '<button class="btn rojo" id="ed-borrar" style="margin-right:auto">Borrar</button>') +
+    '<button class="btn" id="ed-can">Cancelar</button><button class="btn pri" id="ed-ok">' + (nuevo ? 'Crear usuario' : 'Guardar') + '</button></div>');
+  var tocadoUsu = !nuevo;
+  $('ed-nom').addEventListener('input', function () { if (!tocadoUsu) $('ed-usu').value = usuarioSugerido(this.value); });
+  $('ed-usu').addEventListener('input', function () { tocadoUsu = true; var p = this.selectionStart; this.value = this.value.toLowerCase().replace(/\s/g, ''); try { this.setSelectionRange(p, p); } catch (e) {} });
+  $('ed-admin').addEventListener('change', function () { $('ed-perms').classList.toggle('oculto', this.checked); });
+  $('ed-perms').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-v]'); if (!b) return;
+    var seg = b.parentNode; seg.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
+  });
+  $('ed-gen').onclick = function () { $('ed-clave').value = claveAleatoria(); };
+  $('ed-can').onclick = cerrarModal;
+  if ($('ed-borrar')) $('ed-borrar').onclick = function () { borrar(u); };
+  $('ed-ok').onclick = function () {
+    var permisos = {};
+    document.querySelectorAll('#ed-perms .seg').forEach(function (s) { var on = s.querySelector('.on'); permisos[s.getAttribute('data-mod')] = on ? on.getAttribute('data-v') : 'no'; });
+    var clave = $('ed-clave').value;
+    var datos = {
+      p_id: u ? u.id : null, p_username: $('ed-usu').value.trim(), p_nombre: $('ed-nom').value.trim(),
+      p_admin: $('ed-admin').checked, p_permisos: permisos, p_activo: $('ed-act').checked, p_clave: clave ? clave : null
+    };
+    if (!datos.p_nombre) return toast(ERRORES.nombre_obligatorio, true);
+    if (nuevo && !clave) return toast(ERRORES.clave_obligatoria, true);
+    if (clave && clave.length < 6) return toast(ERRORES.clave_corta, true);
+    $('ed-ok').disabled = true;
+    api('acc_guardar_usuario', datos).then(function () {
+      if (clave) {
+        abrirModal('<h2>' + (nuevo ? 'Usuario creado' : 'Contraseña cambiada') + '</h2><p class="sub">Dale estos datos a <b>' + h(datos.p_nombre) + '</b>. La contraseña no se vuelve a mostrar.</p>' +
+          '<label class="campo">Usuario</label><div class="clave-grande">' + h(datos.p_username.toLowerCase()) + '</div>' +
+          '<label class="campo">Contraseña</label><div class="clave-grande">' + h(clave) + '</div>' +
+          '<div class="pie"><button class="btn pri" id="cl-ok">Hecho</button></div>');
+        $('cl-ok').onclick = cerrarModal;
+      } else { cerrarModal(); toast('Cambios guardados'); }
+      cargar();
+    }, function (e) { if ($('ed-ok')) $('ed-ok').disabled = false; toast(textoError(e), true); });
+  };
+}
+function borrar(u) {
+  abrirModal('<h2>¿Borrar a ' + h(u.nombre) + '?</h2><p class="sub">Ya no podrá entrar. Si solo quieres impedirle el acceso por un tiempo, mejor desmarca «Activo».</p>' +
+    '<div class="pie"><button class="btn" id="bo-no">No</button><button class="btn rojo" id="bo-si">Borrar</button></div>');
+  $('bo-no').onclick = function () { editar(u); };
+  $('bo-si').onclick = function () {
+    api('acc_borrar_usuario', { p_id: u.id }).then(function () { cerrarModal(); toast('Usuario borrado'); cargar(); }, function (e) { toast(textoError(e), true); });
+  };
+}
+
+/* ---------- Mi contraseña ---------- */
+$('btn-mi-clave').onclick = function () {
+  abrirModal('<h2>Cambiar mi contraseña</h2>' +
+    '<label class="campo" for="mc-act">Contraseña actual</label><input class="inp" id="mc-act" type="password" autocomplete="current-password">' +
+    '<label class="campo" for="mc-n1">Nueva contraseña</label><input class="inp" id="mc-n1" type="password" autocomplete="new-password">' +
+    '<label class="campo" for="mc-n2">Repite la nueva</label><input class="inp" id="mc-n2" type="password" autocomplete="new-password">' +
+    '<p class="nota">Mínimo 6 caracteres. Se cerrarán tus sesiones en otros dispositivos.</p>' +
+    '<div class="pie"><button class="btn" id="mc-can">Cancelar</button><button class="btn pri" id="mc-ok">Cambiar</button></div>');
+  $('mc-can').onclick = cerrarModal;
+  $('mc-ok').onclick = function () {
+    if ($('mc-n1').value !== $('mc-n2').value) return toast('Las dos contraseñas nuevas no coinciden.', true);
+    if ($('mc-n1').value.length < 6) return toast(ERRORES.clave_corta, true);
+    api('acc_cambiar_mi_clave', { p_actual: $('mc-act').value, p_nueva: $('mc-n1').value }).then(function () {
+      cerrarModal(); toast('Contraseña cambiada');
+    }, function (e) { toast(textoError(e), true); });
+  };
+};
+$('modal').addEventListener('click', function (ev) { if (ev.target === $('modal')) cerrarModal(); });
+
+/* ---------- Arranque ---------- */
+(function () {
+  var t = null; try { t = localStorage.getItem('servap_sesion'); } catch (e) {}
+  if (!t) return;
+  $('l-err').textContent = 'Recuperando sesión…';
+  rpc('acc_yo', { p_token: t }).then(function (p) { $('l-err').textContent = ''; entrar(p, t); }, function (e) {
+    $('l-err').textContent = e.tipo === 'red' ? textoError(e) : '';
+    if (e.codigo === 'sesion_invalida') { try { localStorage.removeItem('servap_sesion'); } catch (x) {} }
+  });
+})();
+</script>
+</body>
+</html>

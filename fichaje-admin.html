@@ -129,6 +129,8 @@ textarea.inp{height:auto;min-height:110px;padding:10px 12px;line-height:1.45;res
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--s0);border:1px solid var(--s2);color:var(--text);padding:12px 18px;border-radius:12px;font-size:14px;z-index:60;display:none;max-width:90vw;text-align:center}
 #toast.on{display:block}
 #toast.error{border-color:var(--red);color:var(--red)}
+body.solo-ver [data-acc], body.solo-ver [data-pers], body.solo-ver #btn-val-todos, body.solo-ver #btn-nueva-pers,
+body.solo-ver #btn-nuevo-sector, body.solo-ver #btn-nuevo-lugar { display: none !important; }
 </style>
 </head>
 <body>
@@ -144,7 +146,7 @@ textarea.inp{height:auto;min-height:110px;padding:10px 12px;line-height:1.45;res
     <input class="inp" id="l-pass" type="password" autocomplete="current-password" required>
     <div class="err" id="l-err"></div>
     <button class="btn pri ancho" type="submit" id="l-btn" style="margin-top:6px">Entrar</button>
-    <p class="nota" style="margin-top:14px">Usa el mismo usuario y contraseña que en Gestión. Solo pueden entrar administradores y supervisores.</p>
+    <p class="nota" style="margin-top:14px">Usa el mismo usuario y contraseña que en Gestión. Hace falta acceso a «Personal».</p>
   </form>
 </section>
 
@@ -187,7 +189,7 @@ textarea.inp{height:auto;min-height:110px;padding:10px 12px;line-height:1.45;res
     <!-- ---------- Personal ---------- -->
     <section class="panel" id="p-personal">
       <div class="barra">
-        <p class="ayuda" style="margin:0">Cada persona entra en el móvil con su nombre y un PIN. Si cambias el PIN, su móvil le pedirá el nuevo.</p>
+        <p class="ayuda" style="margin:0">Cada persona entra en el móvil con su usuario y un PIN. Si cambias el PIN, su móvil le pedirá el nuevo.</p>
         <button class="btn pri der" id="btn-nueva-pers">+ Nueva persona</button>
       </div>
       <div class="tabla-wrap" id="tabla-personal"></div>
@@ -268,10 +270,18 @@ function toast(msg, error) {
 }
 
 /* ================= Conexión ================= */
-var CRED = null;
-try { CRED = JSON.parse(sessionStorage.getItem('fa_cred')); } catch (e) {}
+var CRED = null;      // { user: '__token__', pass: <sesión común> }
+var PERFIL = null;
+var ACC_RANGO = { no: 0, ver: 1, editar: 2, admin: 3 };
+function accToken() { try { return localStorage.getItem('servap_sesion'); } catch (e) { return null; } }
+function puede(n) { var v = PERFIL && PERFIL.permisos ? (PERFIL.permisos.personal || 'no') : 'no'; return (ACC_RANGO[v] || 0) >= ACC_RANGO[n]; }
+try { sessionStorage.removeItem('fa_cred'); } catch (e) {}   // forma antigua (guardaba la contraseña)
 var ERRORES = {
-  admin_no_autorizado: 'Usuario o contraseña incorrectos, o sin permiso de administrador.',
+  admin_no_autorizado: 'Usuario o contraseña incorrectos, o sin permiso.',
+  credenciales: 'Usuario o contraseña incorrectos.',
+  sesion_invalida: 'La sesión ha caducado. Vuelve a entrar.',
+  sin_permiso: 'Tu usuario solo puede ver esta sección, no cambiarla.',
+  sin_acceso: 'Tu usuario no tiene acceso a Personal.',
   pin_formato: 'El PIN debe tener entre 4 y 6 números.',
   motivo_obligatorio: 'Escribe el motivo de la corrección.',
   ya_validado: 'Ese tramo ya está validado y no se puede corregir.',
@@ -285,7 +295,9 @@ var ERRORES = {
   sector_no_encontrado: 'Sector no encontrado.',
   tramo_no_encontrado: 'Tramo no encontrado.',
   tipo_invalido: 'Operación no válida.',
-  nota_larga: 'La nota no puede pasar de 500 caracteres.'
+  nota_larga: 'La nota no puede pasar de 500 caracteres.',
+  usuario_repetido: 'Ese usuario ya lo tiene otra persona.',
+  usuario_formato: 'El usuario solo puede llevar minúsculas, números, punto o guion (3 a 30).'
 };
 function textoError(e) {
   if (!e) return 'Error desconocido';
@@ -311,13 +323,13 @@ function rpc(fn, args) {
 function adm(fn, args) {   // llamada de administración con usuario y contraseña
   var a = Object.assign({ p_user: CRED.user, p_pass: CRED.pass }, args || {});
   return rpc(fn, a).catch(function (e) {
-    if (e.codigo === 'admin_no_autorizado') { cerrarSesion(); toast('La sesión ya no es válida. Vuelve a entrar.', true); }
+    if (e.codigo === 'admin_no_autorizado' || e.codigo === 'sesion_invalida') { cerrarSesion(true); toast('La sesión ya no es válida. Vuelve a entrar.', true); }
     throw e;
   });
 }
 function leerConfigCleanHours() {   // nombres de trabajadoras y pisos de Gestión (solo para avisar de diferencias)
   return fetch(SB_URL + '/rest/v1/config?select=key,value', {
-    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }, cache: 'no-store'
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'x-servap-token': (CRED && CRED.pass) || '' }, cache: 'no-store'
   }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
     var c = {};
     (rows || []).forEach(function (r) { try { c[r.key] = typeof r.value === 'string' ? JSON.parse(r.value) : r.value; } catch (e) {} });
@@ -346,26 +358,38 @@ function cargarEstructura() {
 /* ================= Sesión ================= */
 $('form-login').addEventListener('submit', function (ev) {
   ev.preventDefault();
-  var u = $('l-user').value.trim(), p = $('l-pass').value;
+  var u = $('l-user').value.trim().toLowerCase(), p = $('l-pass').value;
   $('l-err').textContent = ''; $('l-btn').disabled = true; $('l-btn').textContent = 'Comprobando…';
-  rpc('fichaje_admin_estructura', { p_user: u, p_pass: p }).then(function (r) {
-    CRED = { user: u, pass: p };
-    try { sessionStorage.setItem('fa_cred', JSON.stringify(CRED)); } catch (e) {}
-    EST.sectores = r.sectores || []; EST.personal = r.personal || [];
-    entrarApp();
-  }, function (e) {
+  rpc('acc_login', { p_user: u, p_pass: p }).then(function (r) {
+    $('l-pass').value = '';
+    try { localStorage.setItem('servap_sesion', r.token); } catch (e) {}
+    return conPerfil(r, r.token);
+  }).catch(function (e) {
     $('l-err').textContent = textoError(e);
   }).then(function () { $('l-btn').disabled = false; $('l-btn').textContent = 'Entrar'; });
 });
-function cerrarSesion() {
-  CRED = null; try { sessionStorage.removeItem('fa_cred'); } catch (e) {}
+function conPerfil(p, token) {
+  PERFIL = p; CRED = { user: '__token__', pass: token };
+  if (!puede('ver')) {
+    $('l-err').innerHTML = h(ERRORES.sin_acceso) + ' <a href="#" id="l-salir" style="color:inherit">Salir</a>';
+    $('l-salir').onclick = function (ev) { ev.preventDefault(); cerrarSesion(false); };
+    CRED = null; return;
+  }
+  document.body.classList.toggle('solo-ver', !puede('editar'));
+  return cargarEstructura().then(entrarApp);
+}
+function cerrarSesion(silencioso) {
+  var t = accToken();
+  if (t && silencioso !== true) rpc('acc_logout', { p_token: t }).catch(function () {});
+  try { localStorage.removeItem('servap_sesion'); } catch (e) {}
+  CRED = null; PERFIL = null; document.body.classList.remove('solo-ver');
   $('app').classList.add('oculto'); $('login').classList.remove('oculto'); $('l-pass').value = '';
   cerrarModal();
 }
-$('btn-salir').onclick = cerrarSesion;
+$('btn-salir').onclick = function () { cerrarSesion(false); };
 function entrarApp() {
   $('login').classList.add('oculto'); $('app').classList.remove('oculto');
-  $('u-nombre').textContent = CRED.user;
+  $('u-nombre').textContent = ((PERFIL && PERFIL.nombre) || '') + (puede('editar') ? '' : ' · solo ver');
   if (!$('f-desde').value) { $('f-desde').value = hoyISO(-6); $('f-hasta').value = hoyISO(0); }
   leerConfigCleanHours().then(function () { pintarPersonal(); pintarLugares(); });
   pintarPersonal(); pintarLugares(); rellenarFiltroPersonas(); cargarTramos();
@@ -687,11 +711,12 @@ var PERFILES = { contratada: 'Contratada (jornada)', parcial_fijo: 'Parcial en l
 function pintarPersonal() {
   rellenarFiltroPersonas();
   if (!EST.personal.length) { $('tabla-personal').innerHTML = '<div class="vacio">Todavía no hay nadie. Pulsa «+ Nueva persona».</div>'; return; }
-  $('tabla-personal').innerHTML = '<table class="term lista" style="min-width:720px"><thead><tr><th>Nombre</th><th>Perfil</th><th>Lugar habitual</th><th>PIN</th><th>Estado</th><th></th></tr></thead><tbody>' +
+  $('tabla-personal').innerHTML = '<table class="term lista" style="min-width:720px"><thead><tr><th>Nombre</th><th>Usuario</th><th>Perfil</th><th>Lugar habitual</th><th>PIN</th><th>Estado</th><th></th></tr></thead><tbody>' +
     EST.personal.map(function (p) {
       var lug = p.lugar_habitual_id ? lugarPorId(p.lugar_habitual_id) : null;
       var enCH = !CH.cargado || CH.workers.indexOf(p.nombre) >= 0;
       return '<tr><td class="c-pers">' + h(p.nombre) + (enCH ? '' : ' <span class="bd amar" title="Este nombre no está en la lista de trabajadores de Gestión">no está en CleanHours</span>') + '</td>' +
+        '<td style="font-family:var(--mono);color:var(--mauve)">' + h(p.usuario || '—') + '</td>' +
         '<td>' + h(PERFILES[p.perfil] || p.perfil) + '</td><td>' + (lug ? h(lug.nombre) : '<span style="color:var(--muted)">—</span>') + '</td>' +
         '<td>' + (p.tiene_pin ? '<span class="bd verde">asignado</span>' : '<span class="bd rojo">sin PIN</span>') + '</td>' +
         '<td>' + (!p.activo ? '<span class="bd gris">desactivada</span>' : p.bloqueado ? '<span class="bd rojo" title="5 PIN incorrectos: espera 15 min o asigna un PIN nuevo">bloqueada</span>' : '<span class="bd verde">activa</span>') + '</td>' +
@@ -721,6 +746,9 @@ function abrirPersona(p) {
     '<p class="sub">' + (nueva ? 'Escribe el nombre exactamente igual que en CleanHours, para que las horas vayan a la misma persona.' : 'El nombre no se puede cambiar.') + '</p>' +
     (nueva ? '<label class="campo" for="pe-nom">Nombre</label><input class="inp" id="pe-nom" list="dl-workers" maxlength="80">' +
       '<datalist id="dl-workers">' + CH.workers.map(function (w) { return '<option value="' + h(w) + '">'; }).join('') + '</datalist><div class="nota aviso" id="pe-nom-aviso"></div>' : '') +
+    '<label class="campo" for="pe-usu">Usuario (para entrar en el móvil)</label>' +
+    '<input class="inp" id="pe-usu" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false" style="font-family:var(--mono)" value="' + h(p ? p.usuario || '' : '') + '" placeholder="mjimenez">' +
+    '<p class="nota">Minúsculas, números, punto o guion (3 a 30). Se propone solo a partir del nombre; puedes cambiarlo.</p>' +
     '<label class="campo" for="pe-perfil">Perfil</label><select class="inp" id="pe-perfil">' +
     Object.keys(PERFILES).map(function (k) { return '<option value="' + k + '"' + ((p ? p.perfil : 'parcial_piso') === k ? ' selected' : '') + '>' + PERFILES[k] + '</option>'; }).join('') + '</select>' +
     '<label class="campo" for="pe-lug">Lugar habitual</label><select class="inp" id="pe-lug">' + opcionesLugares(p ? p.lugar_habitual_id : null) + '</select>' +
@@ -735,9 +763,19 @@ function abrirPersona(p) {
     '<div class="pie"><button class="btn" id="pe-can">Cancelar</button><button class="btn pri" id="pe-ok">Guardar</button></div>');
   $('pe-can').onclick = cerrarModal;
   $('pe-gen').onclick = function () { $('pe-pin').value = pinAleatorio(); };
+  var usuTocado = !nueva, usuT = null;
+  $('pe-usu').addEventListener('input', function () { usuTocado = true; this.value = this.value.toLowerCase().replace(/\s/g, ''); });
   if (nueva) $('pe-nom').addEventListener('input', function () {
     var v = this.value.trim();
     $('pe-nom-aviso').textContent = v && CH.cargado && CH.workers.indexOf(v) < 0 ? 'Este nombre no está en la lista de trabajadores de CleanHours.' : '';
+    if (usuTocado) return;
+    clearTimeout(usuT);
+    usuT = setTimeout(function () {   // propone el usuario libre a partir del nombre
+      if (!v) { $('pe-usu').value = ''; return; }
+      adm('fichaje_admin_sugerir_usuario', { p_nombre: v }).then(function (r) {
+        if (!usuTocado && $('pe-nom') && $('pe-nom').value.trim() === v) $('pe-usu').value = r.usuario;
+      }, function () {});
+    }, 350);
   });
   $('pe-ok').onclick = function () {
     var nombre = nueva ? $('pe-nom').value.trim() : p.nombre;
@@ -746,16 +784,21 @@ function abrirPersona(p) {
     if (nueva && EST.personal.some(function (x) { return x.nombre.toLowerCase() === nombre.toLowerCase(); })) return toast('Ya existe una persona con ese nombre.', true);
     if (nueva && !pin) return toast('Asigna un PIN (puedes pulsar «Generar»).', true);
     if (pin && !/^[0-9]{4,6}$/.test(pin)) return toast('El PIN debe tener entre 4 y 6 números.', true);
+    var usu = $('pe-usu').value.trim().toLowerCase();
+    if (usu && !/^[a-z0-9._-]{3,30}$/.test(usu)) return toast('El usuario solo puede llevar minúsculas, números, punto o guion (3 a 30).', true);
+    var usuFinal = usu;
     adm('fichaje_admin_guardar_personal', {
       p_nombre: nombre, p_perfil: $('pe-perfil').value, p_lugar_habitual_id: $('pe-lug').value || null,
-      p_pin: pin || null, p_activo: $('pe-act').checked
-    }).then(function () {
+      p_pin: pin || null, p_activo: $('pe-act').checked, p_usuario: usu || null
+    }).then(function (r) {
+      usuFinal = (r && r.usuario) || usu;
       return cargarEstructura();
     }).then(function () {
       pintarPersonal();
       if (pin) {
-        abrirModal('<h2>PIN de ' + h(nombre) + '</h2><p class="sub">Anótalo y dáselo en persona. Por seguridad no se puede volver a consultar; si se olvida, asigna uno nuevo.</p>' +
-          '<div class="pin-grande">' + h(pin) + '</div><p class="sub">Para fichar: <b>servapturistics.com/fichaje.html</b></p>' +
+        abrirModal('<h2>Acceso de ' + h(nombre) + '</h2><p class="sub">Anótalo y dáselo en persona. El PIN no se puede volver a consultar; si se olvida, asigna uno nuevo.</p>' +
+          '<p class="sub" style="margin-bottom:0">Usuario</p><div class="pin-grande" style="letter-spacing:2px;font-size:34px">' + h(usuFinal) + '</div>' +
+          '<p class="sub" style="margin-bottom:0">PIN</p><div class="pin-grande">' + h(pin) + '</div><p class="sub">Para fichar: <b>servapturistics.com/fichaje.html</b></p>' +
           '<div class="pie"><button class="btn pri" id="pin-ok">Hecho</button></div>');
         $('pin-ok').onclick = cerrarModal;
       } else { cerrarModal(); toast('Guardado'); }
@@ -910,9 +953,16 @@ function fijarAqui(l) {
 }
 
 /* ================= Arranque ================= */
-if (CRED) {
-  cargarEstructura().then(entrarApp, function () { cerrarSesion(); });
-}
+(function () {
+  var t = accToken(); if (!t) return;
+  $('l-err').textContent = 'Recuperando sesión…';
+  rpc('acc_yo', { p_token: t }).then(function (p) { $('l-err').textContent = ''; return conPerfil(p, t); }).catch(function (e) {
+    if (e.tipo === 'red') { $('l-err').textContent = textoError(e); return; }
+    $('l-err').textContent = '';
+    if (e.codigo === 'sesion_invalida') { try { localStorage.removeItem('servap_sesion'); } catch (x) {} }
+    else $('l-err').textContent = textoError(e);
+  });
+})();
 </script>
 </body>
 </html>

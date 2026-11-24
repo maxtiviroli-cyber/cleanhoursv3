@@ -44,8 +44,10 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
 .fila>.btn{flex:1}
 
 /* Nombres */
-#lista-nombres{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
-#lista-nombres .btn{font-size:24px;justify-content:flex-start;padding-left:22px}
+/* Usuario */
+.inp-usuario{width:100%;height:72px;border-radius:18px;border:2px solid var(--s1);background:var(--mantle);color:var(--text);
+  font-family:var(--mono);font-size:30px;text-align:center;outline:none;text-transform:lowercase}
+.inp-usuario:focus{border-color:var(--mauve)}
 
 /* PIN */
 #pin-dots{display:flex;justify-content:center;gap:16px;margin:8px 0 10px;min-height:28px}
@@ -179,12 +181,16 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
 </head>
 <body>
 
-<!-- 1 · ¿Quién eres? -->
-<section class="scr" id="scr-nombres">
+<!-- 1 · Usuario -->
+<section class="scr" id="scr-usuario">
   <div class="marca">Servap · Fichaje</div>
-  <h1 class="titulo">¿Quién eres?</h1>
-  <p class="subt">Toca tu nombre</p>
-  <div id="lista-nombres"><div class="vacio">Cargando…</div></div>
+  <h1 class="titulo">Entrar</h1>
+  <p class="subt">Escribe tu usuario<br>(te lo da la oficina, por ejemplo <b>mjimenez</b>)</p>
+  <form id="form-usuario" autocomplete="on" style="display:flex;flex-direction:column;gap:14px;max-width:420px;width:100%;margin:0 auto">
+    <input class="inp-usuario" id="in-usuario" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="text" placeholder="usuario" aria-label="Usuario">
+    <div id="usu-msg" style="min-height:24px;text-align:center;font-size:18px;color:var(--red)"></div>
+    <button class="btn pri" type="submit">Siguiente</button>
+  </form>
 </section>
 
 <!-- 2 · PIN -->
@@ -195,7 +201,7 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
   <div id="pin-dots"></div>
   <div id="pin-msg"></div>
   <div class="teclado" id="teclado"></div>
-  <button class="btn lin" id="pin-cambiar" style="margin-top:18px;min-height:54px;font-size:18px">No soy yo</button>
+  <button class="btn lin" id="pin-cambiar" style="margin-top:18px;min-height:54px;font-size:18px">Cambiar de usuario</button>
 </section>
 
 <!-- 3 · Inicio -->
@@ -287,6 +293,7 @@ function fmtDur(ms, conSeg) {
 var S = {
   token: LS.get('fich_token', null),
   nombre: LS.get('fich_nombre', null),
+  usuario: LS.get('fich_usuario', null),
   info: LS.get('fich_info', null),          // { perfil, lugar_habitual_id, sectores }
   abierto: LS.get('fich_abierto', null),    // { client_id, entrada_ms, lugares:[{id,nombre}] }
   cola: LS.get('fich_cola', []),            // fichajes pendientes de enviar, en orden
@@ -298,7 +305,7 @@ var S = {
   sincronizando: false
 };
 function guardar() {
-  LS.set('fich_token', S.token); LS.set('fich_nombre', S.nombre); LS.set('fich_info', S.info);
+  LS.set('fich_token', S.token); LS.set('fich_nombre', S.nombre); LS.set('fich_usuario', S.usuario); LS.set('fich_info', S.info);
   LS.set('fich_abierto', S.abierto); LS.set('fich_cola', S.cola); LS.set('fich_desfase', S.desfase);
   LS.set('fich_avisos', S.avisos); LS.set('fich_notas', S.notas); LS.set('fich_nota_mes', S.notaMes);
 }
@@ -334,42 +341,31 @@ var MENSAJES = {
   tramo_no_encontrado: 'No se encontró la entrada correspondiente.',
   tramo_cerrado: 'Esa entrada ya estaba cerrada.',
   bloqueado: 'Demasiados intentos. Espera 15 minutos.',
-  pin_incorrecto: 'PIN incorrecto.'
+  pin_incorrecto: 'Usuario o PIN incorrectos.'
 };
 function textoError(e) { return (e && MENSAJES[e.codigo]) || 'Error: ' + ((e && e.codigo) || 'desconocido'); }
 
 /* ================= Pantallas ================= */
 function mostrar(id) {
-  ['scr-nombres', 'scr-pin', 'scr-inicio', 'scr-lugares', 'scr-horas'].forEach(function (s) { $(s).classList.toggle('on', s === id); });
+  ['scr-usuario', 'scr-pin', 'scr-inicio', 'scr-lugares', 'scr-horas'].forEach(function (s) { $(s).classList.toggle('on', s === id); });
   window.scrollTo(0, 0);
 }
 function capa(html) { $('capa-caja').innerHTML = html; $('capa').classList.add('on'); }
 function cerrarCapa() { $('capa').classList.remove('on'); $('capa-caja').innerHTML = ''; }
 
-/* ---------- 1 · Nombres ---------- */
-function pantallaNombres() {
-  mostrar('scr-nombres');
-  var cont = $('lista-nombres');
-  cont.innerHTML = '<div class="vacio">Cargando…</div>';
-  rpc('fichaje_nombres').then(function (lista) {
-    if (!lista || !lista.length) {
-      cont.innerHTML = '<div class="vacio">Todavía no hay nadie dado de alta.<br>Pide a la oficina que te registre.</div>';
-      return;
-    }
-    cont.innerHTML = lista.map(function (n) {
-      return '<button class="btn" data-nombre="' + h(n) + '">' + h(n) + '</button>';
-    }).join('');
-  }, function (e) {
-    cont.innerHTML = '<div class="vacio">' + (e.tipo === 'red'
-      ? 'Sin conexión.<br>La primera vez necesitas internet para entrar.'
-      : h(textoError(e))) + '</div><button class="btn" id="nom-reint">Reintentar</button>';
-    $('nom-reint').onclick = pantallaNombres;
-  });
+/* ---------- 1 · Usuario ---------- */
+function pantallaUsuario(msg) {
+  mostrar('scr-usuario');
+  $('in-usuario').value = ''; $('usu-msg').textContent = msg || '';
+  setTimeout(function () { try { $('in-usuario').focus(); } catch (e) {} }, 50);
 }
-$('lista-nombres').addEventListener('click', function (ev) {
-  var b = ev.target.closest('[data-nombre]');
-  if (b) pantallaPin(b.getAttribute('data-nombre'));
+$('form-usuario').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  var u = $('in-usuario').value.trim().toLowerCase();
+  if (!u) { $('usu-msg').textContent = 'Escribe tu usuario.'; return; }
+  pantallaPin(u);
 });
+$('in-usuario').addEventListener('input', function () { $('usu-msg').textContent = ''; });
 
 /* ---------- 2 · PIN ---------- */
 var pinBuf = '', pinNombre = '', pinEnviando = false;
@@ -384,9 +380,9 @@ function pintarPin() {
   for (var i = 0; i < n; i++) s += '<span class="' + (i < pinBuf.length ? 'lleno' : '') + '"></span>';
   $('pin-dots').innerHTML = s;
 }
-function pantallaPin(nombre) {
-  pinNombre = nombre; pinBuf = ''; $('pin-msg').textContent = '';
-  $('pin-nombre').textContent = nombre;
+function pantallaPin(usuario) {
+  pinNombre = usuario; pinBuf = ''; $('pin-msg').textContent = '';
+  $('pin-nombre').textContent = usuario;
   // Con fichajes pendientes de otra sesión no se puede cambiar de persona
   $('pin-cambiar').style.display = S.cola.length ? 'none' : '';
   pintarPin(); mostrar('scr-pin');
@@ -400,7 +396,7 @@ $('teclado').addEventListener('click', function (ev) {
   else if (pinBuf.length < 6) pinBuf += d;
   pintarPin();
 });
-$('pin-cambiar').onclick = function () { S.nombre = null; guardar(); pantallaNombres(); };
+$('pin-cambiar').onclick = function () { S.nombre = null; S.usuario = null; guardar(); pantallaUsuario(); };
 function errorPin(msg) {
   $('pin-msg').textContent = msg; pinBuf = ''; pintarPin();
   var el = $('pin-dots'); el.classList.remove('sacude'); void el.offsetWidth; el.classList.add('sacude');
@@ -408,10 +404,10 @@ function errorPin(msg) {
 function enviarPin() {
   if (pinBuf.length < 4) return errorPin('El PIN tiene al menos 4 números.');
   pinEnviando = true; $('pin-msg').textContent = 'Comprobando…'; $('pin-msg').style.color = 'var(--sub)';
-  rpc('fichaje_login', { p_nombre: pinNombre, p_pin: pinBuf }).then(function (r) {
+  rpc('fichaje_login_usuario', { p_usuario: pinNombre, p_pin: pinBuf }).then(function (r) {
     pinEnviando = false; $('pin-msg').style.color = '';
-    if (!r || !r.ok) return errorPin('PIN incorrecto.');
-    S.token = r.token; S.nombre = r.nombre; guardar();
+    if (!r || !r.ok) return errorPin(r && r.error === 'bloqueado' ? MENSAJES.bloqueado : 'Usuario o PIN incorrectos.');
+    S.token = r.token; S.nombre = r.nombre; S.usuario = r.usuario; guardar();
     pantallaInicio(); sincronizar();
   }, function (e) {
     pinEnviando = false; $('pin-msg').style.color = '';
@@ -492,11 +488,15 @@ $('btn-menu').onclick = function () {
     salirSesion();
   };
 };
+function pedirDeNuevo() {   // la sesión caducó (PIN cambiado, persona desactivada…)
+  if (S.usuario) { pantallaPin(S.usuario); $('pin-msg').textContent = MENSAJES.sesion_invalida; }
+  else pantallaUsuario(MENSAJES.sesion_invalida);
+}
 function salirSesion() {
   cerrarCapa();
-  S.token = null; S.nombre = null; S.abierto = null; S.info = null; S.avisos = []; S.notas = 0;
+  S.token = null; S.nombre = null; S.usuario = null; S.abierto = null; S.info = null; S.avisos = []; S.notas = 0;
   LS.del('fich_horas');
-  guardar(); pantallaNombres();
+  guardar(); pantallaUsuario();
 }
 
 /* ---------- 5 · Mis horas ---------- */
@@ -548,7 +548,7 @@ function cargarHoras() {
   }, function (e) {
     if (HOR.mes !== mes) return;
     if (e.tipo === 'red') S.online = false;
-    else if (e.codigo === 'sesion_invalida') { S.token = null; guardar(); pantallaPin(S.nombre); $('pin-msg').textContent = MENSAJES.sesion_invalida; }
+    else if (e.codigo === 'sesion_invalida') { S.token = null; guardar(); pedirDeNuevo(); }
     else HOR.error = e;
   }).then(function () { HOR.cargando = false; if ($('scr-horas').classList.contains('on')) pintarHoras(); });
 }
@@ -854,8 +854,7 @@ function sincronizar() {
   vaciarCola().then(cargarEstado).catch(function (e) {
     if (e && e.codigo === 'sesion_invalida') {
       S.token = null; guardar();
-      if (S.nombre) { pantallaPin(S.nombre); $('pin-msg').textContent = MENSAJES.sesion_invalida; }
-      else pantallaNombres();
+      pedirDeNuevo();
     } else if (e && e.tipo === 'red') {
       S.online = false;
     } else if (e) {
@@ -883,8 +882,8 @@ setInterval(function () { if (S.cola.length) sincronizar(); }, 20000);
 /* ================= Arranque ================= */
 (function arrancar() {
   if (S.token) { pantallaInicio(); sincronizar(); }
-  else if (S.nombre) pantallaPin(S.nombre);
-  else pantallaNombres();
+  else if (S.usuario) pantallaPin(S.usuario);
+  else pantallaUsuario();
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('sw-fichaje.js', { scope: './fichaje' }).catch(function () {});
   }

@@ -570,60 +570,85 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);display:flex
 <div class="toast" id="toast"></div>
 
 <script>
-//=== AUTH ===================================================================
+//=== AUTH (sesión común de toda la plataforma) ==============================
 var currentUser=null;
-var appUsers=[];
-
-function getAppUsers(){
-  if(appUsers.length) return appUsers;
-  try{var s=localStorage.getItem('app_users');if(s)appUsers=JSON.parse(s);}catch(e){}
-  return appUsers;
+var ACC_KEY='servap_sesion';
+var ACC_RANGO={no:0,ver:1,editar:2,admin:3};
+function accToken(){try{return localStorage.getItem(ACC_KEY);}catch(e){return null;}}
+function accRpc(fn,args){
+  return fetch(SUPA_URL+'/rest/v1/rpc/'+fn,{method:'POST',cache:'no-store',
+    headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY},
+    body:JSON.stringify(args||{})}).then(function(r){
+      return r.text().then(function(t){var b=null;try{b=t?JSON.parse(t):null;}catch(e){}
+        if(r.ok)return b; throw {codigo:(b&&b.message)||('HTTP '+r.status)};});
+    },function(){throw {codigo:'red'};});
 }
+function accNivel(m){return currentUser&&currentUser.permisos?(currentUser.permisos[m]||'no'):'no';}
+function accPuede(m,n){return (ACC_RANGO[accNivel(m)]||0)>=ACC_RANGO[n];}
+function accEsAdmin(){return !!(currentUser&&currentUser.admin);}
+function accCliente(token){
+  try{
+    var opts={global:{headers:{'x-servap-token':token}}};
+    if(window.supabase&&window.supabase.createClient) supa=window.supabase.createClient(SUPA_URL,SUPA_KEY,opts);
+    else if(typeof createClient!=='undefined') supa=createClient(SUPA_URL,SUPA_KEY,opts);
+  }catch(e){console.error('Supabase init error:',e);}
+}
+function accLimpiarCaches(){
+  try{
+    ['app_users','horas_records','horas_config','audit_log','cal_disp','cal_jobs','inf_facturas'].forEach(function(k){localStorage.removeItem(k);});
+    Object.keys(localStorage).forEach(function(k){if(k.indexOf('inv_cache_')===0)localStorage.removeItem(k);});
+  }catch(e){}
+}
+function accSalir(){
+  var t=accToken();
+  var fin=function(){try{localStorage.removeItem(ACC_KEY);}catch(e){} accLimpiarCaches(); location.reload();};
+  if(t) accRpc('acc_logout',{p_token:t}).then(fin,fin); else fin();
+}
+function soloAdmin(){if(accEsAdmin())return true;toast('Solo el administrador puede eliminar');return false;}
 
 function doLogin(){
   var u=document.getElementById('login-user').value.trim().toLowerCase();
   var p=document.getElementById('login-pass').value;
   var err=document.getElementById('login-error');
-  var users=getAppUsers();
-  var found=null;
-  for(var i=0;i<users.length;i++){
-    if(users[i].username.toLowerCase()===u&&users[i].password===p){found=users[i];break;}
-  }
-  if(!found&&supa){
-    err.textContent='Verificando...';err.style.display='block';
-    sbLoad('app_users').then(function(supaUsers){
-      if(supaUsers&&supaUsers.length){
-        appUsers=supaUsers;
-        try{localStorage.setItem('app_users',JSON.stringify(supaUsers));}catch(e){}
-        for(var i=0;i<supaUsers.length;i++){
-          if(supaUsers[i].username.toLowerCase()===u&&supaUsers[i].password===p){found=supaUsers[i];break;}
-        }
-      }
-      if(found){doLoginSuccess(found);}
-      else{err.textContent='Usuario o contraseña incorrectos';err.style.display='block';document.getElementById('login-pass').value='';}
-    }).catch(function(){
-      err.textContent='Error de conexión';err.style.display='block';
-    });
-    return;
-  }
-  if(!found){err.textContent='Usuario o contraseña incorrectos';err.style.display='block';document.getElementById('login-pass').value='';return;}
-  doLoginSuccess(found);
+  if(!u||!p){err.textContent='Escribe usuario y contraseña';err.style.display='block';return;}
+  err.textContent='Verificando...';err.style.display='block';
+  accRpc('acc_login',{p_user:u,p_pass:p}).then(function(r){
+    document.getElementById('login-pass').value='';
+    entrarConPerfil(r,r.token);
+  },function(e){
+    err.textContent=e.codigo==='red'?'Sin conexión. Inténtalo de nuevo.':'Usuario o contraseña incorrectos';
+    err.style.display='block';
+    document.getElementById('login-pass').value='';
+  });
+}
+
+function entrarConPerfil(p,token){
+  try{localStorage.setItem(ACC_KEY,token);}catch(e){}
+  accCliente(token);
+  doLoginSuccess({username:p.username,name:p.nombre,admin:p.admin,permisos:p.permisos});
 }
 
 function doLoginSuccess(found){
+  var err=document.getElementById('login-error');
   currentUser=found;
-  document.getElementById('login-error').style.display='none';
+  if(!accPuede('facturacion','ver')){
+    err.innerHTML='Tu usuario no tiene acceso a Facturación. <a href="#" onclick="accSalir();return false" style="color:inherit;text-decoration:underline">Salir</a>';
+    err.style.display='block';
+    return;
+  }
+  err.style.display='none';
   document.getElementById('login-overlay').style.display='none';
   var su=document.getElementById('sb-username');if(su)su.textContent=found.name||found.username;
-  var sr=document.getElementById('sb-role');if(sr)sr.textContent=found.role||'admin';
+  var sr=document.getElementById('sb-role');if(sr)sr.textContent=found.admin?'Administrador':(accPuede('facturacion','editar')?'Editar':'Solo ver');
   var av=document.getElementById('sb-avatar');if(av)av.textContent=(found.name||found.username||'U')[0].toUpperCase();
   applyRolePermissions();
-  renderDashboard();
+  showPanel('dashboard');
+  loadAll();
 }
 
 // Read-only role: can view + export, cannot create/edit/delete
 function isReadOnly(){
-  return currentUser && (currentUser.role==='viewer' || currentUser.role==='readonly' || currentUser.role==='lectura');
+  return !accPuede('facturacion','editar');
 }
 
 function applyRolePermissions(){
@@ -631,21 +656,19 @@ function applyRolePermissions(){
   // Hide create/edit/delete buttons via CSS class
   var style=document.getElementById('ro-style');
   if(!style){style=document.createElement('style');style.id='ro-style';document.head.appendChild(style);}
+  var css='';
+  // Eliminar: solo administradores
+  if(!accEsAdmin()) css+='[onclick^="deleteCliente("],[onclick^="deleteProveedor("],[onclick^="deleteServicio("],[onclick^="deleteFacturaEmit("],[onclick^="deleteRecibida("],.sb-item[onclick="showPanel(\'config\')"]{display:none !important;}';
   if(ro){
-    style.textContent='.ro-hide{display:none !important;}';
+    style.textContent=css+'.ro-hide{display:none !important;}';
     document.body.classList.add('readonly-mode');
   } else {
-    style.textContent='';
+    style.textContent=css;
     document.body.classList.remove('readonly-mode');
   }
 }
 
-function doLogout(){
-  currentUser=null;
-  document.getElementById('login-overlay').style.display='flex';
-  document.getElementById('login-user').value='';
-  document.getElementById('login-pass').value='';
-}
+function doLogout(){ accSalir(); }
 
 //=== CONFIG ================================================================
 var SUPA_URL='https://kellhcuvbvgofgiwbeka.supabase.co';
@@ -680,6 +703,8 @@ function today(){return new Date().toISOString().slice(0,10);}
 
 //=== NAV ===================================================================
 function showPanel(id){
+  if(id==='config'&&!accEsAdmin()){toast('Solo el administrador');id='dashboard';}
+  if(id==='emitir'&&isReadOnly()){toast('Sin permisos para crear facturas');id='dashboard';}
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
   var el=document.getElementById('panel-'+id);if(el)el.classList.add('active');
   document.querySelectorAll('.sb-item').forEach(function(b){b.classList.remove('active');});
@@ -825,8 +850,9 @@ async function sbSave(table,data){
 async function sbDel(table,id){
   if(!supa)return;
   try{
-    var r=await supa.from(table).delete().eq('id',id);
-    if(r.error){console.warn('sbDel error ['+table+']:',r.error);return;}
+    var r=await supa.from(table).delete({count:'exact'}).eq('id',id);
+    if(r.error){console.warn('sbDel error ['+table+']:',r.error);toast('No se pudo eliminar: '+r.error.message);return;}
+    if(r.count===0){toast('No se pudo eliminar (sin permiso)');return;}
     // Update cache
     try{
       var cache=JSON.parse(localStorage.getItem('inv_cache_'+table)||'[]');
@@ -1078,7 +1104,7 @@ async function saveCliente(editId){
   }
   closeModal();populateSelects();renderClientes();renderEmitidas();toast('Cliente guardado');
 }
-async function deleteCliente(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar cliente?'))return;var c=clientes.find(function(x){return x.id==id;});logInvAudit('eliminar_cliente',c?c.nombre:'ID:'+id);await sbDel('inv_clientes',id);clientes=clientes.filter(function(x){return x.id!=id;});populateSelects();renderClientes();toast('Cliente eliminado');}
+async function deleteCliente(id){if(!soloAdmin())return;if(!confirm('¿Eliminar cliente?'))return;var c=clientes.find(function(x){return x.id==id;});logInvAudit('eliminar_cliente',c?c.nombre:'ID:'+id);await sbDel('inv_clientes',id);clientes=clientes.filter(function(x){return x.id!=id;});populateSelects();renderClientes();toast('Cliente eliminado');}
 function editCliente(id){var c=clientes.find(function(x){return x.id==id;});if(c)openModal('cli',c);}
 
 //=== PROVEEDORES ===========================================================
@@ -1121,7 +1147,7 @@ async function saveProveedor(editId){
   }
   closeModal();populateSelects();renderProveedores();renderRecibidas();toast('Proveedor guardado');
 }
-async function deleteProveedor(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar proveedor?'))return;await sbDel('inv_proveedores',id);proveedores=proveedores.filter(function(p){return p.id!=id;});populateSelects();renderProveedores();toast('Proveedor eliminado');}
+async function deleteProveedor(id){if(!soloAdmin())return;if(!confirm('¿Eliminar proveedor?'))return;await sbDel('inv_proveedores',id);proveedores=proveedores.filter(function(p){return p.id!=id;});populateSelects();renderProveedores();toast('Proveedor eliminado');}
 function editProveedor(id){var p=proveedores.find(function(x){return x.id==id;});if(p)openModal('prov',p);}
 
 //=== SERVICIOS =============================================================
@@ -1148,7 +1174,7 @@ async function saveServicio(editId){
   if(idx>=0)servicios[idx]=obj;else servicios.push(obj);
   closeModal();renderServicios();toast('Servicio guardado');
 }
-async function deleteServicio(id){if(isReadOnly()){toast("Sin permisos");return;}if(!confirm('¿Eliminar servicio?'))return;await sbDel('inv_servicios',id);servicios=servicios.filter(function(s){return s.id!=id;});renderServicios();toast('Servicio eliminado');}
+async function deleteServicio(id){if(!soloAdmin())return;if(!confirm('¿Eliminar servicio?'))return;await sbDel('inv_servicios',id);servicios=servicios.filter(function(s){return s.id!=id;});renderServicios();toast('Servicio eliminado');}
 function editServicio(id){var s=servicios.find(function(x){return x.id==id;});if(s)openModal('svc',s);}
 
 //=== EMITIR FACTURA ========================================================
@@ -1455,7 +1481,7 @@ function confirmDeletePass(){
 }
 
 async function deleteFacturaEmit(id){
-  if(isReadOnly()){toast("Sin permisos para eliminar");return;}
+  if(!soloAdmin())return;
   askDeletePassword(function(){doDeleteFacturaEmit(id);});
 }
 async function doDeleteFacturaEmit(id){
@@ -1599,7 +1625,7 @@ async function saveRecibida(){
   facturasRec.push(obj);
   closeModal();renderRecibidas();toast('Factura recibida registrada');
 }
-async function deleteRecibida(id){if(isReadOnly()){toast("Sin permisos");return;}askDeletePassword(function(){doDeleteRecibida(id);});}
+async function deleteRecibida(id){if(!soloAdmin())return;askDeletePassword(function(){doDeleteRecibida(id);});}
 async function doDeleteRecibida(id){var f=facturasRec.find(function(x){return x.id==id;});logInvAudit('eliminar_factura_rec',f?('N°'+f.numero+' — '+f.proveedor_nombre):'ID:'+id);sheetPostInv({tipo:'inv_eliminar_rec',numero:f?f.numero:'',proveedor:f?f.proveedor_nombre:'',total:f?f.total:0});await sbDel('inv_facturas_rec',id);facturasRec=facturasRec.filter(function(x){return x.id!=id;});renderRecibidas();toast('Factura eliminada');}
 
 //=== PAGOS =================================================================
@@ -2272,8 +2298,18 @@ async function confirmRecImport(){
   // Limpia la caché vieja de inv_adjuntos (guardaba PDFs completos en base64
   // y llenaba la cuota de localStorage) — ya no se usa para esta tabla
   try{localStorage.removeItem('inv_cache_inv_adjuntos');}catch(e){}
-  // Load all data
-  loadAll();
+  // Quita la copia vieja de usuarios/contraseñas que guardaba el navegador
+  try{localStorage.removeItem('app_users');}catch(e){}
+  // Los datos se cargan al entrar, si el usuario tiene permiso
+  var tok=accToken();
+  if(tok){
+    var err=document.getElementById('login-error');
+    if(err){err.textContent='Recuperando sesión...';err.style.display='block';}
+    accRpc('acc_yo',{p_token:tok}).then(function(p){entrarConPerfil(p,tok);},function(e){
+      if(err){err.style.display='none';}
+      if(e.codigo!=='red'){try{localStorage.removeItem(ACC_KEY);}catch(x){} accLimpiarCaches();}
+    });
+  } else accLimpiarCaches();
 })();
 </script>
 </body>

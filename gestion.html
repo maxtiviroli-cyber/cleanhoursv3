@@ -281,6 +281,7 @@ tbody tr:hover{background:#F8F9FC}
   <!-- CONFIG -->
   <div style="padding:6px 8px">
     <button class="sb-item" id="tab-config" onclick="showTab('config')"><span class="sb-icon">&#9881;</span> Configuracion</button>
+      <a class="sb-item" id="acc-link-usuarios" href="usuarios.html" style="display:none;text-decoration:none"><span class="sb-icon">&#128101;</span> Usuarios y accesos</a>
   </div>
 
   <div class="sb-footer">
@@ -1036,21 +1037,10 @@ tbody tr:hover{background:#F8F9FC}
     </div>
 
     <div class="card">
-      <div class="card-header"><div><div class="card-title">&#128272; Usuarios y accesos</div><div class="card-sub">Quien puede acceder y con que rol</div></div></div>
+      <div class="card-header"><div><div class="card-title">&#128272; Usuarios y accesos</div><div class="card-sub">Quién puede entrar y qué puede ver o editar en cada módulo</div></div></div>
       <div class="card-body">
-        <div id="cfg-appusers" style="margin-bottom:18px"></div>
-        <div style="padding-top:16px;border-top:1px solid #F0F2F7">
-          <div style="font-size:12px;font-weight:600;margin-bottom:12px">Nuevo usuario</div>
-          <div class="form-grid">
-            <div><label>Usuario</label><input type="text" id="inp-uname" placeholder="ej: ana01" style="font-family:'DM Mono',monospace"></div>
-            <div><label>Nombre</label><input type="text" id="inp-udisp" placeholder="ej: Ana Garcia"></div>
-          </div>
-          <div class="form-grid">
-            <div><label>Contrasena</label><input type="password" id="inp-upass" placeholder="minimo 4 caracteres"></div>
-            <div><label>Rol</label><select id="inp-urole"><option value="normal">Normal - solo calendario</option><option value="supervisor">Supervisor - ve todo, edita calendario</option><option value="admin">Admin - acceso completo</option></select></div>
-          </div>
-          <button class="btn btn-primary" onclick="cfgAddUser()">+ Crear usuario</button>
-        </div>
+        <p style="font-size:13px;margin-bottom:12px">Los usuarios, contraseñas y permisos se gestionan ahora en una página propia, común a Gestión, Facturación, Servicios y Personal.</p>
+        <a class="btn btn-primary" href="usuarios.html" style="text-decoration:none;display:inline-block">Abrir «Usuarios y accesos»</a>
       </div>
     </div>
 
@@ -1316,14 +1306,6 @@ async function loadFromSupabase(){
         buildSelects();
       }
     }
-    // Load app users
-    var users = await sbGet('app_users');
-    if(users.length > 0){
-      var appUsers = users.map(function(u){
-        return {username:u.username,password:u.password,name:u.name,role:u.role};
-      });
-      try{localStorage.setItem('app_users',JSON.stringify(appUsers));}catch(e){}
-    }
     // Load cal_jobs
     var jobs = await sbGet('cal_jobs');
     if(jobs.length > 0){
@@ -1491,11 +1473,7 @@ function closeSidebar(){ document.getElementById('sidebar').classList.remove('op
 //=== TABS ===================================================================
 function showTab(name){
   // Check permissions
-  var role=currentUser?currentUser.role:'';
-  if(name==='config'&&role!=='admin') return toast('Solo el administrador puede acceder');
-  if(name==='informe'&&role!=='admin') return toast('Solo el administrador puede acceder');
-  if(name==='registro'&&role==='normal') return toast('Sin permiso para registrar horas');
-  if(name==='auditoria'&&role==='normal') return toast('Sin permiso para acceder a auditoria');
+  if(currentUser&&!tabPermitida(name)) return toast('No tienes acceso a esta sección');
 
   ['registro','auditoria','dashboard','config','calendario','informe','planning','reservas-lista','reservas-inf','importwa','svc-registro','svc-detalle','svc-resumen','nom-emitir','nom-historial'].forEach(function(t){
     var p=document.getElementById('panel-'+t); if(p) p.className='panel'+(t===name?' active':'');
@@ -2551,12 +2529,46 @@ function renderDispList(){
 //=== AUTH ===================================================================
 var currentUser = null;
 
+//=== ACCESOS (sesión común de toda la plataforma) ===========================
+var ACC_KEY='servap_sesion';
+var ACC_RANGO={no:0,ver:1,editar:2,admin:3};
+function accToken(){try{return localStorage.getItem(ACC_KEY);}catch(e){return null;}}
+function accRpc(fn,args){
+  return fetch(SUPA_URL+'/rest/v1/rpc/'+fn,{method:'POST',cache:'no-store',
+    headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY},
+    body:JSON.stringify(args||{})}).then(function(r){
+      return r.text().then(function(t){var b=null;try{b=t?JSON.parse(t):null;}catch(e){}
+        if(r.ok)return b; throw {codigo:(b&&b.message)||('HTTP '+r.status)};});
+    },function(){throw {codigo:'red'};});
+}
+function accNivel(m){return currentUser&&currentUser.permisos?(currentUser.permisos[m]||'no'):'no';}
+function accPuede(m,n){return (ACC_RANGO[accNivel(m)]||0)>=ACC_RANGO[n];}
+function accCliente(token){
+  try{
+    var opts={global:{headers:{'x-servap-token':token}}};
+    if(window.supabase&&window.supabase.createClient) supa=window.supabase.createClient(SUPA_URL,SUPA_KEY,opts);
+    else if(typeof createClient!=='undefined') supa=createClient(SUPA_URL,SUPA_KEY,opts);
+  }catch(e){console.error('Supabase init error:',e);}
+}
+function accLimpiarCaches(){
+  try{
+    ['app_users','horas_records','horas_config','audit_log','cal_disp','cal_jobs','inf_facturas'].forEach(function(k){localStorage.removeItem(k);});
+    Object.keys(localStorage).forEach(function(k){if(k.indexOf('inv_cache_')===0)localStorage.removeItem(k);});
+  }catch(e){}
+}
+function accSalir(){
+  var t=accToken();
+  var fin=function(){try{localStorage.removeItem(ACC_KEY);}catch(e){} accLimpiarCaches(); location.reload();};
+  if(t) accRpc('acc_logout',{p_token:t}).then(fin,fin); else fin();
+}
+
+
 function getAppUsers(){
   var stored=null; try{stored=JSON.parse(localStorage.getItem('app_users'));}catch(e){}
   return stored||[];
 }
 function saveAppUsers(users){
-  try{localStorage.setItem('app_users',JSON.stringify(users));}catch(e){}
+  return; // los usuarios se gestionan en usuarios.html
   if(supa){
     // Full sync: delete all and reinsert
     supa.from('app_users').delete().neq('id',0)
@@ -2569,89 +2581,98 @@ function doLogin(){
   var u=document.getElementById('login-user').value.trim().toLowerCase();
   var p=document.getElementById('login-pass').value;
   var err=document.getElementById('login-error');
-  var users=getAppUsers();
-  var found=null;
-  for(var i=0;i<users.length;i++){
-    if(users[i].username.toLowerCase()===u&&users[i].password===p){found=users[i];break;}
-  }
-  if(!found&&supa){
-    // Try loading from Supabase directly
-    err.textContent='Verificando...';
-    err.style.display='block';
-    sbGet('app_users').then(function(supaUsers){
-      if(supaUsers&&supaUsers.length){
-        try{localStorage.setItem('app_users',JSON.stringify(supaUsers));}catch(e){}
-        for(var i=0;i<supaUsers.length;i++){
-          if(supaUsers[i].username.toLowerCase()===u&&supaUsers[i].password===p){found=supaUsers[i];break;}
-        }
-      }
-      if(found){ doLoginSuccess(found); }
-      else {
-        err.textContent='Usuario o contraseña incorrectos';
-        err.style.display='block';
-        document.getElementById('login-pass').value='';
-      }
-    }).catch(function(){
-      err.textContent='Usuario o contraseña incorrectos';
-      err.style.display='block';
-      document.getElementById('login-pass').value='';
-    });
-    return;
-  }
-  if(!found){
-    err.textContent='Usuario o contraseña incorrectos';
+  if(!u||!p){err.textContent='Escribe usuario y contraseña';err.style.display='block';return;}
+  err.textContent='Verificando...';err.style.display='block';
+  accRpc('acc_login',{p_user:u,p_pass:p}).then(function(r){
+    document.getElementById('login-pass').value='';
+    entrarConPerfil(r,r.token);
+  },function(e){
+    err.textContent=e.codigo==='red'?'Sin conexión. Inténtalo de nuevo.':'Usuario o contraseña incorrectos';
     err.style.display='block';
     document.getElementById('login-pass').value='';
-    return;
-  }
-  doLoginSuccess(found);
+  });
+}
+
+function entrarConPerfil(p,token){
+  try{localStorage.setItem(ACC_KEY,token);}catch(e){}
+  accCliente(token);
+  doLoginSuccess({username:p.username,name:p.nombre,admin:p.admin,permisos:p.permisos,
+    role:p.admin?'admin':(p.permisos&&p.permisos.gestion)||'no'});
+}
+
+function cargarDatosSesion(){
+  var loadingMsg=document.createElement('div');
+  loadingMsg.id='supa-loading';
+  loadingMsg.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#F9E2AF;color:#1E1E2E;padding:8px 20px;border-radius:6px;font-size:12px;font-weight:700;z-index:9999';
+  loadingMsg.textContent='⟳ Cargando datos...';
+  document.body.appendChild(loadingMsg);
+  var tareas=[];
+  if(accPuede('gestion','ver')) tareas.push(loadFromSupabase());
+  if(accPuede('personal','ver')) tareas.push(loadNominas());
+  Promise.all(tareas).then(function(){
+    var lm=document.getElementById('supa-loading');
+    if(lm){lm.style.background='#A6E3A1';lm.textContent='✓ Datos cargados';setTimeout(function(){lm.remove();},1500);}
+    buildSelects(); setPendBadge();
+    var act=document.querySelector('.panel.active'); if(act) showTab(act.id.replace('panel-',''));
+  }).catch(function(e){
+    console.warn('Error cargando datos:',e);
+    var lm=document.getElementById('supa-loading');
+    if(lm){lm.style.background='#F38BA8';lm.textContent='⚠ No se pudieron cargar los datos';setTimeout(function(){lm.remove();},4000);}
+  });
 }
 
 function doLoginSuccess(found){
   var err=document.getElementById('login-error');
   currentUser=found;
+  if(!accPuede('gestion','ver')&&!accPuede('personal','ver')){
+    err.innerHTML='Tu usuario no tiene acceso a Gestión. <a href="#" onclick="accSalir();return false" style="color:inherit;text-decoration:underline">Salir</a>';
+    err.style.display='block';
+    return;
+  }
   err.style.display='none';
   document.getElementById('login-overlay').style.display='none';
   var su=document.getElementById('sb-username');
   if(su) su.textContent=found.name;
-  var roleEl=document.getElementById('sb-role');if(roleEl)roleEl.textContent=found.role;
+  var roleEl=document.getElementById('sb-role');if(roleEl)roleEl.textContent=found.admin?'Administrador':(found.role==='editar'?'Editar':found.role==='ver'?'Solo ver':'Personal');
   var avEl=document.getElementById('sb-avatar');if(avEl)avEl.textContent=(found.name||'U')[0].toUpperCase();
   applyRoleUI();
-  if(found.role==='normal') showTab('calendario');
-  else { showTab('planning'); }
+  if(accPuede('gestion','ver')) showTab('planning');
+  else showTab('nom-historial');
+  cargarDatosSesion();
 }
 
-function doLogout(){
-  currentUser=null;
-  document.getElementById('login-overlay').style.display='flex';
-  document.getElementById('login-user').value='';
-  document.getElementById('login-pass').value='';
-}
+function doLogout(){ accSalir(); }
 
+function tabPermitida(t){
+  var g=accPuede('gestion','ver'), ge=accPuede('gestion','editar'), adm=!!(currentUser&&currentUser.admin);
+  var reglas={
+    'registro':ge, 'auditoria':g, 'dashboard':g, 'config':adm, 'calendario':g, 'informe':g,
+    'planning':g, 'reservas-lista':g, 'reservas-inf':g, 'importwa':ge,
+    'svc-registro':false, 'svc-detalle':false, 'svc-resumen':false,
+    'nom-emitir':accPuede('personal','editar'), 'nom-historial':accPuede('personal','ver'),
+    'facturas-emit':accPuede('facturacion','ver'), 'facturas-rec':accPuede('facturacion','ver'), 'nueva-factura':accPuede('facturacion','editar')
+  };
+  return reglas.hasOwnProperty(t)?reglas[t]:g;
+}
 function applyRoleUI(){
   var role=currentUser?currentUser.role:'';
-  var tabRules={
-    'tab-registro':      ['admin','supervisor'],
-    'tab-auditoria':     ['admin','supervisor'],
-    'tab-dashboard':     ['admin','supervisor'],
-    'tab-config':        ['admin'],
-    'tab-informe':       ['admin'],
-    'tab-calendario':    ['admin','supervisor','normal'],
-    'tab-planning':      ['admin','supervisor'],
-    'tab-reservas-lista':['admin','supervisor'],
-    'tab-reservas-inf':  ['admin'],
-    'tab-facturas-emit': ['admin'],
-    'tab-facturas-rec':  ['admin'],
-    'tab-nueva-factura': ['admin']
-  };
-  Object.keys(tabRules).forEach(function(id){
-    var el=document.getElementById(id);
-    if(el) el.style.display=tabRules[id].indexOf(role)>=0?'':'none';
+  document.querySelectorAll('[id^="tab-"]').forEach(function(el){
+    if(!el.classList.contains('sb-item'))return;
+    el.style.display=tabPermitida(el.id.slice(4))?'':'none';
   });
+  // Botones de cambiar/borrar ocultos según el permiso
+  var st=document.getElementById('acc-style');
+  if(!st){st=document.createElement('style');st.id='acc-style';document.head.appendChild(st);}
+  var css='';
+  if(!accPuede('gestion','editar')) css+=ACC_ESCRITURA_GESTION.map(function(n){return '[onclick^="'+n+'("]';}).join(',')+'{display:none!important}';
+  if(!accPuede('gestion','admin')) css+=ACC_BORRAR_GESTION.map(function(n){return '[onclick^="'+n+'("]';}).join(',')+'{display:none!important}';
+  if(!accPuede('personal','editar')) css+=ACC_ESCRITURA_NOMINAS.map(function(n){return '[onclick^="'+n+'("]';}).join(',')+'{display:none!important}';
+  st.textContent=css;
+  var lu=document.getElementById('acc-link-usuarios'); if(lu) lu.style.display=(currentUser&&currentUser.admin)?'':'none';
   // For normal: grey out cal form (read-only)
   var calForm=document.getElementById('cal-form-card');
   if(calForm){
-    if(role==='normal'){
+    if(!accPuede('gestion','editar')){
       calForm.style.opacity='0.4';
       calForm.style.pointerEvents='none';
       calForm.title='Solo lectura - sin permiso para programar';
@@ -2664,7 +2685,8 @@ function applyRoleUI(){
 }
 
 //=== USUARIOS EN CONFIG =====================================================
-function renderConfigUsers(){
+function renderConfigUsers(){ return; }
+function renderConfigUsers_antiguo(){
   var users=getAppUsers();
   var el=document.getElementById('cfg-appusers');
   if(!el) return;
@@ -4409,29 +4431,19 @@ function renderPlanning(){
     var ki=document.getElementById('api-key-input');if(ki)ki.value=apiKey;
     var ks=document.getElementById('apikey-section');if(ks)ks.style.display='none';
   }
-  // Show login first
+  // Entrar: con la sesión guardada en este dispositivo o pidiendo usuario y contraseña.
+  // No se carga ningún dato hasta haber entrado.
   document.getElementById('login-overlay').style.display='flex';
-  // Show loading state
-  var loadingMsg = document.createElement('div');
-  loadingMsg.id='supa-loading';
-  loadingMsg.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#F9E2AF;color:#1E1E2E;padding:8px 20px;border-radius:6px;font-size:12px;font-weight:700;z-index:9999;font-family:DM Mono,monospace';
-  loadingMsg.textContent='⟳ Sincronizando con Supabase...';
-  document.body.appendChild(loadingMsg);
-  // Load from Supabase — MUST complete before user can interact
-  loadFromSupabase().then(function(){
-    console.log('Datos sincronizados con Supabase');
-    var lm=document.getElementById('supa-loading');
-    if(lm){ lm.style.background='#A6E3A1'; lm.textContent='✓ Datos sincronizados'; setTimeout(function(){lm.remove();},2000); }
-    buildSelects();
-    setPendBadge();
-  }).catch(function(e){
-    console.warn('Error sincronizando con Supabase, usando datos locales:', e);
-    supaReady = true; // Allow local operation as fallback
-    var lm=document.getElementById('supa-loading');
-    if(lm){ lm.style.background='#F38BA8'; lm.textContent='⚠ Sin conexión Supabase — modo local'; setTimeout(function(){lm.remove();},4000); }
-    buildSelects();
-    setPendBadge();
-  });
+  try{localStorage.removeItem('app_users');}catch(e){}
+  var tok=accToken();
+  if(tok){
+    var err=document.getElementById('login-error');
+    if(err){err.textContent='Recuperando sesión...';err.style.display='block';}
+    accRpc('acc_yo',{p_token:tok}).then(function(p){entrarConPerfil(p,tok);},function(e){
+      if(err){err.style.display='none';}
+      if(e.codigo!=='red'){try{localStorage.removeItem(ACC_KEY);}catch(x){} accLimpiarCaches();}
+    });
+  }
   buildSelects();
   setPendBadge();
 })();
@@ -5142,8 +5154,25 @@ function reprintNomina(id){
   setTimeout(function(){w.print();},400);
 }
 
-// Load nominas on startup
-loadNominas();
+// (Las nóminas se cargan al entrar, según el permiso de Personal)
+
+//=== ACCESOS: acciones que cambian o borran datos =============================
+var ACC_ESCRITURA_GESTION=['calAdd','dispAdd','cfgAddAdmin','cfgAddPiso','cfgAddWorker','confPrev','confRec','rejRec','editRec','saveEditRec',
+  'editReserva','editReservaFromChecklist','saveReserva','openNuevaReserva','planNuevaReserva','planCfgAddPiso','planCfgAddSector',
+  'submitAdmin','submitWorker','toggleSvcEstado','saveSvcRealizado','processWAChat','confirmWAImport','toggleCheck','cfgAddUser'];
+var ACC_BORRAR_GESTION=['calDel','dispDel','delRec','deleteReserva','deleteSvcRealizado'];
+var ACC_ESCRITURA_NOMINAS=['generarNominaPDF','enviarNominaEmail'];
+(function(){
+  function envolver(nombres,permitido,msg){
+    nombres.forEach(function(n){
+      var f=window[n]; if(typeof f!=='function') return;
+      window[n]=function(){ if(!permitido()){ toast(msg); return; } return f.apply(this,arguments); };
+    });
+  }
+  envolver(ACC_ESCRITURA_GESTION,function(){return accPuede('gestion','editar');},'Solo lectura: no tienes permiso para modificar');
+  envolver(ACC_BORRAR_GESTION,function(){return accPuede('gestion','admin');},'Solo el administrador puede eliminar');
+  envolver(ACC_ESCRITURA_NOMINAS,function(){return accPuede('personal','editar');},'Solo lectura: no tienes permiso para emitir nóminas');
+})();
 
 </script>
 </body>
