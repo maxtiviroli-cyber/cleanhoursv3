@@ -53,6 +53,7 @@ select.inp{appearance:auto}
 .cab{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .cab h1{font-size:24px;flex:1}
 .cab-menu{width:52px;height:52px;border-radius:14px;background:var(--s0);font-size:26px;flex-shrink:0}
+.ir-inicio{display:inline-flex;align-items:center;justify-content:center;color:inherit;text-decoration:none}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--crust);border-top:2px solid var(--s0);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
 .tabs-in{display:flex;width:100%;max-width:680px}
 .tabs button{flex:1;height:var(--tabh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:15px;font-weight:700;color:var(--muted)}
@@ -180,7 +181,7 @@ body.solo-ver #flotante, body.solo-ver [data-facturar] { display: none !importan
 <!-- ============ Principal ============ -->
 <section id="scr-main" class="oculto">
   <div class="envoltura">
-    <div class="cab"><h1 id="cab-tit">Servicios</h1><button class="cab-menu" id="btn-menu" aria-label="Menú">⋯</button></div>
+    <div class="cab"><h1 id="cab-tit">Servicios</h1><a class="cab-menu ir-inicio" href="./" aria-label="Inicio" title="Volver a la página principal">&#8962;</a><button class="cab-menu" id="btn-menu" aria-label="Menú">⋯</button></div>
 
     <!-- Día -->
     <div class="panel on" id="p-dia">

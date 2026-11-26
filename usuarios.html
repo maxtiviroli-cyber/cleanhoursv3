@@ -83,6 +83,7 @@ main{padding:16px;max-width:900px;margin:0 auto}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--s0);border:1px solid var(--s2);color:var(--text);padding:12px 18px;border-radius:12px;font-size:15px;z-index:60;display:none;max-width:90vw;text-align:center}
 #toast.on{display:block}
 #toast.error{border-color:var(--red);color:var(--red)}
+.ir-inicio{text-decoration:none;color:inherit}
 </style>
 </head>
 <body>
@@ -104,7 +105,7 @@ main{padding:16px;max-width:900px;margin:0 auto}
 <div id="app" class="oculto">
   <header>
     <div class="tit">Usuarios y accesos</div>
-    <div class="usuario"><span id="u-nombre"></span><button class="btn peq" id="btn-mi-clave">Mi contraseña</button><button class="btn peq" id="btn-salir">Salir</button></div>
+    <div class="usuario"><span id="u-nombre"></span><a class="btn peq ir-inicio" href="./" title="Volver a la página principal">&#8962; Inicio</a><button class="btn peq" id="btn-mi-clave">Mi contraseña</button><button class="btn peq" id="btn-salir">Salir</button></div>
   </header>
   <main>
     <div id="solo-yo" class="oculto">

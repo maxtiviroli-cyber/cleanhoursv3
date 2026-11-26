@@ -131,6 +131,7 @@ textarea.inp{height:auto;min-height:110px;padding:10px 12px;line-height:1.45;res
 #toast.error{border-color:var(--red);color:var(--red)}
 body.solo-ver [data-acc], body.solo-ver [data-pers], body.solo-ver #btn-val-todos, body.solo-ver #btn-nueva-pers,
 body.solo-ver #btn-nuevo-sector, body.solo-ver #btn-nuevo-lugar { display: none !important; }
+.ir-inicio{text-decoration:none;color:inherit}
 </style>
 </head>
 <body>
@@ -154,7 +155,7 @@ body.solo-ver #btn-nuevo-sector, body.solo-ver #btn-nuevo-lugar { display: none 
 <div id="app" class="oculto">
   <header>
     <span class="marca">Servap</span><span class="tit">Fichajes</span>
-    <div class="usuario"><span id="u-nombre"></span><button class="btn peq" id="btn-salir">Salir</button></div>
+    <div class="usuario"><span id="u-nombre"></span><a class="btn peq ir-inicio" href="./" title="Volver a la página principal">&#8962; Inicio</a><button class="btn peq" id="btn-salir">Salir</button></div>
   </header>
   <nav class="tabs">
     <button data-tab="tramos" class="on">Fichajes</button>
@@ -716,7 +717,7 @@ function pintarPersonal() {
       var lug = p.lugar_habitual_id ? lugarPorId(p.lugar_habitual_id) : null;
       var enCH = !CH.cargado || CH.workers.indexOf(p.nombre) >= 0;
       return '<tr><td class="c-pers">' + h(p.nombre) + (enCH ? '' : ' <span class="bd amar" title="Este nombre no está en la lista de trabajadores de Gestión">no está en CleanHours</span>') + '</td>' +
-        '<td style="font-family:var(--mono);color:var(--mauve)">' + h(p.usuario || '—') + '</td>' +
+        '<td style="font-family:var(--mono);color:var(--mauve)">' + h(p.usuario || '—') + (p.oficina ? ' <span class="bd gris" title="Ve el botón Inicio en la app de fichaje">oficina</span>' : '') + '</td>' +
         '<td>' + h(PERFILES[p.perfil] || p.perfil) + '</td><td>' + (lug ? h(lug.nombre) : '<span style="color:var(--muted)">—</span>') + '</td>' +
         '<td>' + (p.tiene_pin ? '<span class="bd verde">asignado</span>' : '<span class="bd rojo">sin PIN</span>') + '</td>' +
         '<td>' + (!p.activo ? '<span class="bd gris">desactivada</span>' : p.bloqueado ? '<span class="bd rojo" title="5 PIN incorrectos: espera 15 min o asigna un PIN nuevo">bloqueada</span>' : '<span class="bd verde">activa</span>') + '</td>' +
@@ -758,6 +759,8 @@ function abrirPersona(p) {
     '<button class="btn" id="pe-gen" type="button">Generar</button></div>' +
     (!nueva && p.bloqueado ? '<p class="nota aviso">Está bloqueada por PIN incorrectos. Asigna un PIN nuevo para desbloquearla.</p>' : '') +
     (!nueva ? '<p class="nota">Si cambias el PIN, su móvil le pedirá el nuevo.</p>' : '') +
+    '<label class="check"><input type="checkbox" id="pe-ofi"' + (p && p.oficina ? ' checked' : '') + '> Personal de oficina (en la app de fichaje ve el botón «Inicio» para ir a Servap)</label>' +
+    '<p class="nota">Déjalo sin marcar para el personal de limpieza.</p>' +
     '<label class="check"><input type="checkbox" id="pe-act"' + (!p || p.activo ? ' checked' : '') + '> Activa (puede fichar)</label>' +
     (!nueva ? '<p class="nota">Si la desactivas, se cierra su sesión en el móvil y no podrá fichar. Sus fichajes anteriores se conservan.</p>' : '') +
     '<div class="pie"><button class="btn" id="pe-can">Cancelar</button><button class="btn pri" id="pe-ok">Guardar</button></div>');
@@ -789,7 +792,7 @@ function abrirPersona(p) {
     var usuFinal = usu;
     adm('fichaje_admin_guardar_personal', {
       p_nombre: nombre, p_perfil: $('pe-perfil').value, p_lugar_habitual_id: $('pe-lug').value || null,
-      p_pin: pin || null, p_activo: $('pe-act').checked, p_usuario: usu || null
+      p_pin: pin || null, p_activo: $('pe-act').checked, p_usuario: usu || null, p_oficina: $('pe-ofi').checked
     }).then(function (r) {
       usuFinal = (r && r.usuario) || usu;
       return cargarEstructura();

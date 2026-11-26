@@ -66,6 +66,7 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
 .cab{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .cab-nombre{font-size:22px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cab-menu{width:52px;height:52px;border-radius:14px;background:var(--s0);font-size:26px;flex-shrink:0}
+.ir-inicio{display:inline-flex;align-items:center;justify-content:center;color:inherit;text-decoration:none}
 .estado-red{display:inline-flex;align-items:center;gap:8px;font-size:15px;color:var(--sub);margin-top:4px}
 .estado-red i{width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block}
 .estado-red.off i{background:var(--yellow)}
@@ -214,6 +215,7 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
     </div>
     <div class="cab-der">
       <button class="cab-horas" id="btn-horas">Mis horas<span class="punto oculto" id="ini-punto"></span></button>
+      <a class="cab-menu ir-inicio oculto" id="btn-inicio" href="./" aria-label="Inicio">&#8962;</a>
       <button class="cab-menu" id="btn-menu" aria-label="Menú">⋯</button>
     </div>
   </div>
@@ -301,6 +303,7 @@ var S = {
   avisos: LS.get('fich_avisos', []),
   notas: LS.get('fich_notas', 0),            // notas de la oficina sin leer
   notaMes: LS.get('fich_nota_mes', null),   // mes de la nota más reciente sin leer
+  oficina: LS.get('fich_oficina', false),    // personal de oficina: ve el botón «Inicio»
   online: navigator.onLine,
   sincronizando: false
 };
@@ -308,6 +311,7 @@ function guardar() {
   LS.set('fich_token', S.token); LS.set('fich_nombre', S.nombre); LS.set('fich_usuario', S.usuario); LS.set('fich_info', S.info);
   LS.set('fich_abierto', S.abierto); LS.set('fich_cola', S.cola); LS.set('fich_desfase', S.desfase);
   LS.set('fich_avisos', S.avisos); LS.set('fich_notas', S.notas); LS.set('fich_nota_mes', S.notaMes);
+  LS.set('fich_oficina', !!(S.token && S.oficina));
 }
 
 /* ================= Conexión con Supabase ================= */
@@ -419,6 +423,7 @@ function enviarPin() {
 function pantallaInicio() { mostrar('scr-inicio'); pintarInicio(); }
 function pintarInicio() {
   $('ini-nombre').textContent = S.nombre || '';
+  $('btn-inicio').classList.toggle('oculto', !(S.token && S.oficina));
   var red = $('ini-red');
   red.classList.toggle('off', !S.online);
   red.querySelector('span').textContent = S.online ? 'Conectado' : 'Sin conexión · se guarda en el móvil';
@@ -846,6 +851,10 @@ function cargarEstado() {
         lugares: (a.lugares || []).map(function (l) { return { id: l.id, nombre: l.nombre }; }) } : null;
     }
     guardar();
+    // ¿Es personal de oficina? (si la base aún no lo tiene, simplemente no se muestra)
+    return rpc('fichaje_mi_perfil', { p_token: S.token }).then(function (p) {
+      S.oficina = !!(p && p.oficina); guardar();
+    }, function (e) { if (e && e.codigo === 'sesion_invalida') throw e; });
   });
 }
 function sincronizar() {

@@ -86,6 +86,10 @@ a{color:var(--primary);text-decoration:none}
 
 /* ── TOPBAR ─────────────────────────────────────────── */
 .topbar-left{display:flex;align-items:center;gap:12px}
+.ir-inicio{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:8px;background:var(--navy);color:#fff;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap}
+.ir-inicio:hover{opacity:.88}
+.topbar-right{display:flex;align-items:center;gap:14px}
+@media(max-width:520px){.ir-inicio .t{display:none}.ir-inicio{padding:0 11px;font-size:16px}}
 .hamburger{display:none;align-items:center;justify-content:center;width:36px;height:36px;background:var(--navy);border:none;border-radius:var(--radius);cursor:pointer;flex-direction:column;gap:4px;padding:0;flex-shrink:0}
 .hamburger span{display:block;width:16px;height:2px;background:white;border-radius:2px}
 .page-title{font-size:15px;font-weight:600;color:#1A1D27}
@@ -312,6 +316,7 @@ tbody tr:hover{background:#F8F9FC}
     </div>
     <div class="topbar-right">
       <div class="topbar-date" id="topbar-date"></div>
+      <a class="ir-inicio" href="./" title="Volver a la página principal">&#8962;<span class="t"> Inicio</span></a>
     </div>
   </div>
 
