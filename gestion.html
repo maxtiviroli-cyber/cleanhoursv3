@@ -4561,7 +4561,7 @@ function renderPlanning(){
 }
 
 //=== PLANNING MÓVIL (resumen de hoy + 7 días) ===============================
-var planMob={desde:'', hasta:'', sector:'Todos', soloRes:true, sheet:'', notas:{}, mas:false, modo:'dia'};
+var planMob={desde:'', hasta:'', sector:'Todos', soloRes:true, sheet:'', notas:{}, mas:false, modo:'dia', todo:false};
 function pmHoyMas(off){ var d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+(off||0)); return pmYmd(d); }
 function pmParse(y){ var p=String(y).split('-').map(Number); return new Date(p[0],p[1]-1,p[2]); }
 function pmRango(){ if(!planMob.desde){ planMob.desde=planMob.hasta=pmHoyMas(0); } if(planMob.hasta<planMob.desde) planMob.hasta=planMob.desde; return {d:planMob.desde,h:planMob.hasta}; }
@@ -4637,27 +4637,38 @@ function renderPlanMobile(){
   });
   h+='</div>';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
-  h+='<span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B6275">'+(pmRango().d===pmHoyMas(0)?'Próximos 7 días':'7 días desde el '+pmParse(pmRango().d).getDate()+'/'+(pmParse(pmRango().d).getMonth()+1))+'</span>';
+  // Rango del calendario: 7 días (por defecto) o todas las fechas
+  h+='<div style="display:flex;background:#E8EAF0;border-radius:14px;padding:2px">';
+  h+='<button class="pm-seg'+(!planMob.todo?' on':'')+'" onclick="pmSet(\'todo\',false)">7 días</button>';
+  h+='<button class="pm-seg'+(planMob.todo?' on':'')+'" onclick="pmSet(\'todo\',true)">Todas las fechas</button>';
+  h+='</div>';
   h+='<div style="display:flex;background:#E8EAF0;border-radius:14px;padding:2px">';
   h+='<button class="pm-seg'+(planMob.soloRes?' on':'')+'" onclick="pmSet(\'soloRes\',true)">Con reserva</button>';
   h+='<button class="pm-seg'+(!planMob.soloRes?' on':'')+'" onclick="pmSet(\'soloRes\',false)">Todos</button>';
   h+='</div></div>';
-  // Calendario 7 días desde hoy
+  // Calendario: 7 días desde la fecha elegida, o todas las fechas hasta la última salida
   var n=7, labelW=84, rowH=32;
-  var avail=Math.min(window.innerWidth||390,768)-24-2;
-  var cellW=Math.max(34,Math.floor((avail-labelW)/n));
   var d0=pmParse(pmRango().d), hoyY=pmHoyMas(0);
+  if(planMob.todo){
+    var y0t=pmYmd(d0), ult=y0t;
+    (reservas||[]).forEach(function(r){ if(r && r.fecha_salida && r.fecha_salida>ult) ult=r.fecha_salida; });
+    n=Math.min(366, Math.max(7, Math.round((pmParse(ult)-d0)/86400000)+1));
+  }
+  var avail=Math.min(window.innerWidth||390,768)-24-2;
+  var cellW=planMob.todo?36:Math.max(34,Math.floor((avail-labelW)/7));
   var dEnd=new Date(d0); dEnd.setDate(dEnd.getDate()+n);
   var y0=pmYmd(d0), yEnd=pmYmd(dEnd);
   var dows=['DO','LU','MA','MI','JU','VI','SA'];
   var g='<div style="position:relative;width:'+(labelW+n*cellW)+'px">';
-  g+='<div style="display:flex;position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid #D5DAE4"><div style="width:'+labelW+'px;flex-shrink:0"></div>';
+  g+='<div style="display:flex;position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid #D5DAE4"><div style="width:'+labelW+'px;flex-shrink:0;position:sticky;left:0;z-index:6;background:#fff"></div>';
   var cells='';
   for(var i=0;i<n;i++){
     var dd=new Date(d0); dd.setDate(dd.getDate()+i);
     var w=dd.getDay(), isT=(pmYmd(dd)===hoyY), we=(w===0||w===6);
-    g+='<div style="width:'+cellW+'px;flex-shrink:0;text-align:center;padding:5px 0;border-left:1px solid #EEF0F4;color:'+(isT?'#fff':(w===0?'#D32F2F':'#5B6275'))+';'+(isT?'background:var(--primary);border-radius:6px 6px 0 0;':'')+'"><div style="font-size:9px;font-weight:600">'+dows[w]+'</div><div style="font-size:13px;font-weight:700">'+dd.getDate()+'</div></div>';
-    cells+='<div style="width:'+cellW+'px;flex-shrink:0;height:'+rowH+'px;border-left:1px solid #EEF0F4;background:'+(isT?'#E8EFFF':(we?'#F6F7FA':'#fff'))+'"></div>';
+    var dia1=(dd.getDate()===1 && i>0), mesA=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'][dd.getMonth()];
+    var bl=dia1?'#9CA3B8':'#EEF0F4';
+    g+='<div style="width:'+cellW+'px;flex-shrink:0;text-align:center;padding:5px 0;border-left:1px solid '+bl+';color:'+(isT?'#fff':(w===0?'#D32F2F':'#5B6275'))+';'+(isT?'background:var(--primary);border-radius:6px 6px 0 0;':'')+'"><div style="font-size:9px;font-weight:'+(dia1?'800':'600')+'">'+(dia1?mesA:dows[w])+'</div><div style="font-size:13px;font-weight:700">'+dd.getDate()+'</div></div>';
+    cells+='<div style="width:'+cellW+'px;flex-shrink:0;height:'+rowH+'px;border-left:1px solid '+bl+';background:'+(isT?'#E8EFFF':(we?'#F6F7FA':'#fff'))+'"></div>';
   }
   g+='</div>';
   // Incluye las que salen hoy (se dibujan hasta las 10:00 de hoy)
@@ -4668,12 +4679,12 @@ function renderPlanMobile(){
   grupos.forEach(function(s){
     var pisos=s.pisos.filter(function(p){ return !planMob.soloRes || rs.some(function(r){ return r.piso===p; }); });
     if(!pisos.length) return;
-    g+='<div style="font-size:9px;font-weight:600;color:#B4BAC8;padding:'+(primero?'4px':'7px')+' 8px 1px 8px;'+(primero?'':'border-top:1px solid #E3E6EE;')+'">'+planEscHtml(s.nombre)+'</div>';
+    g+='<div style="'+(primero?'':'border-top:1px solid #E3E6EE;')+'"><div style="position:sticky;left:0;display:inline-block;font-size:9px;font-weight:600;color:#B4BAC8;padding:'+(primero?'4px':'7px')+' 8px 1px 8px">'+planEscHtml(s.nombre)+'</div></div>';
     primero=false;
     pisos.forEach(function(p){
       filas++;
       g+='<div style="display:flex;height:'+rowH+'px;border-bottom:1px solid #F1F2F6;position:relative">';
-      g+='<div style="width:'+labelW+'px;flex-shrink:0;font-size:11px;font-weight:600;line-height:1.1;padding:0 8px;box-sizing:border-box;display:flex;align-items:center;overflow:hidden">'+planEscHtml(p)+'</div>'+cells;
+      g+='<div style="width:'+labelW+'px;flex-shrink:0;font-size:11px;font-weight:600;line-height:1.1;padding:0 8px;box-sizing:border-box;display:flex;align-items:center;overflow:hidden;position:sticky;left:0;z-index:3;background:'+(planMob.todo?'rgba(255,255,255,0.92)':'#fff')+'">'+planEscHtml(p)+'</div>'+cells;
       rs.filter(function(r){ return r.piso===p; }).forEach(function(r){
         var a=r.fecha_entrada.split('-').map(Number), e=r.fecha_salida.split('-').map(Number);
         var di=Math.round((new Date(a[0],a[1]-1,a[2])-d0)/86400000), de=Math.round((new Date(e[0],e[1]-1,e[2])-d0)/86400000);
@@ -4690,7 +4701,7 @@ function renderPlanMobile(){
       g+='</div>';
     });
   });
-  if(!filas) g+='<div style="padding:20px;text-align:center;font-size:12px;color:#9CA3B8">Sin reservas en estos 7 días</div>';
+  if(!filas) g+='<div style="padding:20px;text-align:center;font-size:12px;color:#9CA3B8">'+(planMob.todo?'Sin reservas desde esta fecha':'Sin reservas en estos 7 días')+'</div>';
   g+='</div>';
   h+='<div style="overflow:auto;background:#fff;border-radius:10px;border:1px solid #E8EAF0;max-height:calc(100vh - 300px)">'+g+'</div>';
   // Ventana compartible
