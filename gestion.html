@@ -187,7 +187,7 @@ tbody tr:hover{background:#F8F9FC}
 #plan-mobile{display:none}
 @media(max-width:768px){#plan-desktop{display:none}#plan-mobile{display:block}}
 .pm-box{text-align:left;border:none;border-radius:10px;padding:8px 10px;cursor:pointer;font-family:inherit}
-.pm-chip{flex-shrink:0;height:32px;padding:0 12px;border-radius:16px;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;border:1px solid #E2E5ED;background:#fff;color:#5B6275;font-family:inherit}
+.pm-chip{flex:1 1 auto;min-height:28px;padding:3px 7px;border-radius:10px;font-size:11px;line-height:1.15;text-align:center;font-weight:600;white-space:normal;cursor:pointer;border:1px solid #E2E5ED;background:#fff;color:#5B6275;font-family:inherit}
 .pm-chip.on{border-color:var(--primary);background:#EEF3FF;color:#2F5FDF}
 .pm-seg{height:26px;padding:0 10px;border-radius:12px;border:none;font-size:11px;font-weight:600;background:transparent;color:#5B6275;cursor:pointer;font-family:inherit}
 .pm-seg.on{background:#fff;color:#1A1D27;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.12)}
@@ -342,6 +342,7 @@ tbody tr:hover{background:#F8F9FC}
         <div id="plan-month-title" style="font-size:14px;font-weight:600;min-width:140px;text-align:center"></div>
         <button onclick="planNextMonth()" style="background:none;border:1px solid #E2E5ED;border-radius:var(--radius);cursor:pointer;font-size:18px;padding:4px 12px;color:var(--primary)">&#8250;</button>
         <button onclick="planGoToday()" class="btn btn-light btn-sm">Hoy</button>
+        <button id="plan-alertas-btn" onclick="mostrarAlertas(true)" title="Alertas pendientes" style="display:none;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:16px;border:none;background:#FEE2E2;color:#B91C1C;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Alertas <span class="n" style="background:#DC2626;color:#fff;border-radius:9px;padding:0 6px;font-size:11px">0</span></button>
       </div>
     </div>
 
@@ -462,6 +463,18 @@ tbody tr:hover{background:#F8F9FC}
       <div id="res-sintarifa-note" style="display:none;margin-bottom:10px;padding:8px 10px;background:var(--bg);border-radius:var(--radius);font-size:11px;color:var(--text2)">Este piso no factura tarifa — solo se registra la reserva para planificación.</div>
       <div style="margin-bottom:14px"><label style="font-size:10px">Observaciones / Notas</label>
         <textarea id="res-obs" rows="2" placeholder="Notas, parking, mascotas..." style="font-size:12px;padding:6px 8px"></textarea>
+      </div>
+      <div style="margin-bottom:14px;padding:10px;border:1px solid #F3D9B1;background:#FFFBF3;border-radius:var(--radius)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:700;color:#B45309;text-transform:uppercase;letter-spacing:.05em">Alerta</span>
+          <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:11px;font-weight:700;color:#DC2626;text-transform:none;letter-spacing:0;cursor:pointer"><input type="checkbox" id="res-alerta-urgente" style="width:auto;margin:0"> Urgente</label>
+        </div>
+        <textarea id="res-alerta-texto" rows="2" placeholder="Ej.: cambiar sábanas extra, revisar caldera, entregar llaves en mano..." style="font-size:12px;padding:6px 8px;margin-bottom:6px"></textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label style="font-size:10px">Fecha de la alerta</label><input type="date" id="res-alerta-fecha" style="font-size:12px;padding:6px 8px"></div>
+          <div><label style="font-size:10px">Avisar desde</label><select id="res-alerta-antes" style="font-size:12px;padding:6px 8px"><option value="0">El mismo día</option><option value="1">1 día antes</option><option value="2" selected>2 días antes</option><option value="3">3 días antes</option><option value="7">1 semana antes</option></select></div>
+        </div>
+        <div id="res-alerta-estado" style="display:none;margin-top:6px;font-size:11px;color:#15803D;font-weight:600"></div>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="btn btn-light btn-sm" onclick="closeModalReserva()">Cancelar</button>
@@ -1504,7 +1517,7 @@ function showTab(name){
   if(name==='config'){renderConfig();renderHistorial();}
   if(name==='calendario'){calBuildSelects();renderCal();}
   if(name==='informe')   initInforme();
-  if(name==='planning'){loadReservas().then(function(){ setTimeout(renderPlanning, 100); });}
+  if(name==='planning'){loadReservas().then(function(){ setTimeout(function(){ renderPlanning(); mostrarAlertas(false); }, 100); });}
   if(name==='reservas-lista'){loadReservas().then(function(){ setTimeout(renderReservas, 100); });}
   if(name==='reservas-inf'){loadReservas().then(function(){ setTimeout(renderInformeReservas, 100); });}
   if(name==='svc-registro') initSvcRegistro();
@@ -4082,6 +4095,7 @@ function openNuevaReserva(){
   document.getElementById('modal-res-title').textContent = 'Nueva Reserva';
   ['res-nombre','res-pais','res-obs'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
   ['res-precio','res-taxa'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  resAlertaRellenar(null);
   var _ps=getPlanSectores(); var _first=null; _ps.some(function(sx){ if(sx.pisos.length){_first=sx.pisos[0];return true;} return false; }); if(_first) document.getElementById('res-piso').value=_first;
   document.getElementById('res-personas').value='2';
   document.getElementById('res-entrada').value='';
@@ -4141,14 +4155,40 @@ async function saveReserva(){
     taxa_cobrada: currentReservaId ? undefined : false
   };
 
+  // Alerta
+  var alTxt=(document.getElementById('res-alerta-texto').value||'').trim();
+  var alFecha=document.getElementById('res-alerta-fecha').value;
+  var alUrg=document.getElementById('res-alerta-urgente').checked;
+  var alAntes=parseInt(document.getElementById('res-alerta-antes').value,10)||0;
+  var prevR=currentReservaId?(reservas||[]).find(function(x){return x.id===currentReservaId;}):null;
+  var conAlerta=false;
+  if(alTxt){
+    if(!alFecha) return toast('Pon la fecha de la alerta');
+    var cambio=!prevR || prevR.alerta_texto!==alTxt || prevR.alerta_fecha!==alFecha || !!prevR.alerta_urgente!==alUrg || (prevR.alerta_dias_antes||0)!==alAntes;
+    data.alerta_texto=alTxt; data.alerta_fecha=alFecha; data.alerta_urgente=alUrg; data.alerta_dias_antes=alAntes;
+    if(cambio){ data.alerta_hecha=false; data.alerta_hecha_por=null; data.alerta_hecha_en=null; }
+    conAlerta=true;
+  } else if(prevR && prevR.alerta_texto){
+    data.alerta_texto=null; data.alerta_fecha=null; data.alerta_urgente=false; data.alerta_hecha=false; data.alerta_hecha_por=null; data.alerta_hecha_en=null;
+    conAlerta=true;
+  }
+
   // Remove undefined keys for edit mode
   Object.keys(data).forEach(function(k){ if(data[k]===undefined) delete data[k]; });
   try {
-    if(currentReservaId){
-      await sbUpdate('reservas', currentReservaId, data);
+    var guardar=function(d){ return currentReservaId ? sbUpdate('reservas', currentReservaId, d) : sbInsert('reservas', d); };
+    var r1=await guardar(data);
+    if(r1 && r1.error){
+      if(conAlerta && /alerta/i.test(r1.error.message||'')){
+        // Las columnas de alertas aún no existen en Supabase: se guarda la reserva sin la alerta
+        Object.keys(data).forEach(function(k){ if(k.indexOf('alerta_')===0) delete data[k]; });
+        var r2=await guardar(data);
+        if(r2 && r2.error) throw r2.error;
+        toast('Reserva guardada, pero la alerta NO: falta activar las alertas en Supabase');
+      } else { throw r1.error; }
+    } else if(currentReservaId){
       toast('Reserva actualizada');
     } else {
-      var res = await sbInsert('reservas', data);
       toast('Reserva creada: '+nombre+' - '+piso);
     }
     await loadReservas();
@@ -4298,8 +4338,87 @@ function editReserva(id){
   document.getElementById('res-taxa').value=r.taxa;
   document.getElementById('res-periodo').value=r.periodo||'';
   document.getElementById('res-obs').value=r.observaciones||'';
+  resAlertaRellenar(r);
   toggleTarifaFields();
   document.getElementById('modal-reserva').style.display='flex';
+}
+
+//=== ALERTAS DE RESERVA ======================================================
+function resAlertaRellenar(r){
+  var t=document.getElementById('res-alerta-texto'); if(!t) return;
+  t.value=(r&&r.alerta_texto)||'';
+  document.getElementById('res-alerta-fecha').value=(r&&r.alerta_fecha)||'';
+  document.getElementById('res-alerta-urgente').checked=!!(r&&r.alerta_urgente);
+  document.getElementById('res-alerta-antes').value=String((r&&r.alerta_dias_antes!=null)?r.alerta_dias_antes:2);
+  var st=document.getElementById('res-alerta-estado');
+  if(r&&r.alerta_texto&&r.alerta_hecha){ st.style.display='block'; st.textContent='Resuelta'+(r.alerta_hecha_por?' por '+r.alerta_hecha_por:'')+'. Si la cambias, vuelve a avisar.'; }
+  else { st.style.display='none'; st.textContent=''; }
+}
+function alertaActiva(r){
+  if(!r||!r.alerta_texto||!r.alerta_fecha||r.alerta_hecha) return false;
+  var p=String(r.alerta_fecha).split('-').map(Number); var d=new Date(p[0],p[1]-1,p[2]);
+  d.setDate(d.getDate()-(parseInt(r.alerta_dias_antes,10)||0));
+  var hoy=new Date(); hoy.setHours(0,0,0,0);
+  return hoy>=d;
+}
+function alertasPendientes(){
+  return (reservas||[]).filter(alertaActiva).sort(function(a,b){
+    if(!!b.alerta_urgente!==!!a.alerta_urgente) return b.alerta_urgente?1:-1;
+    return String(a.alerta_fecha).localeCompare(String(b.alerta_fecha));
+  });
+}
+function alertaCuando(f){
+  var p=String(f).split('-').map(Number); var d=new Date(p[0],p[1]-1,p[2]);
+  var hoy=new Date(); hoy.setHours(0,0,0,0);
+  var n=Math.round((d-hoy)/86400000);
+  if(n===0) return 'Hoy'; if(n===1) return 'Mañana'; if(n>1) return 'En '+n+' días';
+  return n===-1?'Ayer (atrasada)':'Hace '+(-n)+' días (atrasada)';
+}
+function mostrarAlertas(forzar){
+  var lst=alertasPendientes();
+  var prev=document.getElementById('alertas-modal'); if(prev) prev.remove();
+  actualizarCampanaAlertas();
+  if(!lst.length){ if(forzar) toast('No hay alertas pendientes'); return; }
+  var h='<div style="width:100%;max-width:460px;max-height:85vh;background:#fff;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.25)">';
+  h+='<div style="padding:14px 16px;border-bottom:1px solid #EEF0F4;display:flex;align-items:center;gap:10px"><div style="flex-grow:1"><div style="font-size:17px;font-weight:700;color:#B45309">Alertas pendientes ('+lst.length+')</div><div style="font-size:12px;color:#5B6275">Márcalas como hechas cuando estén resueltas</div></div>';
+  h+='<button aria-label="Cerrar" onclick="cerrarAlertas()" style="width:34px;height:34px;border-radius:17px;border:none;background:#F1F2F6;font-size:18px;color:#5B6275;cursor:pointer">&#215;</button></div>';
+  h+='<div style="overflow:auto;padding:6px 16px 10px 16px">';
+  lst.forEach(function(r){
+    var urg=!!r.alerta_urgente;
+    h+='<div style="padding:10px 0;border-bottom:1px solid #F1F2F6">';
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+    h+='<span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;background:'+(urg?'#FEE2E2':'#FEF3C7')+';color:'+(urg?'#B91C1C':'#92400E')+'">'+(urg?'URGENTE':'AVISO')+'</span>';
+    h+='<span style="font-size:12px;font-weight:700;color:'+(alertaCuando(r.alerta_fecha).indexOf('atrasada')>=0?'#B91C1C':'#1A1D27')+'">'+alertaCuando(r.alerta_fecha)+' · '+fmtDate(r.alerta_fecha)+'</span></div>';
+    h+='<div style="font-size:14px;font-weight:700">'+planEscHtml(r.piso)+' <span style="font-weight:500;color:#5B6275;font-size:12px">· '+planEscHtml(r.nombre_huesped||'')+' · '+fmtDate(r.fecha_entrada)+' → '+fmtDate(r.fecha_salida)+'</span></div>';
+    h+='<div style="font-size:13px;margin:4px 0 8px 0;white-space:pre-wrap">'+planEscHtml(r.alerta_texto)+'</div>';
+    h+='<div style="display:flex;gap:8px"><button onclick="marcarAlertaHecha('+r.id+')" style="height:34px;padding:0 14px;border-radius:8px;border:none;background:#16A34A;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Hecho</button>';
+    h+='<button onclick="cerrarAlertas();editReserva('+r.id+')" style="height:34px;padding:0 14px;border-radius:8px;border:1px solid #E2E5ED;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Ver reserva</button></div>';
+    h+='</div>';
+  });
+  h+='</div><div style="padding:10px 16px 14px 16px;border-top:1px solid #EEF0F4;display:flex;justify-content:flex-end"><button onclick="cerrarAlertas()" style="height:38px;padding:0 16px;border-radius:8px;border:1px solid #E2E5ED;background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Recordar más tarde</button></div></div>';
+  var m=document.createElement('div');
+  m.id='alertas-modal';
+  m.setAttribute('style','position:fixed;inset:0;background:rgba(20,22,33,.45);z-index:3500;display:flex;align-items:center;justify-content:center;padding:16px');
+  m.innerHTML=h;
+  m.addEventListener('click',function(e){ if(e.target===m) cerrarAlertas(); });
+  document.body.appendChild(m);
+}
+function cerrarAlertas(){ var m=document.getElementById('alertas-modal'); if(m) m.remove(); }
+async function marcarAlertaHecha(id){
+  var data={alerta_hecha:true, alerta_hecha_por:(currentUser?currentUser.name:'Sistema'), alerta_hecha_en:new Date().toISOString()};
+  var res=await sbUpdate('reservas', id, data);
+  if(res&&res.error){ console.error(res.error); return toast('Error: '+res.error.message); }
+  var r=(reservas||[]).find(function(x){return x.id===id;}); if(r) Object.assign(r,data);
+  toast('Alerta marcada como hecha');
+  mostrarAlertas(false); renderPlanning();
+}
+function actualizarCampanaAlertas(){
+  var n=alertasPendientes().length;
+  ['plan-alertas-btn','pm-alertas-btn'].forEach(function(id){
+    var b=document.getElementById(id); if(!b) return;
+    b.style.display=n?'inline-flex':'none';
+    var c=b.querySelector('.n'); if(c) c.textContent=n;
+  });
 }
 
 //=== PLANNING ===============================================================
@@ -4417,6 +4536,7 @@ function renderPlanning(){
       var pax=(r.personas&&r.personas>0)?Math.min(10,Math.max(1,r.personas)):1;
 
       h+='<div title="'+pax+' pax — '+r.nombre_huesped+' ('+r.plataforma+')" onclick="openChecklist('+r.id+')" style="position:absolute;left:'+left+'px;top:6px;width:'+(width-1)+'px;height:'+(rowH-12)+'px;background:'+col+';border-radius:3px;cursor:pointer;display:flex;align-items:center;padding:0 6px;overflow:hidden">';
+      if(alertaActiva(r)) h+='<span title="Alerta pendiente" style="flex-shrink:0;width:14px;height:14px;border-radius:7px;background:#fff;color:#DC2626;font-size:10px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;margin-right:3px">!</span>';
       h+='<span style="font-size:10px;font-weight:700;color:white;flex-shrink:0;white-space:nowrap">'+pax+'P</span>';
       h+='<span style="font-size:10px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;margin-left:3px">'+r.nombre_huesped+'</span>';
       h+='</div>';
@@ -4437,21 +4557,41 @@ function renderPlanning(){
   var grid=document.getElementById('plan-grid');
   if(grid) grid.innerHTML=h;
   if(typeof renderPlanMobile==='function') renderPlanMobile();
+  if(typeof actualizarCampanaAlertas==='function') actualizarCampanaAlertas();
 }
 
 //=== PLANNING MÓVIL (resumen de hoy + 7 días) ===============================
-var planMob={dia:0, sector:'Todos', soloRes:true, sheet:''};
+var planMob={desde:'', hasta:'', sector:'Todos', soloRes:true, sheet:'', notas:{}, mas:false, modo:'dia'};
+function pmHoyMas(off){ var d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+(off||0)); return pmYmd(d); }
+function pmParse(y){ var p=String(y).split('-').map(Number); return new Date(p[0],p[1]-1,p[2]); }
+function pmRango(){ if(!planMob.desde){ planMob.desde=planMob.hasta=pmHoyMas(0); } if(planMob.hasta<planMob.desde) planMob.hasta=planMob.desde; return {d:planMob.desde,h:planMob.hasta}; }
+function pmEsPeriodo(){ var R=pmRango(); return R.d!==R.h; }
+function pmCorta(y){ var t=pmParse(y).toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}); return t.charAt(0).toUpperCase()+t.slice(1); }
+function pmRangoTxt(){ var R=pmRango(); return R.d===R.h ? pmFechaLarga(pmParse(R.d)) : pmCorta(R.d)+' – '+pmCorta(R.h); }
+function pmDia(off){ planMob.desde=planMob.hasta=pmHoyMas(off); planMob.mas=false; renderPlanMobile(); }
+function pmToggleMas(){ planMob.mas=!planMob.mas; renderPlanMobile(); }
+function pmAplicarFechas(){
+  var d=(document.getElementById('pm-f-desde')||{}).value, h=(document.getElementById('pm-f-hasta')||{}).value;
+  if(!d) return toast('Elige una fecha');
+  if(planMob.modo==='dia' || !h) h=d;
+  if(h<d){ var t=d; d=h; h=t; }
+  planMob.desde=d; planMob.hasta=h; planMob.mas=false; renderPlanMobile();
+}
+// Notas para compartir: solo se guardan mientras la página está abierta (no van a la base de datos)
+function pmNotaKey(r){ var R=pmRango(); return planMob.sheet+'|'+R.d+'_'+R.h+'|'+r.id; }
+function pmNota(inp){ planMob.notas[inp.getAttribute('data-k')]=inp.value; }
 function pmYmd(d){ return d.getFullYear()+'-'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'-'+(d.getDate()<10?'0':'')+d.getDate(); }
-function pmBaseDate(){ var d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+planMob.dia); return d; }
+function pmBaseDate(){ return pmParse(pmRango().d); }
 function pmFechaLarga(d){ var t=d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}); return t.charAt(0).toUpperCase()+t.slice(1); }
 function pmSectorDe(piso){ var s=null; getPlanSectores().forEach(function(sx){ if(!s && sx.pisos.indexOf(piso)>=0) s=sx.nombre; }); return s||'Otros'; }
 function pmListas(){
-  var b=pmYmd(pmBaseDate());
+  var R=pmRango(), d=R.d, h=R.h;
   var rs=(reservas||[]).filter(function(r){ return r && r.fecha_entrada && r.fecha_salida; });
   return {
-    sal: rs.filter(function(r){ return r.fecha_salida===b; }),
-    ent: rs.filter(function(r){ return r.fecha_entrada===b; }),
-    ocu: rs.filter(function(r){ return r.fecha_entrada<b && r.fecha_salida>b; })
+    sal: rs.filter(function(r){ return r.fecha_salida>=d && r.fecha_salida<=h; }),
+    ent: rs.filter(function(r){ return r.fecha_entrada>=d && r.fecha_entrada<=h; }),
+    // Ocupados: alojados en algún momento del periodo (un solo día: ya estaban y siguen)
+    ocu: rs.filter(function(r){ return r.fecha_entrada<h && r.fecha_salida>d; })
   };
 }
 function pmSet(k,v){ planMob[k]=v; renderPlanMobile(); }
@@ -4460,11 +4600,28 @@ function renderPlanMobile(){
   var L=pmListas(), base=pmBaseDate();
   var h='';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
-  h+='<div><div style="font-size:18px;font-weight:700">Planning</div><div style="font-size:12px;color:#5B6275;font-weight:600">'+pmFechaLarga(base)+'</div></div>';
-  h+='<div style="display:flex;background:#E8EAF0;border-radius:16px;padding:2px">';
-  h+='<button class="pm-tab'+(planMob.dia===0?' on':'')+'" onclick="pmSet(\'dia\',0)">Hoy</button>';
-  h+='<button class="pm-tab'+(planMob.dia===1?' on':'')+'" onclick="pmSet(\'dia\',1)">Mañana</button>';
+  var R=pmRango(), esHoy=(R.d===R.h&&R.d===pmHoyMas(0)), esMan=(R.d===R.h&&R.d===pmHoyMas(1));
+  h+='<div style="min-width:0"><div style="font-size:18px;font-weight:700">Planning</div><div style="font-size:12px;color:'+(esHoy||esMan?'#5B6275':'#2F5FDF')+';font-weight:600">'+pmRangoTxt()+'</div></div>';
+  h+='<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><div style="display:flex;background:#E8EAF0;border-radius:16px;padding:2px">';
+  h+='<button class="pm-tab'+(esHoy?' on':'')+'" onclick="pmDia(0)">Hoy</button>';
+  h+='<button class="pm-tab'+(esMan?' on':'')+'" onclick="pmDia(1)">Mañana</button>';
+  h+='</div>';
+  h+='<button aria-label="Elegir fecha o periodo" title="Elegir fecha o periodo" onclick="pmToggleMas()" style="width:30px;height:30px;border-radius:15px;border:none;cursor:pointer;font-size:16px;font-weight:700;line-height:1;font-family:inherit;'+((planMob.mas||!(esHoy||esMan))?'background:var(--primary);color:#fff':'background:#E8EAF0;color:#5B6275')+'">&#8943;</button>';
   h+='</div></div>';
+  if(planMob.mas){
+    var per=planMob.modo==='periodo';
+    h+='<div style="background:#fff;border:1px solid #E2E5ED;border-radius:12px;padding:10px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px">';
+    h+='<div style="display:flex;background:#E8EAF0;border-radius:14px;padding:2px;align-self:flex-start">';
+    h+='<button class="pm-seg'+(!per?' on':'')+'" onclick="planMob.modo=\'dia\';renderPlanMobile()">Un día</button>';
+    h+='<button class="pm-seg'+(per?' on':'')+'" onclick="planMob.modo=\'periodo\';renderPlanMobile()">Periodo</button></div>';
+    h+='<div style="display:flex;gap:8px;align-items:flex-end">';
+    h+='<div style="flex:1;min-width:0"><div style="font-size:10px;font-weight:600;color:#5B6275;margin-bottom:3px">'+(per?'Desde':'Fecha')+'</div><input type="date" id="pm-f-desde" value="'+R.d+'" style="font-size:13px;padding:6px 8px;height:34px;box-sizing:border-box"></div>';
+    if(per) h+='<div style="flex:1;min-width:0"><div style="font-size:10px;font-weight:600;color:#5B6275;margin-bottom:3px">Hasta</div><input type="date" id="pm-f-hasta" value="'+R.h+'" style="font-size:13px;padding:6px 8px;height:34px;box-sizing:border-box"></div>';
+    h+='<button onclick="pmAplicarFechas()" style="height:34px;padding:0 12px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">Ver</button>';
+    h+='</div></div>';
+  }
+  var nAl=alertasPendientes().length;
+  if(nAl) h+='<button id="pm-alertas-btn" onclick="mostrarAlertas(true)" style="display:inline-flex;width:100%;align-items:center;justify-content:space-between;margin-bottom:10px;height:38px;padding:0 12px;border-radius:10px;border:1px solid #FECACA;background:#FEF2F2;color:#B91C1C;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit"><span>Alertas pendientes</span><span class="n" style="background:#DC2626;color:#fff;border-radius:10px;padding:1px 8px;font-size:12px">'+nAl+'</span></button>';
   // Recuadros
   var box=function(k,n,lbl,bg,c1,c2){ return '<button class="pm-box" onclick="pmOpen(\''+k+'\')" style="background:'+bg+'"><div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-size:22px;font-weight:700;color:'+c1+'">'+n+'</span><span style="font-size:15px;color:'+c1+'">&#8250;</span></div><div style="font-size:11px;font-weight:600;color:'+c2+'">'+lbl+'</div></button>'; };
   h+='<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px">';
@@ -4474,13 +4631,13 @@ function renderPlanMobile(){
   h+='</div>';
   // Filtros
   var ps=getPlanSectores();
-  h+='<div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:8px;padding-bottom:2px">';
+  h+='<div style="display:flex;gap:4px;margin-bottom:8px;align-items:stretch">';
   ['Todos'].concat(ps.map(function(s){return s.nombre;})).forEach(function(nm){
     h+='<button class="pm-chip'+(planMob.sector===nm?' on':'')+'" data-sec="'+planEscHtml(nm)+'" onclick="pmSet(\'sector\',this.getAttribute(\'data-sec\'))">'+planEscHtml(nm)+'</button>';
   });
   h+='</div>';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
-  h+='<span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B6275">Próximos 7 días</span>';
+  h+='<span style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5B6275">'+(pmRango().d===pmHoyMas(0)?'Próximos 7 días':'7 días desde el '+pmParse(pmRango().d).getDate()+'/'+(pmParse(pmRango().d).getMonth()+1))+'</span>';
   h+='<div style="display:flex;background:#E8EAF0;border-radius:14px;padding:2px">';
   h+='<button class="pm-seg'+(planMob.soloRes?' on':'')+'" onclick="pmSet(\'soloRes\',true)">Con reserva</button>';
   h+='<button class="pm-seg'+(!planMob.soloRes?' on':'')+'" onclick="pmSet(\'soloRes\',false)">Todos</button>';
@@ -4489,7 +4646,7 @@ function renderPlanMobile(){
   var n=7, labelW=84, rowH=32;
   var avail=Math.min(window.innerWidth||390,768)-24-2;
   var cellW=Math.max(34,Math.floor((avail-labelW)/n));
-  var d0=new Date(); d0.setHours(0,0,0,0);
+  var d0=pmParse(pmRango().d), hoyY=pmHoyMas(0);
   var dEnd=new Date(d0); dEnd.setDate(dEnd.getDate()+n);
   var y0=pmYmd(d0), yEnd=pmYmd(dEnd);
   var dows=['DO','LU','MA','MI','JU','VI','SA'];
@@ -4498,12 +4655,13 @@ function renderPlanMobile(){
   var cells='';
   for(var i=0;i<n;i++){
     var dd=new Date(d0); dd.setDate(dd.getDate()+i);
-    var w=dd.getDay(), isT=(i===0), we=(w===0||w===6);
+    var w=dd.getDay(), isT=(pmYmd(dd)===hoyY), we=(w===0||w===6);
     g+='<div style="width:'+cellW+'px;flex-shrink:0;text-align:center;padding:5px 0;border-left:1px solid #EEF0F4;color:'+(isT?'#fff':(w===0?'#D32F2F':'#5B6275'))+';'+(isT?'background:var(--primary);border-radius:6px 6px 0 0;':'')+'"><div style="font-size:9px;font-weight:600">'+dows[w]+'</div><div style="font-size:13px;font-weight:700">'+dd.getDate()+'</div></div>';
     cells+='<div style="width:'+cellW+'px;flex-shrink:0;height:'+rowH+'px;border-left:1px solid #EEF0F4;background:'+(isT?'#E8EFFF':(we?'#F6F7FA':'#fff'))+'"></div>';
   }
   g+='</div>';
-  var enVentana=function(r){ return r.fecha_entrada<yEnd && r.fecha_salida>y0; };
+  // Incluye las que salen hoy (se dibujan hasta las 10:00 de hoy)
+  var enVentana=function(r){ return r.fecha_entrada<yEnd && r.fecha_salida>=y0; };
   var rs=(reservas||[]).filter(function(r){ return r && r.fecha_entrada && r.fecha_salida && enVentana(r); });
   var grupos=ps.filter(function(s){ return planMob.sector==='Todos' || planMob.sector===s.nombre; });
   var primero=true, filas=0;
@@ -4524,7 +4682,10 @@ function renderPlanMobile(){
         var col=PLAT_COLORS[r.plataforma]||PLAT_COLORS.default;
         var pax=(r.personas&&r.personas>0)?r.personas:'';
         var rl=di<0?'0':'11px', rr=de>n?'0':'11px';
-        g+='<div onclick="openChecklist('+r.id+')" title="'+planEscHtml(r.nombre_huesped||'')+'" style="position:absolute;top:5px;height:22px;left:'+Math.round(labelW+s0*cellW)+'px;width:'+Math.max(6,Math.round((s1-s0)*cellW)-1)+'px;background:'+col+';border-radius:'+rl+' '+rr+' '+rr+' '+rl+';color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;padding:0 6px;box-sizing:border-box;white-space:nowrap;overflow:hidden;cursor:pointer">'+(pax?pax+'P ':'')+planEscHtml(r.nombre_huesped||'')+'</div>';
+        var bw=Math.max(6,Math.round((s1-s0)*cellW)-1), corta=bw<34;
+        var txt=corta?(pax?pax+'P':''):(pax?pax+'P ':'')+planEscHtml(r.nombre_huesped||'');
+        if(alertaActiva(r)) txt='<span title="Alerta pendiente" style="flex-shrink:0;width:13px;height:13px;border-radius:7px;background:#fff;color:#DC2626;font-size:9px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;margin-right:3px">!</span>'+txt;
+        g+='<div onclick="openChecklist('+r.id+')" title="'+planEscHtml((r.nombre_huesped||'')+(r.fecha_salida===y0?' · sale hoy 10:00':''))+'" style="position:absolute;top:5px;height:22px;left:'+Math.round(labelW+s0*cellW)+'px;width:'+bw+'px;background:'+col+';border-radius:'+rl+' '+rr+' '+rr+' '+rl+';color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;padding:0 '+(corta?'3px':'6px')+';box-sizing:border-box;white-space:nowrap;overflow:hidden;cursor:pointer">'+txt+'</div>';
       });
       g+='</div>';
     });
@@ -4541,11 +4702,12 @@ function pmClose(){ planMob.sheet=''; renderPlanMobile(); }
 function pmSheetHtml(L, base){
   var k=planMob.sheet;
   var cfg={
-    sal:{list:L.sal,t:'Salidas · limpiar',c:'#B45309',hora:function(){return '10:00';},det:function(r){return (r.nombre_huesped||'')+' · '+(r.plataforma||'');}},
-    ent:{list:L.ent,t:'Entradas',c:'#15803D',hora:function(r){return r.hora_llegada||'16:00';},det:function(r){return (r.personas?r.personas+' pers · ':'')+(r.nombre_huesped||'')+' · '+(r.plataforma||'');}},
+    sal:{list:L.sal,t:'Salidas · limpiar',c:'#B45309',f:'fecha_salida',hora:function(){return '10:00';},det:function(r){return (r.nombre_huesped||'');}},
+    ent:{list:L.ent,t:'Entradas',c:'#15803D',f:'fecha_entrada',hora:function(r){return r.hora_llegada||'16:00';},det:function(r){return (r.personas?r.personas+' pers · ':'')+(r.nombre_huesped||'');}},
     ocu:{list:L.ocu,t:'Ocupados',c:'#2F5FDF',hora:function(){return '';},det:function(r){var e=r.fecha_salida.split('-');return (r.nombre_huesped||'')+' · sale el '+e[2]+'/'+e[1];}}
   }[k];
   if(!cfg) return '';
+  var esPer=pmEsPeriodo();
   var orden={}; getPlanSectores().forEach(function(s,i){ orden[s.nombre]=i; });
   var grupos={};
   cfg.list.forEach(function(r){ var s=pmSectorDe(r.piso); (grupos[s]=grupos[s]||[]).push(r); });
@@ -4554,18 +4716,21 @@ function pmSheetHtml(L, base){
   h+='<div style="width:100%;max-width:480px;max-height:85vh;background:#fff;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden">';
   h+='<div id="pm-share-card" style="overflow:auto;background:#fff">';
   h+='<div style="padding:16px 16px 10px 16px;border-bottom:1px solid #EEF0F4;display:flex;align-items:flex-start;gap:10px">';
-  h+='<div style="flex-grow:1"><div style="font-size:18px;font-weight:700;color:'+cfg.c+'">'+cfg.t+' ('+cfg.list.length+')</div><div style="font-size:12px;color:#5B6275;margin-top:2px">Servap Turístics · '+pmFechaLarga(base)+'</div></div>';
+  h+='<div style="flex-grow:1"><div style="font-size:18px;font-weight:700;color:'+cfg.c+'">'+cfg.t+' ('+cfg.list.length+')</div><div style="font-size:12px;color:#5B6275;margin-top:2px">Servap Turístics · '+pmRangoTxt()+'</div></div>';
   h+='<button data-html2canvas-ignore="true" aria-label="Cerrar" onclick="pmClose()" style="width:36px;height:36px;border-radius:18px;border:none;background:#F1F2F6;font-size:18px;color:#5B6275;cursor:pointer">&#215;</button>';
   h+='</div><div style="padding:4px 16px 12px 16px">';
-  if(!cfg.list.length) h+='<div style="padding:24px 0;text-align:center;color:#9CA3B8;font-size:13px">Nada para este día</div>';
+  if(!cfg.list.length) h+='<div style="padding:24px 0;text-align:center;color:#9CA3B8;font-size:13px">'+(esPer?'Nada en estas fechas':'Nada para este día')+'</div>';
   nombres.forEach(function(nm){
     h+='<div style="font-size:10px;font-weight:600;color:#9CA3B8;padding:10px 0 2px 0">'+planEscHtml(nm)+'</div>';
-    grupos[nm].sort(function(a,b){ return String(a.piso).localeCompare(String(b.piso)); }).forEach(function(r){
-      var col=PLAT_COLORS[r.plataforma]||PLAT_COLORS.default;
-      h+='<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F1F2F6">';
-      h+='<span style="width:10px;height:10px;border-radius:3px;flex-shrink:0;background:'+col+'"></span>';
+    grupos[nm].sort(function(a,b){ var fa=cfg.f?a[cfg.f]:'', fb=cfg.f?b[cfg.f]:''; return esPer&&fa!==fb ? fa.localeCompare(fb) : String(a.piso).localeCompare(String(b.piso)); }).forEach(function(r){
+      var nk=pmNotaKey(r), nv=planMob.notas[nk]||'';
+      h+='<div style="padding:9px 0;border-bottom:1px solid #F1F2F6">';
+      h+='<div style="display:flex;align-items:center;gap:10px">';
       h+='<div style="flex-grow:1;min-width:0"><div style="font-size:14px;font-weight:700">'+planEscHtml(r.piso)+'</div><div style="font-size:12px;color:#5B6275">'+planEscHtml(cfg.det(r))+'</div></div>';
-      h+='<span style="font-size:13px;font-weight:700">'+planEscHtml(cfg.hora(r))+'</span></div>';
+      var hr=cfg.hora(r);
+      h+='<div style="text-align:right;flex-shrink:0">'+(esPer&&cfg.f?'<div style="font-size:11px;font-weight:600;color:#5B6275">'+planEscHtml(pmCorta(r[cfg.f]))+'</div>':'')+'<span style="font-size:13px;font-weight:700">'+planEscHtml(hr)+'</span></div></div>';
+      h+='<input type="text" data-nota="1" data-k="'+planEscHtml(nk)+'" value="'+planEscHtml(nv)+'" oninput="pmNota(this)" placeholder="+ Añadir nota" aria-label="Nota para '+planEscHtml(r.piso)+'" style="margin-top:6px;width:100%;box-sizing:border-box;height:32px;border:1px dashed #D5DAE4;border-radius:8px;background:#FAFBFC;padding:0 10px;font-size:12px;color:#7C4A0B;font-family:inherit">';
+      h+='</div>';
     });
   });
   h+='</div></div>';
@@ -4587,12 +4752,22 @@ function pmLoadHtml2canvas(){
 function pmShareImage(){
   var card=document.getElementById('pm-share-card'); if(!card) return;
   var btn=document.getElementById('pm-share-btn'); if(btn){ btn.disabled=true; btn.textContent='Preparando imagen…'; }
-  var nombre='servap-'+({sal:'salidas',ent:'entradas',ocu:'ocupados'}[planMob.sheet]||'planning')+'-'+pmYmd(pmBaseDate())+'.png';
+  var nombre='servap-'+({sal:'salidas',ent:'entradas',ocu:'ocupados'}[planMob.sheet]||'planning')+'-'+pmRango().d+(pmEsPeriodo()?'_'+pmRango().h:'')+'.png';
   var fin=function(){ if(btn){ btn.disabled=false; btn.textContent='Compartir imagen'; } };
   pmLoadHtml2canvas().then(function(h2c){
     var prevMax=card.style.maxHeight, prevOv=card.style.overflow;
     card.style.maxHeight='none'; card.style.overflow='visible';
-    return h2c(card,{backgroundColor:'#ffffff',scale:2,useCORS:true}).then(function(canvas){
+    return h2c(card,{backgroundColor:'#ffffff',scale:2,useCORS:true,onclone:function(doc){
+      // En la imagen: las notas vacías desaparecen y las escritas se ven como texto
+      doc.querySelectorAll('input[data-nota]').forEach(function(inp){
+        var v=(planMob.notas[inp.getAttribute('data-k')]||'').trim();
+        if(!v){ inp.parentNode.removeChild(inp); return; }
+        var d=doc.createElement('div');
+        d.textContent='Nota: '+v;
+        d.setAttribute('style','margin-top:6px;padding:6px 10px;border-radius:8px;background:#FFF8E6;color:#7C4A0B;font-size:12px;font-weight:600;line-height:1.35;white-space:pre-wrap');
+        inp.parentNode.replaceChild(d,inp);
+      });
+    }}).then(function(canvas){
       card.style.maxHeight=prevMax; card.style.overflow=prevOv;
       return new Promise(function(ok){ canvas.toBlob(ok,'image/png'); });
     });
@@ -4607,7 +4782,9 @@ function pmShareImage(){
     toast('Imagen descargada: '+nombre);
   }).catch(function(e){ console.error('pmShareImage',e); toast('No se pudo crear la imagen'); }).then(fin);
 }
-window.addEventListener('resize',function(){ if(document.getElementById('plan-mobile') && window.innerWidth<=768) renderPlanMobile(); });
+// Solo se redibuja si cambia el ancho (al abrir el teclado del móvil cambia el alto y no debe perderse lo que se escribe)
+var _pmLastW=window.innerWidth;
+window.addEventListener('resize',function(){ if(window.innerWidth===_pmLastW) return; _pmLastW=window.innerWidth; if(document.getElementById('plan-mobile') && window.innerWidth<=768) renderPlanMobile(); });
 
 //=== INIT ===================================================================
 (function(){
@@ -5350,7 +5527,7 @@ function reprintNomina(id){
 
 //=== ACCESOS: acciones que cambian o borran datos =============================
 var ACC_ESCRITURA_GESTION=['calAdd','dispAdd','cfgAddAdmin','cfgAddPiso','cfgAddWorker','confPrev','confRec','rejRec','editRec','saveEditRec',
-  'editReserva','editReservaFromChecklist','saveReserva','openNuevaReserva','planNuevaReserva','planCfgAddPiso','planCfgAddSector',
+  'editReserva','editReservaFromChecklist','saveReserva','marcarAlertaHecha','openNuevaReserva','planNuevaReserva','planCfgAddPiso','planCfgAddSector',
   'submitAdmin','submitWorker','toggleSvcEstado','saveSvcRealizado','processWAChat','confirmWAImport','toggleCheck','cfgAddUser'];
 var ACC_BORRAR_GESTION=['calDel','dispDel','delRec','deleteReserva','deleteSvcRealizado'];
 var ACC_ESCRITURA_NOMINAS=['generarNominaPDF','enviarNominaEmail'];
